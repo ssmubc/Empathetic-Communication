@@ -62,36 +62,19 @@ def handler(event, context):
                 "last_sign_in" timestamp
             );
 
-            CREATE TABLE IF NOT EXISTS "Courses" (
-                "course_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "course_name" varchar,
-                "course_department" varchar,
-                "course_number" integer,
-                "course_access_code" varchar,
-                "course_student_access" bool,
-                "system_prompt" text
+            CREATE TABLE IF NOT EXISTS "Patients" (
+                "patient_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+                "patient_name" varchar,
+                "patient_gender" varchar,
+                "patient_age" integer,
+                "patient_allergies" varchar,
+                "diagnosis" varchar,
+                "admission_date" timestamp
             );
 
-            CREATE TABLE IF NOT EXISTS "Course_Modules" (
-                "module_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "concept_id" uuid,
-                "module_name" varchar,
-                "module_number" integer
-            );
-
-            CREATE TABLE IF NOT EXISTS "Enrolments" (
-                "enrolment_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "user_id" uuid,
-                "course_id" uuid,
-                "enrolment_type" varchar,
-                "course_completion_percentage" integer,
-                "time_spent" integer,
-                "time_enroled" timestamp
-            );
-
-            CREATE TABLE IF NOT EXISTS "Module_Files" (
+            CREATE TABLE IF NOT EXISTS "Patient_Files" (
                 "file_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "module_id" uuid,
+                "patient_id" uuid,
                 "filetype" varchar,
                 "s3_bucket_reference" varchar,
                 "filepath" varchar,
@@ -100,18 +83,17 @@ def handler(event, context):
                 "metadata" text
             );
 
-            CREATE TABLE IF NOT EXISTS "Student_Modules" (
-                "student_module_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "course_module_id" uuid,
-                "enrolment_id" uuid,
-                "module_score" integer,
-                "last_accessed" timestamp,
-                "module_context_embedding" float[]
+            CREATE TABLE IF NOT EXISTS "Enrolments" (
+                "enrolment_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+                "user_id" uuid,
+                "patient_id" uuid,
+                "enrolment_type" varchar,
+                "time_enroled" timestamp
             );
 
             CREATE TABLE IF NOT EXISTS "Sessions" (
                 "session_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "student_module_id" uuid,
+                "patient_id" uuid,
                 "session_name" varchar,
                 "session_context_embeddings" float[],
                 "last_accessed" timestamp
@@ -125,42 +107,27 @@ def handler(event, context):
                 "time_sent" timestamp
             );
 
-            CREATE TABLE IF NOT EXISTS "Course_Concepts" (
-                "concept_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "course_id" uuid,
-                "concept_name" varchar,
-                "concept_number" integer
-            );
-
             CREATE TABLE IF NOT EXISTS "User_Engagement_Log" (
                 "log_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "user_id" uuid,
-                "course_id" uuid,
-                "module_id" uuid,
+                "patient_id" uuid,
                 "enrolment_id" uuid,
                 "timestamp" timestamp,
                 "engagement_type" varchar,
                 "engagement_details" text
             );
 
+            -- Add foreign keys
             ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("enrolment_id") REFERENCES "Enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
             ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("user_id") REFERENCES "Users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("course_id") REFERENCES "Courses" ("course_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("module_id") REFERENCES "Course_Modules" ("module_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Course_Concepts" ADD FOREIGN KEY ("course_id") REFERENCES "Courses" ("course_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "Patient_Files" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Course_Modules" ADD FOREIGN KEY ("concept_id") REFERENCES "Course_Concepts" ("concept_id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-            ALTER TABLE "Enrolments" ADD FOREIGN KEY ("course_id") REFERENCES "Courses" ("course_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "Enrolments" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
             ALTER TABLE "Enrolments" ADD FOREIGN KEY ("user_id") REFERENCES "Users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Module_Files" ADD FOREIGN KEY ("module_id") REFERENCES "Course_Modules" ("module_id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-            ALTER TABLE "Student_Modules" ADD FOREIGN KEY ("course_module_id") REFERENCES "Course_Modules" ("module_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "Student_Modules" ADD FOREIGN KEY ("enrolment_id") REFERENCES "Enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-            ALTER TABLE "Sessions" ADD FOREIGN KEY ("student_module_id") REFERENCES "Student_Modules" ("student_module_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "Sessions" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
             ALTER TABLE "Messages" ADD FOREIGN KEY ("session_id") REFERENCES "Sessions" ("session_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -169,19 +136,14 @@ def handler(event, context):
                 IF NOT EXISTS (
                     SELECT 1
                     FROM pg_constraint
-                    WHERE conname = 'unique_course_user'
+                    WHERE conname = 'unique_patient_user'
                     AND conrelid = '"Enrolments"'::regclass
                 ) THEN
-                    ALTER TABLE "Enrolments" ADD CONSTRAINT unique_course_user UNIQUE (course_id, user_id);
+                    ALTER TABLE "Enrolments" ADD CONSTRAINT unique_patient_user UNIQUE (patient_id, user_id);
                 END IF;
             END $$;
 
-
         """
-
-        #
-        ## Create user with limited permission on RDS
-        ##
 
         # Execute table creation
         cursor.execute(sqlTableCreation)
@@ -193,17 +155,7 @@ def handler(event, context):
         usernameTableCreator = secrets.token_hex(8)
         passwordTableCreator = secrets.token_hex(16)
 
-        # Based on the observation,
-        #   - Database name: does not reflect from the CDK dbname read more from https://stackoverflow.com/questions/51014647/aws-postgres-db-does-not-exist-when-connecting-with-pg
-        #   - Schema: uses the default schema 'public' in all tables
-        #
-        # Create new user with the following permission:
-        #   - SELECT
-        #   - INSERT
-        #   - UPDATE
-        #   - DELETE
-
-        # comment out to 'connection.commit()' on redeployment
+        # Create a user with the following permissions: SELECT, INSERT, UPDATE, DELETE
         sqlCreateUser = """
             DO $$
             BEGIN
@@ -225,7 +177,7 @@ def handler(event, context):
             CREATE USER "%s" WITH PASSWORD '%s';
             GRANT readwrite TO "%s";
         """
-        
+
         sqlCreateTableCreator = """
             DO $$
             BEGIN
@@ -248,8 +200,7 @@ def handler(event, context):
             GRANT tablecreator TO "%s";
         """
 
-
-        #Execute table creation
+        # Execute user creation
         cursor.execute(
             sqlCreateUser,
             (
@@ -269,48 +220,29 @@ def handler(event, context):
         )
         connection.commit()
 
-        #also for table creator:
+        # Store new credentials in Secrets Manager
         authInfoTableCreator = {"username": usernameTableCreator, "password": passwordTableCreator}
-
-        # comment out to on redeployment
         dbSecret.update(authInfoTableCreator)
         sm_client = boto3.client("secretsmanager")
         sm_client.put_secret_value(
             SecretId=DB_PROXY, SecretString=json.dumps(dbSecret)
         )
 
-        #
-        ## Load client username and password to SSM
-        ##
         authInfo = {"username": username, "password": password}
-
-        # comment out to on redeployment
         dbSecret.update(authInfo)
-        sm_client = boto3.client("secretsmanager")
         sm_client.put_secret_value(
             SecretId=DB_USER_SECRET_NAME, SecretString=json.dumps(dbSecret)
         )
+
+        # Test query outputs
         sql = """
             SELECT * FROM "Users";
-        """
-        
-        cursor.execute(sql)
-        print(cursor.fetchall())
-        
-        sql = """
-            SELECT * FROM "LLM_Vectors";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-        
-        sql = """
-            SELECT * FROM "Courses";
         """
         cursor.execute(sql)
         print(cursor.fetchall())
 
         sql = """
-            SELECT * FROM "Course_Modules";
+            SELECT * FROM "Patients";
         """
         cursor.execute(sql)
         print(cursor.fetchall())
@@ -322,13 +254,7 @@ def handler(event, context):
         print(cursor.fetchall())
 
         sql = """
-            SELECT * FROM "Module_Files";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
-            SELECT * FROM "Student_Modules";
+            SELECT * FROM "Patient_Files";
         """
         cursor.execute(sql)
         print(cursor.fetchall())
@@ -346,17 +272,10 @@ def handler(event, context):
         print(cursor.fetchall())
 
         sql = """
-            SELECT * FROM "Course_Concepts";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
             SELECT * FROM "User_Engagement_Log";
         """
         cursor.execute(sql)
         print(cursor.fetchall())
-
 
         # Close cursor and connection
         cursor.close()

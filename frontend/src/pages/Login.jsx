@@ -460,7 +460,7 @@ export const Login = () => {
             >
               Welcome to
               <br />
-              AI Learning Assistant 👋
+              Virtual Care Interaction 👋
             </Typography>
           </Grid>
           {/* existing user sign in */}
