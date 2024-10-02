@@ -100,8 +100,8 @@ export class ApiGatewayStack extends cdk.Stack {
      * Using verification code
      * Inspiration from http://buraktas.com/create-cognito-user-pool-aws-cdk/
      */
-    const userPoolName = "ailaUserPool";
-    this.userPool = new cognito.UserPool(this, "aila-pool", {
+    const userPoolName = "vciUserPool";
+    this.userPool = new cognito.UserPool(this, "vci-pool", {
       userPoolName: userPoolName,
       signInAliases: {
         email: true,
@@ -128,7 +128,7 @@ export class ApiGatewayStack extends cdk.Stack {
     });
 
     // Create app client
-    this.appClient = this.userPool.addClient("aila-pool", {
+    this.appClient = this.userPool.addClient("vci-pool", {
       userPoolClientName: userPoolName,
       authFlows: {
         userPassword: true,
@@ -139,10 +139,10 @@ export class ApiGatewayStack extends cdk.Stack {
 
     this.identityPool = new cognito.CfnIdentityPool(
       this,
-      "aila-identity-pool",
+      "vci-identity-pool",
       {
         allowUnauthenticatedIdentities: true,
-        identityPoolName: "ailaIdentityPool",
+        identityPoolName: "vciIdentityPool",
         cognitoIdentityProviders: [
           {
             clientId: this.appClient.userPoolClientId,
@@ -152,7 +152,7 @@ export class ApiGatewayStack extends cdk.Stack {
       }
     );
 
-    const secretsName = "AILA_Cognito_Secrets";
+    const secretsName = "VCI_Cognito_Secrets";
 
     this.secret = new secretsmanager.Secret(this, secretsName, {
       secretName: secretsName,
@@ -197,7 +197,7 @@ export class ApiGatewayStack extends cdk.Stack {
     this.api = new apigateway.SpecRestApi(this, "APIGateway", {
       apiDefinition: apigateway.AssetApiDefinition.fromInline(data),
       endpointTypes: [apigateway.EndpointType.REGIONAL],
-      restApiName: "ailaAPI",
+      restApiName: "vciAPI",
       deploy: true,
       cloudWatchRole: true,
       deployOptions: {
@@ -643,7 +643,7 @@ export class ApiGatewayStack extends cdk.Stack {
           "secretsmanager:PutSecretValue",
         ],
         resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:AILA/*`,
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:VCI/*`,
         ],
       })
     );
@@ -692,7 +692,7 @@ export class ApiGatewayStack extends cdk.Stack {
       AutoSignupLambda
     );
 
-    // const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'ailaAuthorizer', {
+    // const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'vciAuthorizer', {
     //   cognitoUserPools: [this.userPool],
     // });
     new cdk.CfnOutput(this, "UserPoolIdOutput", {
@@ -883,8 +883,8 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     // Create S3 Bucket to handle documents for each course
-    const dataIngestionBucket = new s3.Bucket(this, "AILADataIngestionBucket", {
-      bucketName: "aila-data-ingestion-bucket",
+    const dataIngestionBucket = new s3.Bucket(this, "VCIDataIngestionBucket", {
+      bucketName: "vci-data-ingestion-bucket",
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       cors: [
         {
