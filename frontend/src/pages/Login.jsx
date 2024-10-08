@@ -1,4 +1,9 @@
 import { useState } from "react";
+
+// logo
+import heartbeatImage from "../pages/heartbeat.png"; 
+
+
 // amplify
 import {
   signIn,
@@ -446,21 +451,47 @@ export const Login = () => {
             sm={3}
             md={5}
             sx={{
-              background: `linear-gradient(189deg, #d5e1ff, #dcbfe3)`,
+              background: `linear-gradient(90deg, #e43333, #EA9598 80%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              padding: "20px"
             }}
           >
-            <Typography
-              variant="h4"
-              sx={{ color: "black", fontWeight: "bold", textAlign: "center" }}
-            >
-              Welcome to
-              <br />
-              Virtual Care Interaction 👋
-            </Typography>
+            
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              <img
+                src={heartbeatImage}
+                alt="Heartbeat"
+                style={{
+                  maxWidth: '25%', // Ensure the image fits within the container
+                  display: 'block', // Make the image a block element
+                  height: 'auto', // Maintain aspect ratio
+                  margin: '0 auto', // Center the image horizontally
+                }}
+              />
+              
+              <Typography
+                variant="h4"
+                sx={{
+                  color: 'black',
+                  fontWeight: 'bold',
+                  fontSize: '2rem', // Increase the font size for a bolder look
+                  lineHeight: '1.5', // Adjust line height for better spacing
+                  marginTop: '10px', // Add space between the image and the text
+                }}  
+              >
+                Welcome to
+                <br />
+                Virtual Care Interactions 
+                <br />
+                Powered by AI
+              </Typography>
+            </div>
+
+
           </Grid>
+          
           {/* existing user sign in */}
           {!loading &&
             !newUserPassword &&
