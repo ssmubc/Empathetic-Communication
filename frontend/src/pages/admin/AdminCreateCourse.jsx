@@ -279,12 +279,12 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           textAlign="left"
           variant="h6"
         >
-          Create a new course
+          Create a new Simulation Group
         </Typography>
         <form noValidate autoComplete="off">
           <TextField
             fullWidth
-            label="Course Name"
+            label="Simulation Group"
             value={courseName}
             onChange={(e) => setCourseName(e.target.value)}
             margin="normal"
@@ -304,7 +304,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           />
           <TextField
             fullWidth
-            label="Course Department"
+            label="Group Department"
             value={courseDepartment}
             onChange={(e) => setCourseDepartment(e.target.value)}
             margin="normal"
@@ -313,7 +313,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           />
           <TextField
             fullWidth
-            label="Course Code (Numbers Only)"
+            label="Group Access Code (Numbers Only)"
             value={courseCode}
             onChange={handleCourseCodeChange}
             margin="normal"

@@ -120,7 +120,7 @@ export const AdminCourses = ({ setSelectedCourse }) => {
               textAlign="left"
               variant="h6"
             >
-              Courses
+              Simulation Groups
             </Typography>
           </Box>
           <TableContainer
@@ -130,7 +130,7 @@ export const AdminCourses = ({ setSelectedCourse }) => {
             }}
           >
             <TextField
-              label="Search by Course"
+              label="Search Groups"
               variant="outlined"
               value={searchQuery}
               onChange={handleSearchChange}
@@ -144,10 +144,10 @@ export const AdminCourses = ({ setSelectedCourse }) => {
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ width: "30%", fontSize: 14 }}>
-                        Course
+                        Group
                       </TableCell>
                       <TableCell sx={{ fontSize: 14 }}>
-                        Course Access Code
+                        Group Access Code
                       </TableCell>
                       <TableCell sx={{ fontSize: 14 }}>
                         Status
