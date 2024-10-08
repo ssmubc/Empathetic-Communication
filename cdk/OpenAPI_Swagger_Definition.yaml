@@ -328,12 +328,6 @@ paths:
           description: last name of the user
           schema:
             type: string
-        - in: query
-          name: preferred_name
-          required: false
-          description: preferred name of the user
-          schema:
-            type: string
       responses:
         "200":
           description: Student Created

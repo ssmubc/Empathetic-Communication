@@ -86,19 +86,18 @@ exports.handler = async (event) => {
           try {
             // Check if the user already exists
             const existingUser = await sqlConnection`
-                SELECT * FROM "Users"
+                SELECT * FROM "users"
                 WHERE user_email = ${user_email};
             `;
 
             if (existingUser.length > 0) {
               // Update the existing user's information
               const updatedUser = await sqlConnection`
-                    UPDATE "Users"
+                    UPDATE "users"
                     SET
                         username = ${username},
                         first_name = ${first_name},
                         last_name = ${last_name},
-                        preferred_name = ${preferred_name},
                         last_sign_in = CURRENT_TIMESTAMP,
                         time_account_created = CURRENT_TIMESTAMP
                     WHERE user_email = ${user_email}
@@ -108,8 +107,8 @@ exports.handler = async (event) => {
             } else {
               // Insert a new user with 'student' role
               const newUser = await sqlConnection`
-                    INSERT INTO "Users" (user_email, username, first_name, last_name, preferred_name, time_account_created, roles, last_sign_in)
-                    VALUES (${user_email}, ${username}, ${first_name}, ${last_name}, ${preferred_name}, CURRENT_TIMESTAMP, ARRAY['student'], CURRENT_TIMESTAMP)
+                    INSERT INTO "users" (user_email, username, first_name, last_name, time_account_created, roles, last_sign_in)
+                    VALUES (${user_email}, ${username}, ${first_name}, ${last_name}, CURRENT_TIMESTAMP, ARRAY['student'], CURRENT_TIMESTAMP)
                     RETURNING *;
                 `;
               response.body = JSON.stringify(newUser[0]);
@@ -134,7 +133,7 @@ exports.handler = async (event) => {
             // Retrieve roles for the user with the provided email
             const userData = await sqlConnection`
                 SELECT roles
-                FROM "Users"
+                FROM "users"
                 WHERE user_email = ${user_email};
               `;
             if (userData.length > 0) {
@@ -163,7 +162,7 @@ exports.handler = async (event) => {
             // Retrieve roles for the user with the provided email
             const userData = await sqlConnection`
                   SELECT first_name
-                  FROM "Users"
+                  FROM "users"
                   WHERE user_email = ${user_email};
                 `;
             if (userData.length > 0) {
