@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 // logo
-import heartbeatImage from "../pages/heartbeat.png"; 
+import heartbeatImage from "../assets/heartbeat.png";
 
 
 // amplify
