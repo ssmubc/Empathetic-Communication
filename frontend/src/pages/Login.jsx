@@ -4,6 +4,9 @@ import { useState } from "react";
 import heartbeatImage from "../assets/heartbeat.png";
 
 
+import './LoginStyles.css'; // Adjust the path if necessary
+
+
 // amplify
 import {
   signIn,
@@ -299,7 +302,7 @@ export const Login = () => {
       if (user.isSignedIn) {
         // Send user data to backend
         const session = await fetchAuthSession();
-        const token = session.tokens.idToken;
+        const token = session.tokens.idToken
 
         const response = await fetch(
           `${
@@ -310,7 +313,9 @@ export const Login = () => {
             username
           )}&first_name=${encodeURIComponent(
             firstName
-          )}&last_name=${encodeURIComponent(lastName)}`,
+          )}&last_name=${encodeURIComponent(
+            lastName
+          )}&preferred_name=${encodeURIComponent(firstName)}`,
           {
             method: "POST",
             headers: {
@@ -450,14 +455,15 @@ export const Login = () => {
             xs={false}
             sm={3}
             md={5}
+            className="animatedGradient"
             sx={{
-              background: `linear-gradient(90deg, #e43333, #EA9598 80%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "20px"
+              padding: "20px",
             }}
           >
+
             
             <div style={{ textAlign: 'center', marginTop: '20px' }}>
               <img
