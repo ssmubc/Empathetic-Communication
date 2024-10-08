@@ -50,29 +50,45 @@ def handler(event, context):
         # Create tables based on the schema
         sqlTableCreation = """
             CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-            CREATE TABLE IF NOT EXISTS "Users" (
+
+            CREATE TABLE IF NOT EXISTS "users" (
                 "user_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "user_email" varchar UNIQUE,
                 "username" varchar,
                 "first_name" varchar,
                 "last_name" varchar,
-                "preferred_name" varchar,
                 "time_account_created" timestamp,
                 "roles" varchar[],
                 "last_sign_in" timestamp
             );
 
-            CREATE TABLE IF NOT EXISTS "Patients" (
-                "patient_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "patient_name" varchar,
-                "patient_gender" varchar,
-                "patient_age" integer,
-                "patient_allergies" varchar,
-                "diagnosis" varchar,
-                "admission_date" timestamp
+            CREATE TABLE IF NOT EXISTS "simulation_groups" (
+                "simulation_group_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+                "group_name" varchar,
+                "group_description" varchar,
+                "group_access_code" varchar,
+                "group_student_access" bool,
+                "system_prompt" text
             );
 
-            CREATE TABLE IF NOT EXISTS "Patient_Files" (
+            CREATE TABLE IF NOT EXISTS "patients" (
+                "patient_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+                "simulation_group_id" uuid,
+                "patient_name" varchar,
+                "patient_age" integer,
+                "patient_gender" varchar
+            );
+
+            CREATE TABLE IF NOT EXISTS "enrolments" (
+                "enrolment_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+                "user_id" uuid,
+                "simulation_group_id" uuid,
+                "enrolment_type" varchar,
+                "group_completion_percentage" integer,
+                "time_enroled" timestamp
+            );
+
+            CREATE TABLE IF NOT EXISTS "patient_data" (
                 "file_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "patient_id" uuid,
                 "filetype" varchar,
@@ -83,23 +99,25 @@ def handler(event, context):
                 "metadata" text
             );
 
-            CREATE TABLE IF NOT EXISTS "Enrolments" (
-                "enrolment_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "user_id" uuid,
+            CREATE TABLE IF NOT EXISTS "student_patients" (
+                "student_patient_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "patient_id" uuid,
-                "enrolment_type" varchar,
-                "time_enroled" timestamp
+                "enrolment_id" uuid,
+                "patient_score" integer,
+                "last_accessed" timestamp,
+                "patient_context_embedding" float[],
+                "notes" text
             );
 
-            CREATE TABLE IF NOT EXISTS "Sessions" (
+            CREATE TABLE IF NOT EXISTS "sessions" (
                 "session_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "patient_id" uuid,
+                "student_patient_id" uuid,
                 "session_name" varchar,
                 "session_context_embeddings" float[],
                 "last_accessed" timestamp
             );
 
-            CREATE TABLE IF NOT EXISTS "Messages" (
+            CREATE TABLE IF NOT EXISTS "messages" (
                 "message_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "session_id" uuid,
                 "student_sent" bool,
@@ -107,9 +125,10 @@ def handler(event, context):
                 "time_sent" timestamp
             );
 
-            CREATE TABLE IF NOT EXISTS "User_Engagement_Log" (
+            CREATE TABLE IF NOT EXISTS "user_engagement_log" (
                 "log_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "user_id" uuid,
+                "simulation_group_id" uuid,
                 "patient_id" uuid,
                 "enrolment_id" uuid,
                 "timestamp" timestamp,
@@ -117,33 +136,43 @@ def handler(event, context):
                 "engagement_details" text
             );
 
-            -- Add foreign keys
-            ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("enrolment_id") REFERENCES "Enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("user_id") REFERENCES "Users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "User_Engagement_Log" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            -- Add foreign key constraints
+            ALTER TABLE "user_engagement_log" ADD FOREIGN KEY ("enrolment_id") REFERENCES "enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "user_engagement_log" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "user_engagement_log" ADD FOREIGN KEY ("simulation_group_id") REFERENCES "simulation_groups" ("simulation_group_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "user_engagement_log" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Patient_Files" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "patients" ADD FOREIGN KEY ("simulation_group_id") REFERENCES "simulation_groups" ("simulation_group_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Enrolments" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "Enrolments" ADD FOREIGN KEY ("user_id") REFERENCES "Users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "enrolments" ADD FOREIGN KEY ("simulation_group_id") REFERENCES "simulation_groups" ("simulation_group_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "enrolments" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Sessions" ADD FOREIGN KEY ("patient_id") REFERENCES "Patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "patient_data" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "Messages" ADD FOREIGN KEY ("session_id") REFERENCES "Sessions" ("session_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "student_patients" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "student_patients" ADD FOREIGN KEY ("enrolment_id") REFERENCES "enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+            ALTER TABLE "sessions" ADD FOREIGN KEY ("student_patient_id") REFERENCES "student_patients" ("student_patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+            ALTER TABLE "messages" ADD FOREIGN KEY ("session_id") REFERENCES "sessions" ("session_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+            -- Add unique constraint to enrolments
             DO $$
             BEGIN
                 IF NOT EXISTS (
                     SELECT 1
                     FROM pg_constraint
-                    WHERE conname = 'unique_patient_user'
-                    AND conrelid = '"Enrolments"'::regclass
+                    WHERE conname = 'unique_simulation_group_user'
+                    AND conrelid = '"enrolments"'::regclass
                 ) THEN
-                    ALTER TABLE "Enrolments" ADD CONSTRAINT unique_patient_user UNIQUE (patient_id, user_id);
+                    ALTER TABLE "enrolments" ADD CONSTRAINT unique_simulation_group_user UNIQUE (simulation_group_id, user_id);
                 END IF;
             END $$;
-
         """
+
+        #
+        ## Create users with limited permissions on RDS
+        ##
 
         # Execute table creation
         cursor.execute(sqlTableCreation)
@@ -155,7 +184,7 @@ def handler(event, context):
         usernameTableCreator = secrets.token_hex(8)
         passwordTableCreator = secrets.token_hex(16)
 
-        # Create a user with the following permissions: SELECT, INSERT, UPDATE, DELETE
+        # Create new user roles
         sqlCreateUser = """
             DO $$
             BEGIN
@@ -177,7 +206,7 @@ def handler(event, context):
             CREATE USER "%s" WITH PASSWORD '%s';
             GRANT readwrite TO "%s";
         """
-
+        
         sqlCreateTableCreator = """
             DO $$
             BEGIN
@@ -220,62 +249,33 @@ def handler(event, context):
         )
         connection.commit()
 
-        # Store new credentials in Secrets Manager
+        # Store credentials in Secrets Manager
         authInfoTableCreator = {"username": usernameTableCreator, "password": passwordTableCreator}
         dbSecret.update(authInfoTableCreator)
         sm_client = boto3.client("secretsmanager")
-        sm_client.put_secret_value(
-            SecretId=DB_PROXY, SecretString=json.dumps(dbSecret)
-        )
+        sm_client.put_secret_value(SecretId=DB_PROXY, SecretString=json.dumps(dbSecret))
 
+        # Store client username and password
         authInfo = {"username": username, "password": password}
         dbSecret.update(authInfo)
-        sm_client.put_secret_value(
-            SecretId=DB_USER_SECRET_NAME, SecretString=json.dumps(dbSecret)
-        )
+        sm_client.put_secret_value(SecretId=DB_USER_SECRET_NAME, SecretString=json.dumps(dbSecret))
 
-        # Test query outputs
-        sql = """
-            SELECT * FROM "Users";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
+        # Print sample queries to validate data
+        sample_queries = [
+            'SELECT * FROM "users";',
+            'SELECT * FROM "simulation_groups";',
+            'SELECT * FROM "patients";',
+            'SELECT * FROM "enrolments";',
+            'SELECT * FROM "patient_data";',
+            'SELECT * FROM "student_patients";',
+            'SELECT * FROM "sessions";',
+            'SELECT * FROM "messages";',
+            'SELECT * FROM "user_engagement_log";'
+        ]
 
-        sql = """
-            SELECT * FROM "Patients";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
-            SELECT * FROM "Enrolments";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
-            SELECT * FROM "Patient_Files";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
-            SELECT * FROM "Sessions";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
-            SELECT * FROM "Messages";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
-
-        sql = """
-            SELECT * FROM "User_Engagement_Log";
-        """
-        cursor.execute(sql)
-        print(cursor.fetchall())
+        for query in sample_queries:
+            cursor.execute(query)
+            print(cursor.fetchall())
 
         # Close cursor and connection
         cursor.close()

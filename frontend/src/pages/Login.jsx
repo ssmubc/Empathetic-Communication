@@ -294,7 +294,7 @@ export const Login = () => {
       if (user.isSignedIn) {
         // Send user data to backend
         const session = await fetchAuthSession();
-        const token = session.tokens.idToken
+        const token = session.tokens.idToken;
 
         const response = await fetch(
           `${
@@ -305,9 +305,7 @@ export const Login = () => {
             username
           )}&first_name=${encodeURIComponent(
             firstName
-          )}&last_name=${encodeURIComponent(
-            lastName
-          )}&preferred_name=${encodeURIComponent(firstName)}`,
+          )}&last_name=${encodeURIComponent(lastName)}`,
           {
             method: "POST",
             headers: {
