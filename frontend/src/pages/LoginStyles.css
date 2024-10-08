@@ -1,0 +1,15 @@
+@keyframes gradientAnimation {
+    0% {
+      background-position: 100% 100%;
+    }
+    100% {
+      background-position: 0% 0%;
+    }
+  }
+  
+  .animatedGradient {
+    background: linear-gradient(110deg, #f04a4a, #c9787b, #e4a4a2);
+    background-size: 300% 300%; /* Allow for larger background to create smooth transitions */
+    animation: gradientAnimation 500ms linear forwards; /* Run once and retain the final state */
+  }
+  
