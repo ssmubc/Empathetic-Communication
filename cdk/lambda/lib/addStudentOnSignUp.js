@@ -24,11 +24,22 @@ exports.handler = async (event) => {
     const emailAttr = userAttributesResponse.UserAttributes.find(
       (attr) => attr.Name === "email"
     );
-    const email = emailAttr ? emailAttr.Value : null;
+    
+    if (!emailAttr) {
+      console.error("Email attribute missing from Cognito");
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: "Email attribute not found in Cognito user",
+        }),
+      };
+    }
+    
+    const email = emailAttr.Value;
 
     // Retrieve roles from the database
     const dbUser = await sqlConnection`
-      SELECT roles FROM "Users" WHERE user_email = ${email};
+      SELECT roles FROM "users" WHERE user_email = ${email};
     `;
 
     const dbRoles = dbUser[0]?.roles || [];
