@@ -95,7 +95,7 @@ const AdminSidebar = ({
               onClick={() => {
                 setSelectedInstructor(null);
                 setSelectedCourse(null);
-                setSelectedComponent("AdminCourses");
+                setSelectedComponent("AdminSimulationGroups");
               }}
             >
               <ListItemIcon

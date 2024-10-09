@@ -42,7 +42,7 @@ exports.handler = async (event) => {
           // SQL query to fetch all users who are instructors
           const instructors = await sqlConnectionTableCreator`
                 SELECT user_email, first_name, last_name
-                FROM "Users"
+                FROM "users"
                 WHERE roles @> ARRAY['instructor']::varchar[]
                 ORDER BY last_name ASC;
               `;
@@ -59,16 +59,15 @@ exports.handler = async (event) => {
           response.body = "instructor_email is required";
         }
         break;
-      case "GET /admin/courses":
+      case "GET /admin/simulation_groups":
         try {
-          // Query all courses from Courses table
-          const courses = await sqlConnectionTableCreator`
+          // Query all simulation groups from simulation_groups table
+          const simulationGroups = await sqlConnectionTableCreator`
                     SELECT *
-                    FROM "Courses"
-                    ORDER BY course_department ASC, course_number ASC;
+                    FROM "simulation_groups";
                 `;
 
-          response.body = JSON.stringify(courses);
+          response.body = JSON.stringify(simulationGroups);
         } catch (err) {
           response.statusCode = 500;
           response.body = JSON.stringify({ error: "Internal server error" });
@@ -83,10 +82,10 @@ exports.handler = async (event) => {
           try {
             const { course_id, instructor_email } = event.queryStringParameters;
 
-            // Retrieve user_id from Users table
+            // Retrieve user_id from users table
             const userResult = await sqlConnectionTableCreator`
                 SELECT user_id
-                FROM "Users"
+                FROM "users"
                 WHERE user_email = ${instructor_email};
               `;
 
@@ -228,7 +227,7 @@ exports.handler = async (event) => {
           const instructors = await sqlConnectionTableCreator`
               SELECT u.user_email, u.first_name, u.last_name
               FROM "Enrolments" e
-              JOIN "Users" u ON e.user_id = u.user_id
+              JOIN "users" u ON e.user_id = u.user_id
               WHERE e.course_id = ${course_id} AND e.enrolment_type = 'instructor';
             `;
 
@@ -250,7 +249,7 @@ exports.handler = async (event) => {
               SELECT c.course_id, c.course_name, c.course_department, c.course_number
               FROM "Enrolments" e
               JOIN "Courses" c ON e.course_id = c.course_id
-              JOIN "Users" u ON e.user_id = u.user_id
+              JOIN "users" u ON e.user_id = u.user_id
               WHERE u.user_email = ${instructor_email} AND e.enrolment_type = 'instructor';
             `;
 
@@ -299,7 +298,7 @@ exports.handler = async (event) => {
             // Retrieve the user's ID
             const userResult = await sqlConnectionTableCreator`
                         SELECT user_id 
-                        FROM "Users"
+                        FROM "users"
                         WHERE user_email = ${instructor_email};
                     `;
 
@@ -401,7 +400,7 @@ exports.handler = async (event) => {
           try {
             // Check if the user exists
             const existingUser = await sqlConnectionTableCreator`
-                          SELECT * FROM "Users"
+                          SELECT * FROM "users"
                           WHERE user_email = ${instructorEmail};
                       `;
 
@@ -428,7 +427,7 @@ exports.handler = async (event) => {
                 );
 
                 await sqlConnectionTableCreator`
-                                UPDATE "Users"
+                                UPDATE "users"
                                 SET roles = ${newRoles}
                                 WHERE user_email = ${instructorEmail};
                             `;
@@ -442,7 +441,7 @@ exports.handler = async (event) => {
             } else {
               // Create a new user with the role 'instructor'
               await sqlConnectionTableCreator`
-                              INSERT INTO "Users" (user_email, roles)
+                              INSERT INTO "users" (user_email, roles)
                               VALUES (${instructorEmail}, ARRAY['instructor']);
                           `;
 
@@ -472,7 +471,7 @@ exports.handler = async (event) => {
             // Fetch the roles for the user
             const userRoleData = await sqlConnectionTableCreator`
                     SELECT roles, user_id
-                    FROM "Users"
+                    FROM "users"
                     WHERE user_email = ${userEmail};
                   `;
 
@@ -494,7 +493,7 @@ exports.handler = async (event) => {
 
             // Update the roles in the database
             await sqlConnectionTableCreator`
-                    UPDATE "Users"
+                    UPDATE "users"
                     SET roles = ${updatedRoles}
                     WHERE user_email = ${userEmail};
                   `;

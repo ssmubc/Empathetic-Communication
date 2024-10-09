@@ -4,7 +4,6 @@ import { fetchAuthSession } from "aws-amplify/auth";
 import {
   Typography,
   Box,
-  AppBar,
   Toolbar,
   Table,
   TableBody,
@@ -17,39 +16,39 @@ import {
   Button,
   TableFooter,
   TablePagination,
-  OutlinedInput,
 } from "@mui/material";
 import { useState } from "react";
 
 // populate with dummy data
-const createData = (course, instructor, status, id) => {
-  return { course, instructor, status, id };
+const createData = (groupName, accessCode, status, id) => {
+  return { groupName, accessCode, status, id };
 };
 
-function getCourseInfo(coursesArray) {
-  return coursesArray.map((course) =>
+function getSimulationGroupInfo(groupsArray) {
+  return groupsArray.map((group) =>
     createData(
-      `${course.course_department} ${course.course_number}`,
-      `${course.course_access_code}`,
-      `${course.course_student_access}`,
-      `${course.course_id}`
+      `${group.group_name}`,
+      `${group.group_access_code}`,
+      `${group.group_student_access}`,
+      `${group.simulation_group_id}`
     )
   );
 }
 
-export const AdminCourses = ({ setSelectedCourse }) => {
+export const AdminSimulationGroups = ({ setSelectedGroup }) => {
   const [rows, setRows] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchSimulationGroups = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken
+        var token = session.tokens.idToken;
         const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}admin/courses`,
+          `${import.meta.env.VITE_API_ENDPOINT}admin/simulation_groups`,
           {
             method: "GET",
             headers: {
@@ -60,17 +59,17 @@ export const AdminCourses = ({ setSelectedCourse }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          setRows(getCourseInfo(data));
+          setRows(getSimulationGroupInfo(data));
           setLoading(false);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch simulation groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching simulation groups:", error);
       }
     };
 
-    fetchCourses();
+    fetchSimulationGroups();
   }, []);
 
   const handleSearchChange = (event) => {
@@ -87,11 +86,11 @@ export const AdminCourses = ({ setSelectedCourse }) => {
   };
 
   const filteredRows = rows.filter((row) =>
-    row.course.toLowerCase().includes(searchQuery.toLowerCase())
+    row.groupName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCourseClick = (course) => {
-    setSelectedCourse(course);
+  const handleGroupClick = (group) => {
+    setSelectedGroup(group);
   };
 
   return (
@@ -138,13 +137,13 @@ export const AdminCourses = ({ setSelectedCourse }) => {
               InputProps={{ sx: { fontSize: 14 } }} // Increased font size
               InputLabelProps={{ sx: { fontSize: 14 } }} // Increased label font size
             />
-            <Table aria-label="user table">
+            <Table aria-label="simulation group table">
               {!loading ? (
                 <>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ width: "30%", fontSize: 14 }}>
-                        Group
+                        Group Name
                       </TableCell>
                       <TableCell sx={{ fontSize: 14 }}>
                         Group Access Code
@@ -163,14 +162,14 @@ export const AdminCourses = ({ setSelectedCourse }) => {
                       .map((row, index) => (
                         <TableRow
                           key={index}
-                          onClick={() => handleCourseClick({ row })}
+                          onClick={() => handleGroupClick({ row })}
                           style={{ cursor: "pointer" }}
                         >
                           <TableCell sx={{ fontSize: 14 }}>
-                            {row.course.toUpperCase()}
+                            {row.groupName.toUpperCase()}
                           </TableCell>
                           <TableCell sx={{ fontSize: 14 }}>
-                            {row.instructor}
+                            {row.accessCode}
                           </TableCell>
                           <TableCell>
                             <Button
@@ -215,4 +214,4 @@ export const AdminCourses = ({ setSelectedCourse }) => {
   );
 };
 
-export default AdminCourses;
+export default AdminSimulationGroups;

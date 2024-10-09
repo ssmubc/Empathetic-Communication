@@ -202,7 +202,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
             theme: "colored",
           });
           setTimeout(() => {
-            setSelectedComponent("AdminCourses");
+            setSelectedComponent("AdminSimulationGroups");
           }, 1000);
         } else {
           toast.error("Some instructors could not be enrolled", {
