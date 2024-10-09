@@ -159,53 +159,49 @@ exports.handler = async (event) => {
           response.body = "course_id and instructor_email are required";
         }
         break;
-      case "POST /admin/create_course":
+      case "POST /admin/create_simulation_group":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_name &&
-          event.queryStringParameters.course_department &&
-          event.queryStringParameters.course_number &&
-          event.queryStringParameters.course_access_code &&
-          event.queryStringParameters.course_student_access &&
+          event.queryStringParameters.group_name &&
+          event.queryStringParameters.group_access_code &&
+          event.queryStringParameters.group_description &&
+          event.queryStringParameters.group_student_access &&
           event.body
         ) {
           try {
-            console.log("course creation start");
+            console.log("simulation group creation start");
             const {
-              course_name,
-              course_department,
-              course_number,
-              course_access_code,
-              course_student_access,
+              group_name,
+              group_access_code,
+              group_description,
+              group_student_access,
             } = event.queryStringParameters;
-
+      
             const { system_prompt } = JSON.parse(event.body);
-
-            // Insert new course into Courses table
-            const newCourse = await sqlConnectionTableCreator`         
-                  INSERT INTO "Courses" (
-                      course_id,
-                      course_name,
-                      course_department,
-                      course_number,
-                      course_access_code,
-                      course_student_access,
+      
+            // Insert new simulation group into simulation_groups table
+            const newSimulationGroup = await sqlConnectionTableCreator`
+                  INSERT INTO "simulation_groups" (
+                      simulation_group_id,
+                      group_name,
+                      group_description,
+                      group_access_code,
+                      group_student_access,
                       system_prompt
                   )
                   VALUES (
                       uuid_generate_v4(),
-                      ${course_name},
-                      ${course_department},
-                      ${course_number},
-                      ${course_access_code},
-                      ${course_student_access.toLowerCase() === "true"},
+                      ${group_name},
+                      ${group_description}, -- optional, can be null if not provided
+                      ${group_access_code},
+                      ${group_student_access.toLowerCase() === "true"},
                       ${system_prompt}
                   )
                   RETURNING *;
               `;
-
-            console.log(newCourse);
-            response.body = JSON.stringify(newCourse[0]);
+      
+            console.log(newSimulationGroup);
+            response.body = JSON.stringify(newSimulationGroup[0]);
           } catch (err) {
             response.statusCode = 500;
             console.log(err);

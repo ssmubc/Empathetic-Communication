@@ -101,32 +101,17 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
     try {
       const session = await fetchAuthSession();
       const token = session.tokens.idToken
-      const numericCourseCode = Number(courseCode);
-
-      if (isNaN(numericCourseCode)) {
-        toast.error("access code must be a number", {
-          position: "top-center",
-          autoClose: 1000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
-        });
-        return;
-      }
 
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }admin/create_course?course_name=${encodeURIComponent(
+        }admin/create_simulation_group?group_name=${encodeURIComponent(
           courseName
         )}&group_description=${encodeURIComponent(
           groupDescription
-        )}&course_access_code=${encodeURIComponent(
+        )}&group_access_code=${encodeURIComponent(
           access_code
-        )}&course_student_access=${encodeURIComponent(isActive)}`,
+        )}&group_student_access=${encodeURIComponent(isActive)}`,
         {
           method: "POST",
           headers: {

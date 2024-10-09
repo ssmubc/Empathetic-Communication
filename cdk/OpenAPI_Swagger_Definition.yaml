@@ -3232,7 +3232,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /admin/create_course:
+  /admin/create_simulation_group:
     options:
       summary: CORS support
       description: |
@@ -3260,39 +3260,33 @@ paths:
     post:
       tags:
         - Admin
-      summary: Create a new course
-      operationId: admin_create_course_POST
+      summary: Create a new group
+      operationId: admin_create_simulation_group_POST
       parameters:
         - in: query
-          name: course_name
+          name: group_name
           required: true
           schema:
             type: string
-          description: Name of the course
+          description: Name of the group
         - in: query
-          name: course_department
+          name: group_access_code
           required: true
           schema:
             type: string
-          description: Department of the course
+          description: Access code for the group
         - in: query
-          name: course_number
-          required: true
-          schema:
-            type: string
-          description: Number of the course
-        - in: query
-          name: course_access_code
-          required: true
-          schema:
-            type: string
-          description: Access code for the course
-        - in: query
-          name: course_student_access
+          name: group_student_access
           required: true
           schema:
             type: boolean
-          description: Student access details for the course
+          description: Student access details for the group
+        - in: query
+          name: group_description
+          required: true
+          schema:
+            type: string
+          description: A brief description of the simulation group
       requestBody:
         required: true
         content:
@@ -3302,7 +3296,10 @@ paths:
               properties:
                 system_prompt:
                   type: string
-                  description: System prompt for the course
+                  description: System prompt for the course              
+              # group_description:
+              #   type: string
+              #   description: A brief description of the simulation group
       responses:
         "200":
           description: Course created successfully
