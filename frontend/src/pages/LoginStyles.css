@@ -8,8 +8,8 @@
   }
   
   .animatedGradient {
-    background: linear-gradient(90deg, #e44f4f, #c9787b, #f39c9c);
+    background: linear-gradient(75deg, #ed2525, #c9787b, #f39c9c);
     background-size: 300% 300%; /* Allow for larger background to create smooth transitions */
-    animation: gradientAnimation 1s linear forwards; /* Run once and retain the final state */
+    animation: gradientAnimation 500ms linear forwards; /* Run once and retain the final state */
   }
   

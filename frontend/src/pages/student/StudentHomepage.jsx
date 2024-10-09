@@ -5,9 +5,11 @@ import { fetchAuthSession } from "aws-amplify/auth";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { helix } from "ldrs";
 
-helix.register();
+// pulse for loading animation
+import { cardio } from 'ldrs'
+cardio.register()
+
 // MUI
 import {
   Card,
@@ -274,8 +276,13 @@ export const StudentHomepage = ({ setCourse }) => {
                 height: "80vh",
                 width: "100%",
               }}
-            >
-              <l-helix size="50" speed="2.5" color="#d21adb"></l-helix>
+            >     
+              <l-cardio
+                size="50" // pulse for loading animation  
+                stroke="4"
+                speed="2" 
+                color="Black" 
+              ></l-cardio>
             </Box>
           ) : (
             <Box
