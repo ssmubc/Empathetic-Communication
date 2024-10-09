@@ -48,8 +48,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
   const [coursePrompt, setCoursePrompt] = useState(
     `Engage with the student by asking questions and conversing with them to identify any gaps in their understanding of the topic. If you identify gaps, address these gaps by providing explanations, answering the student's questions, and referring to the relevant context to help the student gain a comprehensive understanding of the topic.`
   );
-  const [courseDepartment, setCourseDepartment] = useState("");
-  const [courseCode, setCourseCode] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [selectedInstructors, setSelectedInstructors] = useState([]);
   const [instructors, setInstructors] = useState([]);
@@ -62,7 +61,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
       // This regex ensures only digits
-      setCourseCode(value);
+      setCourseCode(value); 
     }
   };
   useEffect(() => {
@@ -123,10 +122,8 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           import.meta.env.VITE_API_ENDPOINT
         }admin/create_course?course_name=${encodeURIComponent(
           courseName
-        )}&course_department=${encodeURIComponent(
-          courseDepartment
-        )}&course_number=${encodeURIComponent(
-          courseCode
+        )}&group_description=${encodeURIComponent(
+          groupDescription
         )}&course_access_code=${encodeURIComponent(
           access_code
         )}&course_student_access=${encodeURIComponent(isActive)}`,
@@ -304,21 +301,12 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           />
           <TextField
             fullWidth
-            label="Group Department"
-            value={courseDepartment}
-            onChange={(e) => setCourseDepartment(e.target.value)}
+            label="Group Description"
+            value={groupDescription}
+            onChange={(e) => setGroupDescription(e.target.value)}
             margin="normal"
             backgroundColor="default"
             inputProps={{ maxLength: 20 }}
-          />
-          <TextField
-            fullWidth
-            label="Group Access Code (Numbers Only)"
-            value={courseCode}
-            onChange={handleCourseCodeChange}
-            margin="normal"
-            backgroundColor="default"
-            inputProps={{ maxLength: 10, min: 0, step: 1 }}
           />
           <FormControl fullWidth sx={{ marginBottom: 2, marginTop: 2 }}>
             <Autocomplete

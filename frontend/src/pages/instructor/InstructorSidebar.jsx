@@ -33,8 +33,11 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
       sx={{
         width: 220,
         flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { width: 220, boxSizing: "border-box" },
-        bgcolor: "background",
+        [`& .MuiDrawer-paper`]: {
+          width: 220,
+          boxSizing: "border-box",
+          background: "linear-gradient(to top, #ee7b7b, #faf5f5)", // Add gradient here
+        },
       }}
     >
       <Box sx={{ overflow: "auto", paddingTop: 10 }}>
