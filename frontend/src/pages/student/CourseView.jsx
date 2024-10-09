@@ -163,7 +163,12 @@ export const CourseView = ({ course, setModule, setCourse }) => {
   if (loading) {
     return (
       <div className="bg-[#F8F9FD] w-screen flex justify-center items-center h-screen">
-        <l-helix size="50" speed="2.5" color="#d21adb"></l-helix>
+        <l-cardio
+          size="50" // pulse for loading animation  
+          stroke="4"
+          speed="2" 
+          color="black" 
+        ></l-cardio>
       </div>
     );
   }
