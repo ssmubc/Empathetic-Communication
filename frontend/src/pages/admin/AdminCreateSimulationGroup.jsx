@@ -43,9 +43,9 @@ function formatInstructors(instructorsArray) {
   }));
 }
 
-export const AdminCreateCourse = ({ setSelectedComponent }) => {
-  const [courseName, setCourseName] = useState("");
-  const [coursePrompt, setCoursePrompt] = useState(
+export const AdminCreateSimulationGroup = ({ setSelectedComponent }) => {
+  const [simulationGroupName, setSimulationGroupName] = useState("");
+  const [simulationGroupPrompt, setSimulationGroupPrompt] = useState(
     `Engage with the student by asking questions and conversing with them to identify any gaps in their understanding of the topic. If you identify gaps, address these gaps by providing explanations, answering the student's questions, and referring to the relevant context to help the student gain a comprehensive understanding of the topic.`
   );
   const [groupDescription, setGroupDescription] = useState("");
@@ -57,11 +57,11 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
     setIsActive(event.target.checked);
   };
 
-  const handleCourseCodeChange = (e) => {
+  const handleSimulationGroupCodeChange = (e) => {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
       // This regex ensures only digits
-      setCourseCode(value); 
+      setSimulationGroupCode(value); 
     }
   };
   useEffect(() => {
@@ -97,7 +97,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
   }, []);
   const handleCreate = async () => {
     const access_code = generateAccessCode();
-    // Handle the create course logic here
+    // Handle the create simulationGroup logic here
     try {
       const session = await fetchAuthSession();
       const token = session.tokens.idToken
@@ -106,7 +106,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
         `${
           import.meta.env.VITE_API_ENDPOINT
         }admin/create_simulation_group?group_name=${encodeURIComponent(
-          courseName
+          simulationGroupName
         )}&group_description=${encodeURIComponent(
           groupDescription
         )}&group_access_code=${encodeURIComponent(
@@ -119,21 +119,21 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            system_prompt: coursePrompt,
+            system_prompt: simulationGroupPrompt,
           }),
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        const { course_id } = data;   
+        const { simulation_group_id } = data;   
         console.log('selectedInstructors',selectedInstructors)     
         const enrollPromises = selectedInstructors.map((instructor) =>
           fetch(
             `${
               import.meta.env.VITE_API_ENDPOINT
-            }admin/enroll_instructor?course_id=${encodeURIComponent(
-              course_id
+            }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
+              simulation_group_id
             )}&instructor_email=${encodeURIComponent(instructor.email)}`,
             {
               method: "POST",
@@ -173,7 +173,7 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
         );
 
         if (allEnrolledSuccessfully || selectedInstructors.length === 0) {
-          toast.success("🦄 Course Created!", {
+          toast.success("🦄 Simulation Group Created!", {
             position: "top-center",
             autoClose: 1000,
             hideProgressBar: false,
@@ -199,8 +199,8 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           });
         }
       } else {
-        console.error("Failed to create course:", response.statusText);
-        toast.error("Course Creation Failed", {
+        console.error("Failed to create simulation group:", response.statusText);
+        toast.error("Simulation Group Creation Failed", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -212,8 +212,8 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
         });
       }
     } catch (error) {
-      console.error("Error creating course:", error);
-      toast.error("Course Creation Failed", {
+      console.error("Error creating simulation group:", error);
+      toast.error("Simulation Group Creation Failed", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -267,8 +267,8 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           <TextField
             fullWidth
             label="Simulation Group"
-            value={courseName}
-            onChange={(e) => setCourseName(e.target.value)}
+            value={simulationGroupName}
+            onChange={(e) => setSimulationGroupName(e.target.value)}
             margin="normal"
             backgroundColor="default"
             inputProps={{ maxLength: 50 }}
@@ -276,13 +276,13 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
           <TextField
             fullWidth
             label="System Prompt"
-            value={coursePrompt}
-            onChange={(e) => setCoursePrompt(e.target.value)}
+            value={simulationGroupPrompt}
+            onChange={(e) => setSimulationGroupPrompt(e.target.value)}
             margin="normal"
             multiline
             rows={4}
             inputProps={{ maxLength: 1000 }}
-            helperText={`${coursePrompt.length}/${CHARACTER_LIMIT}`}
+            helperText={`${simulationGroupPrompt.length}/${CHARACTER_LIMIT}`}
           />
           <TextField
             fullWidth
@@ -387,4 +387,4 @@ export const AdminCreateCourse = ({ setSelectedComponent }) => {
     </Box>
   );
 };
-export default AdminCreateCourse;
+export default AdminCreateSimulationGroup;

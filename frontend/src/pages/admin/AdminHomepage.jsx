@@ -3,7 +3,7 @@ import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import AdminInstructors from "./AdminInstructors";
 import AdminSimulationGroups from "./AdminSimulationGroups";
-import AdminCreateCourse from "./AdminCreateCourse";
+import AdminCreateSimulationGroup from "./AdminCreateSimulationGroup";
 import PageContainer from "../Container";
 import InstructorDetails from "./InstructorDetails";
 import CourseDetails from "./CourseDetails";
@@ -42,9 +42,9 @@ export const AdminHomepage = () => {
         );
       case "AdminSimulationGroups":
         return <AdminSimulationGroups setSelectedCourse={setSelectedCourse} />;
-      case "AdminCreateCourse":
+      case "AdminCreateSimulationGroup":
         return (
-          <AdminCreateCourse setSelectedComponent={setSelectedComponent} />
+          <AdminCreateSimulationGroup setSelectedComponent={setSelectedComponent} />
         );
       default:
         return (
