@@ -474,8 +474,10 @@ export const Login = () => {
                   display: 'block', // Make the image a block element
                   height: 'auto', // Maintain aspect ratio
                   margin: '0 auto', // Center the image horizontally
+                  animation: 'float 3s ease-in-out infinite', // Add the float animation
                 }}
               />
+
               
               <Typography
                 variant="h4"

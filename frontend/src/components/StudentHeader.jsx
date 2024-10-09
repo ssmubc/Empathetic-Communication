@@ -10,6 +10,7 @@ import { UserContext } from "../App";
 
 const StudentHeader = () => {
   const [name, setName] = useState("");
+  const [showDashboard, setShowDashboard] = useState(false); // State to control the display of the dashboard text
   const { isInstructorAsStudent, setIsInstructorAsStudent } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -18,7 +19,7 @@ const StudentHeader = () => {
       fetchAuthSession()
         .then((session) => {
           return fetchUserAttributes().then((userAttributes) => {
-            const token = session.tokens.idToken
+            const token = session.tokens.idToken;
             const email = userAttributes.email;
             return fetch(
               `${
@@ -46,6 +47,16 @@ const StudentHeader = () => {
     fetchName();
   }, []);
 
+  useEffect(() => {
+    // Introduce a delay before showing the dashboard text
+    const timer = setTimeout(() => {
+      setShowDashboard(true);
+    }, 0); // Set delay in milliseconds (2000ms = 2 seconds)
+
+    // Clean up the timer when the component unmounts
+    return () => clearTimeout(timer);
+  }, [name]);
+
   const handleSignOut = async (event) => {
     event.preventDefault();
     signOut()
@@ -65,7 +76,7 @@ const StudentHeader = () => {
   return (
     <header className="bg-[#F8F9FD] p-4 flex justify-between items-center max-h-20">
       <div className="text-black text-3xl font-roboto font-semibold p-4">
-        {name}'s Dashboard
+        {showDashboard && name && `${name}'s Dashboard`} {/* Display the text after the delay */}
       </div>
       <div className="flex items-center space-x-4">
         {/* Render this button only if the instructor is viewing as a student */}

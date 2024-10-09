@@ -13,3 +13,15 @@
     animation: gradientAnimation 500ms linear forwards; /* Run once and retain the final state */
   }
   
+  @keyframes float {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(10px); /* Move down by 10px */
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
