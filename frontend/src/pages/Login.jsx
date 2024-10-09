@@ -469,6 +469,7 @@ export const Login = () => {
               <img
                 src={heartbeatImage}
                 alt="Heartbeat"
+                className='heartbeat-image'
                 style={{
                   maxWidth: '25%', // Ensure the image fits within the container
                   display: 'block', // Make the image a block element
@@ -477,8 +478,6 @@ export const Login = () => {
                   animation: 'float 3s ease-in-out infinite', // Add the float animation
                 }}
               />
-
-              
               <Typography
                 variant="h4"
                 sx={{

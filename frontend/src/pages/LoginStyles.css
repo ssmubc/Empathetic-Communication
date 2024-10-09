@@ -24,4 +24,9 @@
       transform: translateY(0);
     }
   }
+
+  .heartbeat-image:hover {
+    transform: scale(1.2); /* Slightly enlarge the image on hover */
+    filter: drop-shadow(0 0 10px #e8e8e8); /* Glowing effect */
+  }
   
