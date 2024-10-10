@@ -8,9 +8,8 @@
   }
   
   .animatedGradient {
-    background: linear-gradient(75deg, #ed2525, #c9787b, #f39c9c);
-    background-size: 300% 300%; /* Allow for larger background to create smooth transitions */
-    animation: gradientAnimation 500ms linear forwards; /* Run once and retain the final state */
+    background-color: #99DFB2; /* Medicine green */
+    animation: none; /* Remove the gradient animation */
   }
   
   @keyframes float {
@@ -24,9 +23,9 @@
       transform: translateY(0);
     }
   }
-
+  
   .heartbeat-image:hover {
     transform: scale(1.2); /* Slightly enlarge the image on hover */
-    filter: drop-shadow(0 0 10px #e8e8e8); /* Glowing effect */
+    filter: drop-shadow(0 0 10px #ffffff); /* Glowing effect */
   }
   

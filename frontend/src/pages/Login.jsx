@@ -33,7 +33,6 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // login assets
-import loginframe from "../assets/loginframe.png";
 import PageContainer from "./Container";
 // cognito verifier
 import { CognitoJwtVerifier } from "aws-jwt-verify";
@@ -44,7 +43,7 @@ const { augmentColor } = palette;
 const createColor = (mainColor) => augmentColor({ color: { main: mainColor } });
 const theme = createTheme({
   palette: {
-    primary: createColor("#5536DA"),
+    primary: createColor("#36bd78"),
     bg: createColor("#F8F9FD"),
   },
 });
