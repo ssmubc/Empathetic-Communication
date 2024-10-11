@@ -23,7 +23,7 @@ import { useState, useEffect } from "react";
 import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import InstructorDetails from "./InstructorDetails"; // Ensure path to InstructorDetails is correct
+import InstructorDetails from "./InstructorDetails";
 
 function titleCase(str) {
   if (typeof str !== "string") {
@@ -32,18 +32,16 @@ function titleCase(str) {
   return str
     .toLowerCase()
     .split(" ")
-    .map(function (word) {
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
 const fetchInstructors = async () => {
   try {
     const session = await fetchAuthSession();
-    const userAtrributes = await fetchUserAttributes();
+    const userAttributes = await fetchUserAttributes();
     const token = session.tokens.idToken;
-    const adminEmail = userAtrributes.email;
+    const adminEmail = userAttributes.email;
 
     const response = await fetch(
       `${import.meta.env.VITE_API_ENDPOINT}admin/instructors?instructor_email=${adminEmail}`,
@@ -55,9 +53,8 @@ const fetchInstructors = async () => {
         },
       }
     );
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    
     const data = await response.json();
     return data;
   } catch (error) {
@@ -90,52 +87,33 @@ export const AdminInstructors = () => {
   const [openInstructorDetails, setOpenInstructorDetails] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState(null);
 
-  const handleClickOpenAdd = () => {
-    setOpenAddDialog(true);
-  };
-
-  const handleCloseAdd = () => {
-    setOpenAddDialog(false);
-  };
-
-  const handleCloseInstructorDetails = () => {
-    setOpenInstructorDetails(false);
-    setSelectedInstructor(null);
+  const refreshInstructors = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchInstructors();
+      setRows(getInstructorInfo(data));
+    } catch (error) {
+      console.error("Error loading instructors");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const loadInstructors = async () => {
-      try {
-        const data = await fetchInstructors();
-        setRows(getInstructorInfo(data));
-      } catch (error) {
-        console.log("error loading data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInstructors();
+    refreshInstructors(); // Initial fetch
   }, []);
 
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
+  const handleSearchChange = (event) => setSearchQuery(event.target.value);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+  const handleChangePage = (event, newPage) => setPage(newPage);
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const filteredRows = rows.filter(
-    (row) =>
-      row &&
-      row.user &&
-      row.user.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRows = rows.filter((row) =>
+    row.user.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleRowClick = (instructor) => {
@@ -143,10 +121,14 @@ export const AdminInstructors = () => {
     setOpenInstructorDetails(true);
   };
 
+  const handleCloseInstructorDetails = () => {
+    setOpenInstructorDetails(false);
+    setSelectedInstructor(null);
+  };
+
   const handleAddInstructor = async (email) => {
     try {
       const session = await fetchAuthSession();
-      const userAtrributes = await fetchUserAttributes();
       const token = session.tokens.idToken;
       const existingInstructor = rows.find((row) => row.email === email);
       if (existingInstructor) {
@@ -157,7 +139,6 @@ export const AdminInstructors = () => {
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          progress: undefined,
           theme: "colored",
         });
         return;
@@ -172,20 +153,7 @@ export const AdminInstructors = () => {
           },
         }
       );
-      if (!response.ok) {
-        throw new Error(`Error Status: ${response.status}`);
-      }
-      const data = await response.json();
-
-      // Add the new instructor to the rows state
-      setRows((prevRows) => [
-        ...prevRows,
-        {
-          user: "Waiting for user to sign up",
-          last: "Waiting for user to sign up",
-          email: email,
-        },
-      ]);
+      if (!response.ok) throw new Error(`Error Status: ${response.status}`);
 
       toast.success(`Instructor with email ${email} elevated`, {
         position: "top-center",
@@ -194,11 +162,11 @@ export const AdminInstructors = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-        progress: undefined,
         theme: "colored",
       });
 
-      // Close the add dialog after successful addition
+      // Refresh instructors after adding
+      refreshInstructors();
       handleCloseAdd();
     } catch (error) {
       console.error("Error elevating instructor", error);
@@ -209,11 +177,12 @@ export const AdminInstructors = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-        progress: undefined,
         theme: "colored",
       });
     }
   };
+
+  const handleCloseAdd = () => setOpenAddDialog(false);
 
   return (
     <Box component="main" sx={{ flexGrow: 1, p: 2, marginTop: 0.5 }}>
@@ -236,29 +205,19 @@ export const AdminInstructors = () => {
             alignItems: "center",
           }}
         >
-          <Typography
-            color="black"
-            fontStyle="semibold"
-            textAlign="left"
-            variant="h6"
-          >
+          <Typography color="black" fontStyle="semibold" variant="h6">
             Manage Instructors
           </Typography>
           <Button
             variant="contained"
             color="primary"
-            onClick={handleClickOpenAdd}
+            onClick={() => setOpenAddDialog(true)}
             sx={{ fontSize: 14 }}
           >
             Add Instructor
           </Button>
         </Box>
-        <TableContainer
-          sx={{
-            maxHeight: "70vh",
-            overflowY: "auto",
-          }}
-        >
+        <TableContainer sx={{ maxHeight: "70vh", overflowY: "auto" }}>
           <TextField
             label="Search by User"
             variant="outlined"
@@ -282,10 +241,7 @@ export const AdminInstructors = () => {
                 </TableHead>
                 <TableBody>
                   {filteredRows
-                    .slice(
-                      page * rowsPerPage,
-                      page * rowsPerPage + rowsPerPage
-                    )
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((row, index) => (
                       <TableRow
                         key={index}
@@ -298,9 +254,7 @@ export const AdminInstructors = () => {
                         <TableCell sx={{ fontSize: 14 }}>
                           {titleCase(row.last)}
                         </TableCell>
-                        <TableCell sx={{ fontSize: 14 }}>
-                          {row.email}
-                        </TableCell>
+                        <TableCell sx={{ fontSize: 14 }}>{row.email}</TableCell>
                       </TableRow>
                     ))}
                 </TableBody>
@@ -318,10 +272,7 @@ export const AdminInstructors = () => {
                   page={page}
                   onPageChange={handleChangePage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
-                  sx={{
-                    fontSize: 14,
-                    minWidth: 400,
-                  }}
+                  sx={{ fontSize: 14, minWidth: 400 }}
                 />
               </TableRow>
             </TableFooter>
@@ -338,8 +289,7 @@ export const AdminInstructors = () => {
           onSubmit: (event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const formJson = Object.fromEntries(formData.entries());
-            const email = formJson.email;
+            const email = formData.get("email");
             handleAddInstructor(email);
           },
         }}
@@ -379,7 +329,10 @@ export const AdminInstructors = () => {
           {selectedInstructor && (
             <InstructorDetails
               instructorData={selectedInstructor}
-              onBack={handleCloseInstructorDetails}
+              onBack={() => {
+                handleCloseInstructorDetails();
+                refreshInstructors(); // Refresh after updating or deleting
+              }}
             />
           )}
         </DialogContent>
