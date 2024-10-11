@@ -129,7 +129,7 @@ const InstructorDetails = ({ instructorData, onBack }) => {
 
   const handleConfirmDelete = async () => {
     handleConfirmDeleteClose();
-    await handleDelete();
+    handleDelete();
   };
 
   const handleCoursesChange = (event) => {
@@ -141,16 +141,16 @@ const InstructorDetails = ({ instructorData, onBack }) => {
     setActiveCourses(uniqueCourses);
   };
 
-
-  
   const handleDelete = async () => {
     try {
       const session = await fetchAuthSession();
-      const token = session.tokens.idToken;
+      var token = session.tokens.idToken
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }admin/lower_instructor?email=${encodeURIComponent(instructorData.email)}`,
+        }admin/lower_instructor?email=${encodeURIComponent(
+          instructorData.email
+        )}`,
         {
           method: "POST",
           headers: {
@@ -171,39 +171,16 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           progress: undefined,
           theme: "colored",
         });
-  
-        // Use a timeout to delay navigating back to ensure toast displays
-        setTimeout(() => {
+        setTimeout(function () {
           onBack();
         }, 1000);
       } else {
         console.error("Failed to demote instructor:", response.statusText);
-        toast.error("Failed to delete instructor", {
-          position: "top-center",
-          autoClose: 1000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
-        });
       }
     } catch (error) {
       console.error("Error demoting instructor:", error);
-      toast.error("An error occurred while deleting", {
-        position: "top-center",
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
     }
   };
-  
 
   const handleSave = async () => {
     try {
