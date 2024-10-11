@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { fetchAuthSession } from "aws-amplify/auth";
-// MUI Components
 import {
   Typography,
   Box,
@@ -22,10 +21,9 @@ import {
   DialogActions,
   Grid,
 } from "@mui/material";
-import AddCircleIcon from "@mui/icons-material/AddCircle"; // Plus icon
-import AdminCreateSimulationGroup from "./AdminCreateSimulationGroup"; // Dialog component
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import AdminCreateSimulationGroup from "./AdminCreateSimulationGroup";
 
-// Function to create dummy data
 const createData = (groupName, accessCode, status, id) => {
   return { groupName, accessCode, status, id };
 };
@@ -47,7 +45,7 @@ export const AdminSimulationGroups = ({ setSelectedGroup }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false); // State to control dialog visibility
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const fetchSimulationGroups = async () => {
@@ -101,134 +99,138 @@ export const AdminSimulationGroups = ({ setSelectedGroup }) => {
   };
 
   const handleOpenDialog = () => {
-    setOpen(true); // Open the dialog
+    setOpen(true);
   };
 
   const handleCloseDialog = () => {
-    setOpen(false); // Close the dialog
+    setOpen(false);
   };
 
   return (
-    <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, mt: 0.5 }}>
+    <Box component="main" sx={{ flexGrow: 1, p: 2, marginTop: 0.5 }}>
       <Toolbar />
-      <Grid container justifyContent="center">
-        <Grid item xs={12} md={10} lg={8}>
-          <Paper sx={{ width: "100%", overflow: "hidden", mt: 2, borderRadius: 2 }}>
-            <Box
-              sx={{
-                px: { xs: 2, sm: 3 },
-                py: 1.5,
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: { xs: 1, sm: 2 },
-              }}
-            >
-              <Typography color="black" fontStyle="semibold" variant="h6" sx={{ textAlign: { xs: "center", sm: "left" } }}>
-                Simulation Groups
-              </Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleOpenDialog}
-                sx={{ fontSize: 14 }}
-                endIcon={<AddCircleIcon />}
-              >
-                Create Group
-              </Button>
-            </Box>
-            <TableContainer
-              sx={{
-                maxHeight: "70vh",
-                overflowY: "auto",
-                px: { xs: 1, sm: 2 },
-              }}
-            >
-              <TextField
-                label="Search Groups"
-                variant="outlined"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                sx={{
-                  my: 1,
-                  width: "100%",
-                  maxWidth: 500,
-                  mx: "auto",
-                  display: "block",
-                }}
-                InputProps={{ sx: { fontSize: 14 } }}
-                InputLabelProps={{ sx: { fontSize: 14 } }}
-              />
-              <Table aria-label="simulation group table">
-                {!loading ? (
-                  <>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ width: "30%", fontSize: 14 }}>
-                          Group Name
+      <Paper
+        sx={{
+          width: "100%",
+          overflow: "hidden",
+          marginTop: 1,
+          borderRadius: 2,
+          p: 3,
+          maxHeight: "85vh",
+        }}
+      >
+        <Box
+          sx={{
+            padding: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+          }}
+        >
+          <Typography color="black" fontStyle="semibold" variant="h6" sx={{ textAlign: { xs: "center", sm: "left" } }}>
+            Simulation Groups
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenDialog}
+            sx={{ fontSize: 14 }}
+            endIcon={<AddCircleIcon />}
+          >
+            Create Group
+          </Button>
+        </Box>
+        <TableContainer
+          sx={{
+            maxHeight: "70vh",
+            overflowY: "auto",
+            px: { xs: 1, sm: 2 },
+          }}
+        >
+          <TextField
+            label="Search Groups"
+            variant="outlined"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            sx={{
+              my: 1,
+              width: "100%",
+              maxWidth: 500,
+              mx: "auto",
+              display: "block",
+            }}
+            InputProps={{ sx: { fontSize: 14 } }}
+            InputLabelProps={{ sx: { fontSize: 14 } }}
+          />
+          <Table aria-label="simulation group table">
+            {!loading ? (
+              <>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: "30%", fontSize: 14 }}>
+                      Group Name
+                    </TableCell>
+                    <TableCell sx={{ fontSize: 14 }}>
+                      Group Access Code
+                    </TableCell>
+                    <TableCell sx={{ fontSize: 14 }}>
+                      Status
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredRows
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((row, index) => (
+                      <TableRow
+                        key={index}
+                        onClick={() => handleGroupClick(row)}
+                        sx={{ cursor: "pointer" }}
+                      >
+                        <TableCell sx={{ fontSize: 14 }}>
+                          {row.groupName.toUpperCase()}
                         </TableCell>
                         <TableCell sx={{ fontSize: 14 }}>
-                          Group Access Code
+                          {row.accessCode}
                         </TableCell>
-                        <TableCell sx={{ fontSize: 14 }}>
-                          Status
+                        <TableCell>
+                          <Button
+                            variant="contained"
+                            color={row.status === "true" ? "primary" : "secondary"}
+                            sx={{ fontSize: 12, padding: "6px 12px" }}
+                          >
+                            {row.status === "true" ? "Active" : "Inactive"}
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredRows
-                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((row, index) => (
-                          <TableRow
-                            key={index}
-                            onClick={() => handleGroupClick({ row })}
-                            sx={{ cursor: "pointer" }}
-                          >
-                            <TableCell sx={{ fontSize: 14 }}>
-                              {row.groupName.toUpperCase()}
-                            </TableCell>
-                            <TableCell sx={{ fontSize: 14 }}>
-                              {row.accessCode}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="contained"
-                                color={row.status === "true" ? "primary" : "secondary"}
-                                sx={{ fontSize: 12, padding: "6px 12px" }}
-                              >
-                                {row.status === "true" ? "Active" : "Inactive"}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </>
-                ) : (
-                  <TableBody>loading...</TableBody>
-                )}
-                <TableFooter>
-                  <TableRow>
-                    <TablePagination
-                      rowsPerPageOptions={[5, 10, 25]}
-                      component="div"
-                      count={filteredRows.length}
-                      rowsPerPage={rowsPerPage}
-                      page={page}
-                      onPageChange={handleChangePage}
-                      onRowsPerPageChange={handleChangeRowsPerPage}
-                      sx={{
-                        fontSize: 14,
-                        minWidth: 400, // Ensures width remains constant and not dynamic
-                      }}
-                    />
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Grid>
-      </Grid>
+                    ))}
+                </TableBody>
+              </>
+            ) : (
+              <TableBody>loading...</TableBody>
+            )}
+            <TableFooter>
+              <TableRow>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={filteredRows.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  sx={{
+                    fontSize: 14,
+                    minWidth: 400,
+                  }}
+                />
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       {/* Dialog for Creating New Simulation Group */}
       <Dialog open={open} onClose={handleCloseDialog} fullWidth maxWidth="md">
