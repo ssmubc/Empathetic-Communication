@@ -58,7 +58,7 @@ const GroupDetails = ({ group, onBack }) => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/courseInstructors?course_id=${group.id}`,
+          }admin/groupInstructors?simulation_group_id=${group.id}`,
           {
             method: "GET",
             headers: {
@@ -142,7 +142,7 @@ const GroupDetails = ({ group, onBack }) => {
     const deleteResponse = await fetch(
       `${
         import.meta.env.VITE_API_ENDPOINT
-      }admin/delete_course?&course_id=${encodeURIComponent(group.id)}`,
+      }admin/delete_group?&simulation_group_id=${encodeURIComponent(group.id)}`,
       {
         method: "DELETE",
         headers: {
@@ -191,7 +191,7 @@ const GroupDetails = ({ group, onBack }) => {
       const deleteResponse = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }admin/delete_course_instructor_enrolments?&course_id=${encodeURIComponent(
+        }admin/delete_group_instructor_enrolments?&simulation_group_id=${encodeURIComponent(
           group.id
         )}`,
         {
@@ -222,7 +222,7 @@ const GroupDetails = ({ group, onBack }) => {
         fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/enroll_instructor?course_id=${encodeURIComponent(
+          }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
             group.id
           )}&instructor_email=${encodeURIComponent(instructor.user_email)}`,
           {
@@ -287,10 +287,10 @@ const GroupDetails = ({ group, onBack }) => {
       }
 
       // Update group access
-      const updateCourseAccess = await fetch(
+      const updateGroupAccess = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }admin/updateCourseAccess?&course_id=${encodeURIComponent(
+        }admin/updateGroupAccess?&simulation_group_id=${encodeURIComponent(
           group.id
         )}&access=${encodeURIComponent(isActive)}`,
         {
@@ -302,10 +302,10 @@ const GroupDetails = ({ group, onBack }) => {
         }
       );
 
-      if (!updateCourseAccess.ok) {
+      if (!updateGroupAccess.ok) {
         console.error(
           "Failed to update group access:",
-          updateCourseAccess.statusText
+          updateGroupAccess.statusText
         );
         toast.error("Update group access Failed", {
           position: "top-center",
@@ -320,7 +320,7 @@ const GroupDetails = ({ group, onBack }) => {
       } else {
         console.log(
           "Update group access data:",
-          await updateCourseAccess.json()
+          await updateGroupAccess.json()
         );
       }
     } catch (error) {
