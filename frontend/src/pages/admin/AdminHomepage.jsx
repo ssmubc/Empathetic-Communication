@@ -6,7 +6,7 @@ import AdminSimulationGroups from "./AdminSimulationGroups";
 import AdminCreateSimulationGroup from "./AdminCreateSimulationGroup";
 import PageContainer from "../Container";
 import InstructorDetails from "./InstructorDetails";
-import CourseDetails from "./CourseDetails";
+import GroupDetails from "./GroupDetails";
 // MUI
 import { AppBar } from "@mui/material";
 import { useState } from "react";
@@ -15,7 +15,7 @@ export const AdminHomepage = () => {
   const [selectedComponent, setSelectedComponent] =
     useState("AdminInstructors");
   const [selectedInstructor, setSelectedInstructor] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   // sidebar routing
   const renderComponent = () => {
@@ -27,11 +27,11 @@ export const AdminHomepage = () => {
         />
       );
     }
-    if (selectedCourse) {
+    if (selectedGroup) {
       return (
-        <CourseDetails
-          course={selectedCourse.row}
-          onBack={() => setSelectedCourse(null)}
+        <GroupDetails
+          group={selectedGroup.row}
+          onBack={() => setSelectedGroup(null)}
         />
       );
     }
@@ -41,7 +41,7 @@ export const AdminHomepage = () => {
           <AdminInstructors setSelectedInstructor={setSelectedInstructor} />
         );
       case "AdminSimulationGroups":
-        return <AdminSimulationGroups setSelectedCourse={setSelectedCourse} />;
+        return <AdminSimulationGroups setSelectedGroup={setSelectedGroup} />;
       case "AdminCreateSimulationGroup":
         return (
           <AdminCreateSimulationGroup setSelectedComponent={setSelectedComponent} />
@@ -66,7 +66,7 @@ export const AdminHomepage = () => {
         <AdminSidebar
           setSelectedComponent={setSelectedComponent}
           setSelectedInstructor={setSelectedInstructor}
-          setSelectedCourse={setSelectedCourse}
+          setSelectedGroup={setSelectedGroup}
         />
         {renderComponent()}
       </PageContainer>

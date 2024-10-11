@@ -42,8 +42,8 @@ function titleCase(str) {
     .join(" ");
 }
 
-const CourseDetails = ({ course, onBack }) => {
-  const courseStatus = JSON.parse(course.status);
+const GroupDetails = ({ group, onBack }) => {
+  const courseStatus = JSON.parse(group.status);
   const [activeInstructors, setActiveInstructors] = useState([]);
   const [isActive, setIsActive] = useState(courseStatus);
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ const CourseDetails = ({ course, onBack }) => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/courseInstructors?course_id=${course.id}`,
+          }admin/groupInstructors?simulation_group_id=${group.id}`,
           {
             method: "GET",
             headers: {
@@ -142,7 +142,7 @@ const CourseDetails = ({ course, onBack }) => {
     const deleteResponse = await fetch(
       `${
         import.meta.env.VITE_API_ENDPOINT
-      }admin/delete_course?&course_id=${encodeURIComponent(course.id)}`,
+      }admin/delete_group?&simulation_group_id=${encodeURIComponent(group.id)}`,
       {
         method: "DELETE",
         headers: {
@@ -154,7 +154,7 @@ const CourseDetails = ({ course, onBack }) => {
 
     if (deleteResponse.ok) {
       const enrollData = await deleteResponse.json();
-      toast.success("Course Successfully Deleted", {
+      toast.success("Simulation Group Successfully Deleted", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -191,8 +191,8 @@ const CourseDetails = ({ course, onBack }) => {
       const deleteResponse = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }admin/delete_course_instructor_enrolments?&course_id=${encodeURIComponent(
-          course.id
+        }admin/delete_group_instructor_enrolments?&simulation_group_id=${encodeURIComponent(
+          group.id
         )}`,
         {
           method: "DELETE",
@@ -222,8 +222,8 @@ const CourseDetails = ({ course, onBack }) => {
         fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/enroll_instructor?course_id=${encodeURIComponent(
-            course.id
+          }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
+            group.id
           )}&instructor_email=${encodeURIComponent(instructor.user_email)}`,
           {
             method: "POST",
@@ -286,12 +286,12 @@ const CourseDetails = ({ course, onBack }) => {
         });
       }
 
-      // Update course access
-      const updateCourseAccess = await fetch(
+      // Update group access
+      const updateGroupAccess = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }admin/updateCourseAccess?&course_id=${encodeURIComponent(
-          course.id
+        }admin/updateGroupAccess?&simulation_group_id=${encodeURIComponent(
+          group.id
         )}&access=${encodeURIComponent(isActive)}`,
         {
           method: "POST",
@@ -302,12 +302,12 @@ const CourseDetails = ({ course, onBack }) => {
         }
       );
 
-      if (!updateCourseAccess.ok) {
+      if (!updateGroupAccess.ok) {
         console.error(
-          "Failed to update course access:",
-          updateCourseAccess.statusText
+          "Failed to update group access:",
+          updateGroupAccess.statusText
         );
-        toast.error("Update course access Failed", {
+        toast.error("Update group access Failed", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -319,8 +319,8 @@ const CourseDetails = ({ course, onBack }) => {
         });
       } else {
         console.log(
-          "Update course access data:",
-          await updateCourseAccess.json()
+          "Update group access data:",
+          await updateGroupAccess.json()
         );
       }
     } catch (error) {
@@ -349,7 +349,7 @@ const CourseDetails = ({ course, onBack }) => {
           <Toolbar />
           <Paper sx={{ padding: 2, marginBottom: 2 }}>
             <Typography variant="h4" sx={{ marginBottom: 0 }}>
-              {course.course}
+              {group.group}
             </Typography>
             <Divider sx={{ p: 1, marginBottom: 3 }} />
             <FormControl fullWidth sx={{ marginBottom: 2 }}>
@@ -432,7 +432,7 @@ const CourseDetails = ({ course, onBack }) => {
             </DialogTitle>
             <DialogContent>
               <DialogContentText id="alert-dialog-description">
-                Are you sure you want to delete this course? This action cannot
+                Are you sure you want to delete this group? This action cannot
                 be undone.
               </DialogContentText>
             </DialogContent>
@@ -452,4 +452,4 @@ const CourseDetails = ({ course, onBack }) => {
   );
 };
 
-export default CourseDetails;
+export default GroupDetails;
