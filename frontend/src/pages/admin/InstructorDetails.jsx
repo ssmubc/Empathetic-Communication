@@ -51,18 +51,18 @@ function titleCase(str) {
 
 const InstructorDetails = ({ instructorData, onBack }) => {
   const instructor = instructorData;
-  const [activeCourses, setActiveCourses] = useState([]);
-  const [allCourses, setAllCourses] = useState([]);
-  const [courseLoading, setCourseLoading] = useState(true);
-  const [activeCourseLoading, setActiveCourseLoading] = useState(true);
+  const [activeGroups, setActiveGroups] = useState([]);
+  const [allGroups, setAllGroups] = useState([]);
+  const [groupLoading, setGroupLoading] = useState(true);
+  const [activeGroupLoading, setActiveGroupLoading] = useState(true);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchGroups = async () => {
       try {
         const session = await fetchAuthSession();
         var token = session.tokens.idToken
         const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}admin/courses`,
+          `${import.meta.env.VITE_API_ENDPOINT}admin/simulation_groups`,
           {
             method: "GET",
             headers: {
@@ -73,24 +73,24 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          setAllCourses(data);
-          setCourseLoading(false);
+          setAllGroups(data);
+          setGroupLoading(false);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching groups:", error);
       }
     };
 
-    const fetchActiveCourses = async () => {
+    const fetchActiveGroups = async () => {
       try {
         const session = await fetchAuthSession();
         var token = session.tokens.idToken
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/instructorCourses?instructor_email=${encodeURIComponent(
+          }admin/instructorGroups?instructor_email=${encodeURIComponent(
             instructorData.email
           )}`,
           {
@@ -103,17 +103,17 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          setActiveCourses(data);
-          setActiveCourseLoading(false);
+          setActiveGroups(data);
+          setActiveGroupLoading(false);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching groups:", error);
       }
     };
-    fetchActiveCourses();
-    fetchCourses();
+    fetchActiveGroups();
+    fetchGroups();
   }, []);
 
   if (!instructor) {
@@ -132,13 +132,13 @@ const InstructorDetails = ({ instructorData, onBack }) => {
     await handleDelete();
   };
 
-  const handleCoursesChange = (event) => {
-    const newCourses = event.target.value;
+  const handleGroupsChange = (event) => {
+    const newGroups = event.target.value;
     // Filter out duplicates
-    const uniqueCourses = Array.from(
-      new Map(newCourses.map((course) => [course.course_id, course])).values()
+    const uniqueGroups = Array.from(
+      new Map(newGroups.map((group) => [group.simulation_group_id, group])).values()
     );
-    setActiveCourses(uniqueCourses);
+    setActiveGroups(uniqueGroups);
   };
 
 
@@ -240,13 +240,13 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         });
         return;
       }
-      // Enroll instructor in multiple courses in parallel
-      const enrollPromises = activeCourses.map((course) =>
+      // Enroll instructor in multiple groups in parallel
+      const enrollPromises = activeGroups.map((group) =>
         fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/enroll_instructor?course_id=${encodeURIComponent(
-            course.course_id
+          }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
           )}&instructor_email=${encodeURIComponent(instructor.email)}`,
           {
             method: "POST",
@@ -342,32 +342,27 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           <FormControl sx={{ width: "100%", marginBottom: 2, marginTop: 5 }}>
             <Autocomplete
               multiple
-              id="active-courses-autocomplete"
-              options={allCourses}
-              value={activeCourses}
+              id="active-groups-autocomplete"
+              options={allGroups}
+              value={activeGroups}
               onChange={(event, newValue) => {
                 // Filter out duplicates
-                const uniqueCourses = Array.from(
+                const uniqueGroups = Array.from(
                   new Map(
-                    newValue.map((course) => [course.course_id, course])
+                    newValue.map((group) => [group.simulation_group_id, group])
                   ).values()
                 );
-                setActiveCourses(uniqueCourses);
+                setActiveGroups(uniqueGroups);
               }}
-              getOptionLabel={(option) =>
-                `${option.course_department.toUpperCase()} ${
-                  option.course_number
-                }`
-              }
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Active Courses"
+                  label="Active Groups"
                   variant="outlined"
                 />
               )}
               isOptionEqualToValue={(option, value) =>
-                option.course_id === value.course_id
+                option.simulation_group_id === value.simulation_group_id
               }
             />
           </FormControl>

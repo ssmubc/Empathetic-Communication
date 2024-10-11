@@ -70,8 +70,8 @@ const createData = (user, last, email) => {
   return { user, last, email };
 };
 
-function getInstructorInfo(coursesArray) {
-  return coursesArray.map((instructor) =>
+function getInstructorInfo(groupsArray) {
+  return groupsArray.map((instructor) =>
     createData(
       instructor.first_name || "Waiting for user to sign up",
       instructor.last_name || "Waiting for user to sign up",

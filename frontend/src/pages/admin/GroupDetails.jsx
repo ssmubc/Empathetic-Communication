@@ -43,9 +43,9 @@ function titleCase(str) {
 }
 
 const GroupDetails = ({ group, onBack }) => {
-  const courseStatus = JSON.parse(group.status);
+  const groupStatus = JSON.parse(group.status);
   const [activeInstructors, setActiveInstructors] = useState([]);
-  const [isActive, setIsActive] = useState(courseStatus);
+  const [isActive, setIsActive] = useState(groupStatus);
   const [loading, setLoading] = useState(true);
   const [allInstructors, setAllInstructors] = useState([]);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -71,10 +71,10 @@ const GroupDetails = ({ group, onBack }) => {
           const data = await response.json();
           setActiveInstructors(data);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching groups:", error);
       }
     };
     const fetchInstructors = async () => {
@@ -98,10 +98,10 @@ const GroupDetails = ({ group, onBack }) => {
           const data = await response.json();
           setAllInstructors(data);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching groups:", error);
       }
     };
     fetchActiveInstructors();
