@@ -48,12 +48,6 @@ exports.handler = async (event) => {
               `;
 
           response.body = JSON.stringify(instructors);
-
-          // // Insert into User Engagement Log
-          // await sqlConnectionTableCreator`
-          //       INSERT INTO "User_Engagement_Log" (log_id, user_email, simulation_group_id, module_id, enrolment_id, timestamp, engagement_type)
-          //       VALUES (uuid_generate_v4(), ${instructor_email}, null, null, null, CURRENT_TIMESTAMP, 'admin_viewed_instructors')
-          //     `;
         } else {
           response.statusCode = 400;
           response.body = "instructor_email is required";
@@ -215,7 +209,7 @@ exports.handler = async (event) => {
         ) {
           const { simulation_group_id } = event.queryStringParameters;
 
-          // SQL query to fetch all instructors for a given course
+          // SQL query to fetch all instructors for a given group
           const instructors = await sqlConnectionTableCreator`
               SELECT u.user_email, u.first_name, u.last_name
               FROM "enrolments" e
@@ -262,15 +256,15 @@ exports.handler = async (event) => {
           const { simulation_group_id, access } = event.queryStringParameters;
           const accessBool = access.toLowerCase() === "true";
 
-          // SQL query to update course access
+          // SQL query to update group access
           await sqlConnectionTableCreator`
                     UPDATE "simulation_groups"
-                    SET course_student_access = ${accessBool}
+                    SET group_student_access = ${accessBool}
                     WHERE simulation_group_id = ${simulation_group_id};
                   `;
 
           response.body = JSON.stringify({
-            message: "Course access updated successfully.",
+            message: "Group access updated successfully.",
           });
         } else {
           response.statusCode = 400;
@@ -304,7 +298,7 @@ exports.handler = async (event) => {
 
             // Delete all enrolments for the instructor
             await sqlConnectionTableCreator`
-                        DELETE FROM "Enrolments"
+                        DELETE FROM "enrolments"
                         WHERE user_id = ${userId} AND enrolment_type = 'instructor';
                     `;
 
@@ -332,7 +326,7 @@ exports.handler = async (event) => {
 
             // Delete all enrolments for the group where enrolment_type is 'instructor'
             await sqlConnectionTableCreator`
-                      DELETE FROM "Enrolments"
+                      DELETE FROM "enrolments"
                       WHERE simulation_group_id = ${simulation_group_id} AND enrolment_type = 'instructor';
                   `;
 
@@ -362,14 +356,14 @@ exports.handler = async (event) => {
             //   DROP TABLE IF EXISTS ${sqlConnectionTableCreator(simulation_group_id)};
             // `;
 
-            // Delete the course, related records will be automatically deleted due to cascading
+            // Delete the group, related records will be automatically deleted due to cascading
             await sqlConnectionTableCreator`
                       DELETE FROM "simulation_groups"
                       WHERE simulation_group_id = ${simulation_group_id};
                   `;
 
             response.body = JSON.stringify({
-              message: "Course and related records deleted successfully.",
+              message: "Group and related records deleted successfully.",
             });
           } catch (err) {
             await sqlConnection.rollback();
@@ -492,7 +486,7 @@ exports.handler = async (event) => {
 
             // Delete all enrolments where the enrolment type is instructor
             await sqlConnectionTableCreator`
-                    DELETE FROM "Enrolments"
+                    DELETE FROM "enrolments"
                     WHERE user_id = ${userId} AND enrolment_type = 'instructor';
                   `;
 
