@@ -11,42 +11,36 @@ import {
 } from "@mui/material";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import GroupsIcon from "@mui/icons-material/Groups";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 const AdminSidebar = ({
   setSelectedComponent,
   setSelectedInstructor,
   setSelectedGroup,
 }) => {
-  // State to control the drawer width
   const [drawerWidth, setDrawerWidth] = useState(220);
 
-  // Function to handle mouse drag for resizing
   const handleMouseMove = (e) => {
-    const newWidth = e.clientX; // Get the new width based on the mouse position
-    if (newWidth >= 85 && newWidth <= 400) { // Limit the resizing range
+    const newWidth = e.clientX;
+    if (newWidth >= 85 && newWidth <= 400) {
       setDrawerWidth(newWidth);
     }
   };
 
-  // Function to handle mouse release (stop resizing)
   const stopResizing = () => {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", stopResizing);
-    document.body.style.userSelect = ""; // Re-enable text selection
+    document.body.style.userSelect = "";
   };
 
-  // Start resizing on mousedown
   const startResizing = (e) => {
-    e.preventDefault(); // Prevent default behavior to avoid issues
+    e.preventDefault();
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", stopResizing);
-    document.body.style.userSelect = "none"; // Disable text selection
+    document.body.style.userSelect = "none";
   };
 
   return (
     <>
-      {/* Drawer */}
       <Drawer
         variant="permanent"
         sx={{
@@ -55,19 +49,18 @@ const AdminSidebar = ({
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#36bd78", // Apply the primary color
-            boxShadow: "none", // Remove shadow if causing darkening
-            transition: "width 0.2s ease", // Smooth transition for resizing
-            overflowX: "hidden", // Prevent horizontal scroll bar
+            backgroundColor: "#36bd78",
+            boxShadow: "none",
+            transition: "width 0.2s ease",
+            overflowX: "hidden",
           },
         }}
       >
-
         <Box
           sx={{
-            overflow: "hidden", // Prevent horizontal scrolling
+            overflow: "hidden",
             paddingTop: 10,
-            textAlign: drawerWidth <= 160 ? "center" : "left", // Center icons when sidebar is small
+            textAlign: drawerWidth <= 160 ? "center" : "left",
           }}
         >
           <List>
@@ -81,13 +74,13 @@ const AdminSidebar = ({
             >
               <ListItemIcon
                 sx={{
-                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start", // Center icons when text is hidden
+                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start",
                   display: "flex",
                 }}
               >
                 <ContactPageIcon />
               </ListItemIcon>
-              {drawerWidth > 160 && ( // Hide text when sidebar is narrow
+              {drawerWidth > 160 && (
                 <ListItemText primary="Instructors" />
               )}
             </ListItem>
@@ -102,35 +95,14 @@ const AdminSidebar = ({
             >
               <ListItemIcon
                 sx={{
-                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start", // Center icons when text is hidden
+                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start",
                   display: "flex",
                 }}
               >
                 <GroupsIcon />
               </ListItemIcon>
-              {drawerWidth > 160 && ( // Hide text when sidebar is narrow
+              {drawerWidth > 160 && (
                 <ListItemText primary="Simulation Groups" />
-              )}
-            </ListItem>
-            <Divider />
-            <ListItem
-              button
-              onClick={() => {
-                setSelectedInstructor(null);
-                setSelectedGroup(null);
-                setSelectedComponent("AdminCreateSimulationGroup");
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start", // Center icons when text is hidden
-                  display: "flex",
-                }}
-              >
-                <AddCircleIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && ( // Hide text when sidebar is narrow
-                <ListItemText primary="Create Group" />
               )}
             </ListItem>
           </List>
