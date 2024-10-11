@@ -16,7 +16,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 const AdminSidebar = ({
   setSelectedComponent,
   setSelectedInstructor,
-  setSelectedCourse,
+  setSelectedGroup,
 }) => {
   // State to control the drawer width
   const [drawerWidth, setDrawerWidth] = useState(220);
@@ -75,7 +75,7 @@ const AdminSidebar = ({
               button
               onClick={() => {
                 setSelectedInstructor(null);
-                setSelectedCourse(null);
+                setSelectedGroup(null);
                 setSelectedComponent("AdminInstructors");
               }}
             >
@@ -96,7 +96,7 @@ const AdminSidebar = ({
               button
               onClick={() => {
                 setSelectedInstructor(null);
-                setSelectedCourse(null);
+                setSelectedGroup(null);
                 setSelectedComponent("AdminSimulationGroups");
               }}
             >
@@ -117,7 +117,7 @@ const AdminSidebar = ({
               button
               onClick={() => {
                 setSelectedInstructor(null);
-                setSelectedCourse(null);
+                setSelectedGroup(null);
                 setSelectedComponent("AdminCreateSimulationGroup");
               }}
             >
