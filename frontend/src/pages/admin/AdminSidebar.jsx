@@ -55,12 +55,14 @@ const AdminSidebar = ({
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            background: "linear-gradient(to top, #ee7b7b, #faf5f5)",
+            backgroundColor: "#36bd78", // Apply the primary color
+            boxShadow: "none", // Remove shadow if causing darkening
             transition: "width 0.2s ease", // Smooth transition for resizing
             overflowX: "hidden", // Prevent horizontal scroll bar
           },
         }}
       >
+
         <Box
           sx={{
             overflow: "hidden", // Prevent horizontal scrolling
