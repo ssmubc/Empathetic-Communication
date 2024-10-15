@@ -134,7 +134,6 @@ const InstructorHomepage = () => {
           }
         );
         if (response.ok) {
-          console.log(response)
           const data = await response.json();
           setGroupData(data);
           const formattedData = data.map((group) => ({
@@ -143,7 +142,6 @@ const InstructorHomepage = () => {
             status: group.group_student_access ? "Active" : "Inactive",
             id: group.simulation_group_id,
           }));
-          console.log('Formatted Data:', formattedData);
           setRows(formattedData);
         } else {
           console.error("Failed to fetch groups:", response.statusText);
