@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-// MUI
 import {
   Drawer,
   List,
@@ -12,13 +11,10 @@ import {
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import GroupsIcon from "@mui/icons-material/Groups";
 
-const AdminSidebar = ({
-  setSelectedComponent,
-  setSelectedInstructor,
-  setSelectedGroup,
-}) => {
+const InstructorSidebar = ({ setSelectedComponent }) => {
   const [drawerWidth, setDrawerWidth] = useState(220);
 
+  // Handle resizing functionality
   const handleMouseMove = (e) => {
     const newWidth = e.clientX;
     if (newWidth >= 85 && newWidth <= 400) {
@@ -49,7 +45,8 @@ const AdminSidebar = ({
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#36bd78",
+            backgroundColor: "#36bd78", // Same color as admin sidebar
+            color: "#FFFFFF", // Text color for contrast
             boxShadow: "none",
             transition: "width 0.2s ease",
             overflowX: "hidden",
@@ -66,44 +63,44 @@ const AdminSidebar = ({
           <List>
             <ListItem
               button
-              onClick={() => {
-                setSelectedInstructor(null);
-                setSelectedGroup(null);
-                setSelectedComponent("AdminInstructors");
+              onClick={() => setSelectedComponent("InstructorDashboard")}
+              sx={{
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                },
               }}
             >
               <ListItemIcon
                 sx={{
                   justifyContent: drawerWidth <= 160 ? "center" : "flex-start",
-                  display: "flex",
+                  color: "#FFFFFF",
                 }}
               >
                 <ContactPageIcon />
               </ListItemIcon>
-              {drawerWidth > 160 && (
-                <ListItemText primary="Instructors" />
-              )}
+              {drawerWidth > 160 && <ListItemText primary="Dashboard" />}
             </ListItem>
-            <Divider />
+
+            <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.2)" }} />
+
             <ListItem
               button
-              onClick={() => {
-                setSelectedInstructor(null);
-                setSelectedGroup(null);
-                setSelectedComponent("AdminSimulationGroups");
+              onClick={() => setSelectedComponent("InstructorGroups")}
+              sx={{
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                },
               }}
             >
               <ListItemIcon
                 sx={{
                   justifyContent: drawerWidth <= 160 ? "center" : "flex-start",
-                  display: "flex",
+                  color: "#FFFFFF",
                 }}
               >
                 <GroupsIcon />
               </ListItemIcon>
-              {drawerWidth > 160 && (
-                <ListItemText primary="Simulation Groups" />
-              )}
+              {drawerWidth > 160 && <ListItemText primary="Groups" />}
             </ListItem>
           </List>
         </Box>
@@ -126,4 +123,4 @@ const AdminSidebar = ({
   );
 };
 
-export default AdminSidebar;
+export default InstructorSidebar;

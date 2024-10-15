@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // MUI
 import {
@@ -10,14 +10,38 @@ import {
   Divider,
   Box,
 } from "@mui/material";
-import HomeIcon from "@mui/icons-material/Home";
+import HomeIcon from "@mui/icons-material/Home"; // old icon
 import ViewTimelineIcon from "@mui/icons-material/ViewTimeline";
 import EditIcon from "@mui/icons-material/Edit";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import GroupIcon from "@mui/icons-material/Group";
 
+import GroupsIcon from '@mui/icons-material/Groups';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+
 const InstructorSidebar = ({ setSelectedComponent }) => {
   const navigate = useNavigate();
+  const [drawerWidth, setDrawerWidth] = useState(220);
+
+  const handleMouseMove = (e) => {
+    const newWidth = e.clientX;
+    if (newWidth >= 85 && newWidth <= 400) {
+      setDrawerWidth(newWidth);
+    }
+  };
+
+  const stopResizing = () => {
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", stopResizing);
+    document.body.style.userSelect = "";
+  };
+
+  const startResizing = (e) => {
+    e.preventDefault();
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", stopResizing);
+    document.body.style.userSelect = "none";
+  };
 
   const handleNavigation = (component) => {
     if (component === "InstructorAllCourses") {
@@ -28,76 +52,82 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
   };
 
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: 220,
-        flexShrink: 0,
-        [`& .MuiDrawer-paper`]: {
-          width: 220,
-          boxSizing: "border-box",
-          background: "linear-gradient(to top, #ee7b7b, #faf5f5)", // Add gradient here
-        },
-      }}
-    >
-      <Box sx={{ overflow: "auto", paddingTop: 10 }}>
-        <List>
-          <ListItem
-            button
-            onClick={() => handleNavigation("InstructorAllCourses")}
-          >
-            <ListItemIcon>
-              <HomeIcon />
-            </ListItemIcon>
-            <ListItemText primary="All Courses" />
-          </ListItem>
-          <Divider />
-          <ListItem
-            button
-            onClick={() => handleNavigation("InstructorAnalytics")}
-          >
-            <ListItemIcon>
-              <ViewTimelineIcon />
-            </ListItemIcon>
-            <ListItemText primary="Analytics" />
-          </ListItem>
-          <Divider />
-          <ListItem
-            button
-            onClick={() => handleNavigation("InstructorEditConcepts")}
-          >
-            <ListItemIcon>
-              <EditIcon />
-            </ListItemIcon>
-            <ListItemText primary="Edit Concepts" />
-          </ListItem>
-          <Divider />
-          <ListItem
-            button
-            onClick={() => handleNavigation("InstructorEditPatients")}
-          >
-            <ListItemIcon>
-              <EditIcon />
-            </ListItemIcon>
-            <ListItemText primary="Edit Modules" />
-          </ListItem>
-          <Divider />
-          <ListItem button onClick={() => handleNavigation("PromptSettings")}>
-            <ListItemIcon>
-              <PsychologyIcon />
-            </ListItemIcon>
-            <ListItemText primary="Prompt Settings" />
-          </ListItem>
-          <Divider />
-          <ListItem button onClick={() => handleNavigation("ViewStudents")}>
-            <ListItemIcon>
-              <GroupIcon />
-            </ListItemIcon>
-            <ListItemText primary="View Students" />
-          </ListItem>
-        </List>
-      </Box>
-    </Drawer>
+    <>
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            backgroundColor: "#4de698",
+            boxShadow: "none",
+            transition: "width 0.2s ease",
+            overflowX: "hidden",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            overflow: "hidden",
+            paddingTop: 10,
+            textAlign: drawerWidth <= 160 ? "center" : "left",
+          }}
+        >
+          <List>
+            <ListItem button onClick={() => handleNavigation("InstructorAllCourses")}>
+              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
+                <GroupsIcon />
+              </ListItemIcon>
+              {drawerWidth > 160 && <ListItemText primary="All Groups" />}
+            </ListItem>
+            <Divider />
+            <ListItem button onClick={() => handleNavigation("InstructorAnalytics")}>
+              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
+                <ShowChartIcon />
+              </ListItemIcon>
+              {drawerWidth > 160 && <ListItemText primary="Analytics" />}
+            </ListItem>
+            <Divider />
+            <ListItem button onClick={() => handleNavigation("InstructorEditConcepts")}>
+              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
+                <EditIcon />
+              </ListItemIcon>
+              {drawerWidth > 160 && <ListItemText primary="Edit Patients" />}
+            </ListItem>
+            <Divider />
+            <ListItem button onClick={() => handleNavigation("PromptSettings")}>
+              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
+                <PsychologyIcon />
+              </ListItemIcon>
+              {drawerWidth > 160 && <ListItemText primary="Prompt Settings" />}
+            </ListItem>
+            <Divider />
+            <ListItem button onClick={() => handleNavigation("ViewStudents")}>
+              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
+                <GroupIcon />
+              </ListItemIcon>
+              {drawerWidth > 160 && <ListItemText primary="View Students" />}
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
+
+      {/* Resizing Handle */}
+      <div
+        onMouseDown={startResizing}
+        style={{
+          width: "5px",
+          cursor: "col-resize",
+          height: "100vh",
+          backgroundColor: "transparent",
+          position: "absolute",
+          top: 0,
+          left: drawerWidth,
+        }}
+      />
+    </>
   );
 };
 
