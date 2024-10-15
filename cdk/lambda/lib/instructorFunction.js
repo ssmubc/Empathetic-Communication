@@ -113,7 +113,7 @@ exports.handler = async (event) => {
           response.body = "Invalid value";
         }
         break;
-      case "GET /instructor/courses":
+      case "GET /instructor/groups":
         if (
           event.queryStringParameters != null &&
           event.queryStringParameters.email
@@ -124,7 +124,7 @@ exports.handler = async (event) => {
             // First, get the user ID using the email
             const userIdResult = await sqlConnection`
                 SELECT user_id
-                FROM "Users"
+                FROM "users"
                 WHERE user_email = ${instructorEmail}
                 LIMIT 1;
               `;
@@ -139,12 +139,12 @@ exports.handler = async (event) => {
 
             // Query to get all courses where the instructor is enrolled
             const data = await sqlConnection`
-                SELECT c.*
-                FROM "Enrolments" e
-                JOIN "Courses" c ON e.course_id = c.course_id
+                SELECT g.*
+                FROM "enrolments" e
+                JOIN "simulation_groups" g ON e.simulation_group_id = g.simulation_group_id
                 WHERE e.user_id = ${userId}
                 AND e.enrolment_type = 'instructor'
-                ORDER BY c.course_name, c.course_id;
+                ORDER BY g.group_name, g.simulation_group_id;
               `;
 
             response.statusCode = 200;

@@ -51,36 +51,36 @@ function titleCase(str) {
     .join(" ");
 }
 
-// course details page
-const CourseDetails = () => {
+// group details page
+const GroupDetails = () => {
   const location = useLocation();
-  const { courseName } = useParams();
+  const { groupName } = useParams();
   const [selectedComponent, setSelectedComponent] = useState(
     "InstructorAnalytics"
   );
-  const { course_id } = location.state;
+  const { simulation_group_id } = location.state;
 
   const renderComponent = () => {
     switch (selectedComponent) {
       case "InstructorAnalytics":
         return (
-          <InstructorAnalytics courseName={courseName} course_id={course_id} />
+          <InstructorAnalytics groupName={groupName} simulation_group_id={simulation_group_id} />
         );
       case "InstructorEditCourse":
         return (
-          <InstructorModules courseName={courseName} course_id={course_id} />
+          <InstructorModules groupName={groupName} simulation_group_id={simulation_group_id} />
         );
       case "InstructorEditConcepts":
         return (
-          <InstructorConcepts courseName={courseName} course_id={course_id} setSelectedComponent={setSelectedComponent}/>
+          <InstructorConcepts groupName={groupName} simulation_group_id={simulation_group_id} setSelectedComponent={setSelectedComponent}/>
         );
       case "PromptSettings":
-        return <PromptSettings courseName={courseName} course_id={course_id} />;
+        return <PromptSettings groupName={groupName} simulation_group_id={simulation_group_id} />;
       case "ViewStudents":
-        return <ViewStudents courseName={courseName} course_id={course_id} />;
+        return <ViewStudents groupName={groupName} simulation_group_id={simulation_group_id} />;
       default:
         return (
-          <InstructorAnalytics courseName={courseName} course_id={course_id} />
+          <InstructorAnalytics groupName={groupName} simulation_group_id={simulation_group_id} />
         );
     }
   };
@@ -103,7 +103,7 @@ const CourseDetails = () => {
 const InstructorHomepage = () => {
   const [rows, setRows] = useState([
     {
-      course: "loading...",
+      group: "loading...",
       date: "loading...",
       status: "loading...",
       id: "loading...",
@@ -112,7 +112,7 @@ const InstructorHomepage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [courseData, setCourseData] = useState([]);
+  const [groupData, setGroupData] = useState([]);
   const { isInstructorAsStudent } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -123,7 +123,7 @@ const InstructorHomepage = () => {
   }, [isInstructorAsStudent, navigate]);
   // connect to api data
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchGroups = async () => {
       try {
         const session = await fetchAuthSession();
         var token = session.tokens.idToken
@@ -131,7 +131,7 @@ const InstructorHomepage = () => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/courses?email=${encodeURIComponent(email)}`,
+          }instructor/groups?email=${encodeURIComponent(email)}`,
           {
             method: "GET",
             headers: {
@@ -141,24 +141,26 @@ const InstructorHomepage = () => {
           }
         );
         if (response.ok) {
+          console.log(response)
           const data = await response.json();
-          setCourseData(data);
-          const formattedData = data.map((course) => ({
-            course: course.course_name,
+          setGroupData(data);
+          const formattedData = data.map((group) => ({
+            group: group.group_name,
             date: new Date().toLocaleDateString(), // REPLACE
-            status: course.course_student_access ? "Active" : "Inactive",
-            id: course.course_id,
+            status: group.group_student_access ? "Active" : "Inactive",
+            id: group.simulation_group_id,
           }));
+          console.log('Formatted Data:', formattedData);
           setRows(formattedData);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching groups:", error);
       }
     };
 
-    fetchCourses();
+    fetchGroups();
   }, []);
 
   const handleSearchChange = (event) => {
@@ -175,20 +177,20 @@ const InstructorHomepage = () => {
   };
 
   const filteredRows = rows.filter((row) =>
-    row.course.toLowerCase().includes(searchQuery.toLowerCase())
+    row.group.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleRowClick = (courseName, course_id) => {
-    const course = courseData.find(
-      (course) => course.course_name.trim() === courseName.trim()
+  const handleRowClick = (groupName, simulation_group_id) => {
+    const group = groupData.find(
+      (group) => group.group_name.trim() === groupName.trim()
     );
 
-    if (course) {
-      const { course_id, course_department, course_number } = course;
-      const path = `/course/${course_department} ${course_number} ${courseName.trim()}`;
-      navigate(path, { state: { course_id } });
+    if (group) {
+      const { simulation_group_id } = group;
+      const path = `/group/ ${groupName.trim()}`;
+      navigate(path, { state: { simulation_group_id } });
     } else {
-      console.error("Course not found!");
+      console.error("Group not found!");
     }
   };
 
@@ -213,7 +215,7 @@ const InstructorHomepage = () => {
                 textAlign="left"
                 variant="h6"
               >
-                Courses
+                Groups
               </Typography>
               <Paper
                 sx={{
@@ -224,7 +226,7 @@ const InstructorHomepage = () => {
                 }}
               >
                 <TextField
-                  label="Search by Course"
+                  label="Search by Group"
                   variant="outlined"
                   value={searchQuery}
                   onChange={handleSearchChange}
@@ -232,11 +234,11 @@ const InstructorHomepage = () => {
                 />
                 <TableContainer sx={{ width: "100%", maxHeight: "70vh",
               overflowY: "auto",}}>
-                  <Table aria-label="course table">
+                  <Table aria-label="group table">
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ width: "60%", padding: "16px" }}>
-                          Course
+                          Group
                         </TableCell>
                         <TableCell sx={{ width: "20%", padding: "16px" }}>
                           Status
@@ -252,11 +254,11 @@ const InstructorHomepage = () => {
                         .map((row, index) => (
                           <TableRow
                             key={index}
-                            onClick={() => handleRowClick(row.course, row.id)}
+                            onClick={() => handleRowClick(row.group, row.id)}
                             style={{ cursor: "pointer" }}
                           >
                             <TableCell sx={{ padding: "16px" }}>
-                              {titleCase(row.course)}
+                              {titleCase(row.group)}
                             </TableCell>
                             <TableCell sx={{ padding: "16px" }}>
                               <Button
@@ -293,22 +295,22 @@ const InstructorHomepage = () => {
           </PageContainer>
         }
       />
-      <Route exact path=":courseName/*" element={<CourseDetails />} />
+      <Route exact path=":groupName/*" element={<GroupDetails />} />
       <Route
-        path=":courseName/edit-module/:moduleId"
+        path=":groupName/edit-module/:moduleId"
         element={<InstructorEditCourse />}
       />
       <Route
-        path=":courseName/edit-concept/:conceptId"
+        path=":groupName/edit-concept/:conceptId"
         element={<InstructorEditConcept />}
       />
-      <Route path=":courseName/new-module" element={<InstructorNewModule />} />
+      <Route path=":groupName/new-module" element={<InstructorNewModule />} />
       <Route
-        path=":courseName/new-concept"
+        path=":groupName/new-concept"
         element={<InstructorNewConcept />}
       />
       <Route
-        path=":courseName/student/:studentId"
+        path=":groupName/student/:studentId"
         element={<StudentDetails />}
       />
     </Routes>

@@ -117,7 +117,7 @@ function App() {
             }
           />
           <Route path="/home/*" element={getHomePage()} />
-          <Route path="/course/*" element={<InstructorHomepage />} />
+          <Route path="/group/*" element={<InstructorHomepage />} />
         </Routes>
       </Router>
     </UserContext.Provider>

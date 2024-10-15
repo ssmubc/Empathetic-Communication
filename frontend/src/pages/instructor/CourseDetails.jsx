@@ -28,7 +28,7 @@ const CourseDetails = () => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/courses?email=${encodeURIComponent(email)}`,
+          }instructor/groups?email=${encodeURIComponent(email)}`,
           {
             method: "GET",
             headers: {

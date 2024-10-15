@@ -183,7 +183,7 @@ export const ViewStudents = ({ courseName, course_id }) => {
     row.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const handleRowClick = (student) => {
-    navigate(`/course/${course_id}/student/${student.name}`, {
+    navigate(`/group/${course_id}/student/${student.name}`, {
       state: { course_id, student },
     });
   };
