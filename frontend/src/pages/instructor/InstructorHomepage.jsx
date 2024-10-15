@@ -213,7 +213,7 @@ const InstructorHomepage = () => {
                 textAlign="left"
                 variant="h6"
               >
-                Courses
+                Simulation Groups
               </Typography>
               <Paper
                 sx={{

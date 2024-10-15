@@ -82,11 +82,13 @@ const StudentHeader = () => {
         {/* Render this button only if the instructor is viewing as a student */}
         {isInstructorAsStudent && (
           <button
-            className="bg-[#5536DA] text-white px-4 py-2 rounded hover:bg-violet-700"
+            className="bg-[#099433] text-white px-4 py-2 rounded hover:bg-green-700"
             onClick={handleSwitchToInstructor}
           >
             Instructor view
           </button>
+                      // primary: createColor("#36bd78"),
+                      // bg: createColor("#F8F9FD"),
         )}
         <button
           className="bg-gray-800 text-white hover:bg-gray-700 px-4 py-2 rounded"
