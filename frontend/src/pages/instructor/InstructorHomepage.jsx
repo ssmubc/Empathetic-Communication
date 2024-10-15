@@ -31,7 +31,7 @@ import InstructorAnalytics from "./InstructorAnalytics";
 import InstructorEditPatients from "./InstructorEditPatients";
 import PromptSettings from "./PromptSettings";
 import ViewStudents from "./ViewStudents";
-import InstructorModules from "./InstructorModules";
+import InstructorPatients from "./InstructorPatients";
 import InstructorNewModule from "./InstructorNewModule";
 import StudentDetails from "./StudentDetails";
 import { UserContext } from "../../App";
@@ -65,7 +65,7 @@ const GroupDetails = () => {
         );
       case "InstructorEditPatients":
         return (
-          <InstructorModules groupName={groupName} simulation_group_id={simulation_group_id} />
+          <InstructorPatients groupName={groupName} simulation_group_id={simulation_group_id} />
         );
       case "PromptSettings":
         return <PromptSettings groupName={groupName} simulation_group_id={simulation_group_id} />;
@@ -134,7 +134,6 @@ const InstructorHomepage = () => {
           }
         );
         if (response.ok) {
-          console.log(response)
           const data = await response.json();
           setGroupData(data);
           const formattedData = data.map((group) => ({
@@ -143,7 +142,6 @@ const InstructorHomepage = () => {
             status: group.group_student_access ? "Active" : "Inactive",
             id: group.simulation_group_id,
           }));
-          console.log('Formatted Data:', formattedData);
           setRows(formattedData);
         } else {
           console.error("Failed to fetch groups:", response.statusText);

@@ -52,8 +52,6 @@ const InstructorEditPatients = () => {
   const [module, setModule] = useState(null);
   const { moduleData, course_id } = location.state || {};
   const [moduleName, setModuleName] = useState("");
-  const [concept, setConcept] = useState("");
-  const [allConcepts, setAllConcept] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleBackClick = () => {
@@ -125,38 +123,11 @@ const InstructorEditPatients = () => {
     setLoading(false);
   };
 
-  const fetchConcepts = async () => {
-    try {
-      const { token, email } = await getAuthSessionAndEmail();
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }instructor/view_concepts?course_id=${encodeURIComponent(course_id)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.ok) {
-        const conceptData = await response.json();
-        setAllConcept(conceptData);
-      } else {
-        console.error("Failed to fetch courses:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
   useEffect(() => {
     if (moduleData) {
       setModule(moduleData);
       setModuleName(moduleData.module_name);
-      setConcept(moduleData.concept_name);
     }
-    fetchConcepts();
   }, [moduleData]);
 
   useEffect(() => {
@@ -240,9 +211,6 @@ const InstructorEditPatients = () => {
     setModuleName(e.target.value);
   };
 
-  const handleConceptInputChange = (e) => {
-    setConcept(e.target.value);
-  };
   const getFileType = (filename) => {
     // Get the file extension by splitting the filename on '.' and taking the last part
     const parts = filename.split(".");
@@ -256,7 +224,6 @@ const InstructorEditPatients = () => {
   };
 
   const updateModule = async () => {
-    const selectedConcept = allConcepts.find((c) => c.concept_name === concept);
     const { token, email } = await getAuthSessionAndEmail();
 
     const editModuleResponse = await fetch(
@@ -264,9 +231,7 @@ const InstructorEditPatients = () => {
         import.meta.env.VITE_API_ENDPOINT
       }instructor/edit_module?module_id=${encodeURIComponent(
         module.module_id
-      )}&instructor_email=${encodeURIComponent(
-        email
-      )}&concept_id=${encodeURIComponent(selectedConcept.concept_id)}`,
+      )}&instructor_email=${encodeURIComponent(email)}`,
       {
         method: "PUT",
         headers: {
@@ -380,8 +345,8 @@ const InstructorEditPatients = () => {
     if (isSaving) return;
     setIsSaving(true);
 
-    if (!moduleName || !concept) {
-      toast.error("Module Name and Concept are required.", {
+    if (!moduleName) {
+      toast.error("Module Name is required.", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -488,24 +453,6 @@ const InstructorEditPatients = () => {
           margin="normal"
           inputProps={{ maxLength: 50 }}
         />
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="concept-select-label">Concept</InputLabel>
-          <Select
-            labelId="concept-select-label"
-            id="concept-select"
-            value={concept}
-            onChange={handleConceptInputChange}
-            label="Concept"
-            sx={{ textAlign: "left" }}
-          >
-            {allConcepts.map((concept) => (
-              <MenuItem key={concept.concept_id} value={concept.concept_name}>
-                {titleCase(concept.concept_name)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
 
         <FileManagement
           newFiles={newFiles}

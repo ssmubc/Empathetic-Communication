@@ -9,7 +9,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-function courseTitleCase(str) {
+function groupTitleCase(str) {
   if (typeof str !== 'string') {
     return str;
   }
@@ -35,19 +35,14 @@ function titleCase(str) {
 
 
 
-const InstructorModules = ({ courseName, course_id }) => {
+const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const columns = useMemo(
     () => [
       {
-        accessorKey: "module_name",
-        header: "Module Name",
-        Cell: ({ cell }) => titleCase(cell.getValue())
-      },
-      {
-        accessorKey: "concept_name",
-        header: "Concept",
+        accessorKey: "patient_name",
+        header: "Patient Name",
         Cell: ({ cell }) => titleCase(cell.getValue())
       },
       {
@@ -91,14 +86,14 @@ const InstructorModules = ({ courseName, course_id }) => {
   });
 
   useEffect(() => {
-    const fetchModules = async () => {
+    const fetchPatients = async () => {
       try {
         const session = await fetchAuthSession();
         var token = session.tokens.idToken
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_modules?course_id=${encodeURIComponent(course_id)}`,
+          }instructor/view_patients?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
           {
             method: "GET",
             headers: {
@@ -108,28 +103,28 @@ const InstructorModules = ({ courseName, course_id }) => {
           }
         );
         if (response.ok) {
-          const moduleData = await response.json();
-          setData(moduleData);
+          const patientData = await response.json();
+          setData(patientData);
         } else {
-          console.error("Failed to fetch modules:", response.statusText);
+          console.error("Failed to fetch patients:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching modules:", error);
+        console.error("Error fetching patients:", error);
       }
     };
 
-    fetchModules();
-  }, [course_id]);
+    fetchPatients();
+  }, [simulation_group_id]);
 
-  const handleEditClick = (moduleData) => {
-    navigate(`/group/${courseName}/edit-module/${moduleData.module_id}`, {
-      state: { moduleData, course_id: course_id },
+  const handleEditClick = (patientData) => {
+    navigate(`/group/${groupName}/edit-patient/${patientData.patient_id}`, {
+      state: { patientData, simulation_group_id: simulation_group_id },
     });
   };
 
-  const handleCreateModuleClick = () => {
-    navigate(`/group/${courseName}/new-module`, {
-      state: { data, course_id },
+  const handleCreatePatientClick = () => {
+    navigate(`/group/${groupName}/new-patient`, {
+      state: { data, simulation_group_id },
     });
   };
   const handleSaveChanges = async () => {
@@ -138,16 +133,16 @@ const InstructorModules = ({ courseName, course_id }) => {
       const token = session.tokens.idToken
       const { email } = await fetchUserAttributes();
 
-      // Create an array of promises for updating modules
-      const updatePromises = data.map((module, index) => {
-        const moduleNumber = index + 1;
+      // Create an array of promises for updating patients
+      const updatePromises = data.map((patient, index) => {
+        const patientNumber = index + 1;
 
         return fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/reorder_module?module_id=${encodeURIComponent(
-            module.module_id
-          )}&module_number=${moduleNumber}&instructor_email=${encodeURIComponent(
+          }instructor/reorder_patient?patient_id=${encodeURIComponent(
+            patient.patient_id
+          )}&patient_number=${patientNumber}&instructor_email=${encodeURIComponent(
             email
           )}`,
           {
@@ -157,16 +152,16 @@ const InstructorModules = ({ courseName, course_id }) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              module_name: module.module_name,
+              patient_name: patient.patient_name,
             }),
           }
         ).then((response) => {
           if (!response.ok) {
             console.error(
-              `Failed to update module ${module.module_id}:`,
+              `Failed to update patient ${patient.patient_id}:`,
               response.statusText
             );
-            toast.error("Module Order Update Failed", {
+            toast.error("Patient Order Update Failed", {
               position: "top-center",
               autoClose: 1000,
               hideProgressBar: false,
@@ -178,7 +173,7 @@ const InstructorModules = ({ courseName, course_id }) => {
             });
             return { success: false };
           } else {
-            return response.json().then((updatedModule) => {
+            return response.json().then((updatedPatient) => {
               return { success: true };
             });
           }
@@ -192,7 +187,7 @@ const InstructorModules = ({ courseName, course_id }) => {
       );
 
       if (allUpdatesSuccessful) {
-        toast.success("Module Order Updated Successfully", {
+        toast.success("Patient Order Updated Successfully", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -203,7 +198,7 @@ const InstructorModules = ({ courseName, course_id }) => {
           theme: "colored",
         });
       } else {
-        toast.error("Some module updates failed", {
+        toast.error("Some patient updates failed", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -242,7 +237,7 @@ const InstructorModules = ({ courseName, course_id }) => {
         textAlign="left"
         variant="h6"
       >
-        {courseTitleCase(courseName)}
+        {groupTitleCase(groupName)}
       </Typography>
       <Paper sx={{ width: "100%", overflow: "hidden", marginTop: 2 }}>
         <Box sx={{ maxHeight: "400px", overflowY: "auto" }}>
@@ -260,9 +255,9 @@ const InstructorModules = ({ courseName, course_id }) => {
         <Button
           variant="contained"
           color="primary"
-          onClick={handleCreateModuleClick}
+          onClick={handleCreatePatientClick}
         >
-          Create New Module
+          Create New Patient
         </Button>
         <Button variant="contained" color="primary" onClick={handleSaveChanges}>
           Save Changes
@@ -284,4 +279,4 @@ const InstructorModules = ({ courseName, course_id }) => {
   );
 };
 
-export default InstructorModules;
+export default InstructorPatients;

@@ -161,101 +161,99 @@ exports.handler = async (event) => {
         break;
         case "GET /instructor/analytics":
           if (
-            event.queryStringParameters != null &&
-            event.queryStringParameters.simulation_group_id
+              event.queryStringParameters != null &&
+              event.queryStringParameters.simulation_group_id
           ) {
-            const simulationGroupId = event.queryStringParameters.simulation_group_id;
-        
-            try {
-              // Query to get all patients and their message counts, filtering by student role
-              const messageCreations = await sqlConnection`
-                    SELECT p.patient_id, p.patient_name, COUNT(m.message_id) AS message_count
-                    FROM "patients" p
-                    LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
-                    LEFT JOIN "sessions" s ON sp.student_patient_id = s.student_patient_id
-                    LEFT JOIN "messages" m ON s.session_id = m.session_id
-                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
-                    LEFT JOIN "users" u ON e.user_id = u.user_id
-                    WHERE p.simulation_group_id = ${simulationGroupId}
-                    AND 'student' = ANY(u.roles)
-                    GROUP BY p.patient_id, p.patient_name
-                    ORDER BY p.patient_name ASC;
+              const simulationGroupId = event.queryStringParameters.simulation_group_id;
+
+              try {
+                  // Query to get all patients and their message counts, filtering by student role
+                  const messageCreations = await sqlConnection`
+                      SELECT p.patient_id, p.patient_name, p.patient_number, COUNT(m.message_id) AS message_count
+                      FROM "patients" p
+                      LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                      LEFT JOIN "sessions" s ON sp.student_patient_id = s.student_patient_id
+                      LEFT JOIN "messages" m ON s.session_id = m.session_id
+                      LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                      LEFT JOIN "users" u ON e.user_id = u.user_id
+                      WHERE p.simulation_group_id = ${simulationGroupId}
+                      AND 'student' = ANY(u.roles)
+                      GROUP BY p.patient_id, p.patient_name, p.patient_number
+                      ORDER BY p.patient_number ASC, p.patient_name ASC;
                   `;
-        
-              // Query to get the number of patient accesses using User_Engagement_Log, filtering by student role
-              const patientAccesses = await sqlConnection`
-                    SELECT p.patient_id, COUNT(uel.log_id) AS access_count
-                    FROM "patients" p
-                    LEFT JOIN "user_engagement_log" uel ON p.patient_id = uel.patient_id
-                    LEFT JOIN "enrolments" e ON uel.enrolment_id = e.enrolment_id
-                    LEFT JOIN "users" u ON e.user_id = u.user_id
-                    WHERE p.simulation_group_id = ${simulationGroupId}
-                    AND uel.engagement_type = 'patient access'
-                    AND 'student' = ANY(u.roles)
-                    GROUP BY p.patient_id;
+
+                  // Query to get the number of patient accesses using User_Engagement_Log, filtering by student role
+                  const patientAccesses = await sqlConnection`
+                      SELECT p.patient_id, COUNT(uel.log_id) AS access_count
+                      FROM "patients" p
+                      LEFT JOIN "user_engagement_log" uel ON p.patient_id = uel.patient_id
+                      LEFT JOIN "enrolments" e ON uel.enrolment_id = e.enrolment_id
+                      LEFT JOIN "users" u ON e.user_id = u.user_id
+                      WHERE p.simulation_group_id = ${simulationGroupId}
+                      AND uel.engagement_type = 'patient access'
+                      AND 'student' = ANY(u.roles)
+                      GROUP BY p.patient_id;
                   `;
-        
-              // Query to get the average score for each patient, filtering by student role
-              const averageScores = await sqlConnection`
-                    SELECT p.patient_id, AVG(sp.patient_score) AS average_score
-                    FROM "patients" p
-                    LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
-                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
-                    LEFT JOIN "users" u ON e.user_id = u.user_id
-                    WHERE p.simulation_group_id = ${simulationGroupId}
-                    AND 'student' = ANY(u.roles)
-                    GROUP BY p.patient_id;
+
+                  // Query to get the average score for each patient, filtering by student role
+                  const averageScores = await sqlConnection`
+                      SELECT p.patient_id, AVG(sp.patient_score) AS average_score
+                      FROM "patients" p
+                      LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                      LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                      LEFT JOIN "users" u ON e.user_id = u.user_id
+                      WHERE p.simulation_group_id = ${simulationGroupId}
+                      AND 'student' = ANY(u.roles)
+                      GROUP BY p.patient_id;
                   `;
-        
-              // Query to get the percentage of perfect scores for each patient, filtering by student role
-              const perfectScores = await sqlConnection`
-                    SELECT p.patient_id, 
-                      CASE 
-                          WHEN COUNT(sp.student_patient_id) = 0 THEN 0 
-                          ELSE COUNT(CASE WHEN sp.patient_score = 100 THEN 1 END) * 100.0 / COUNT(sp.student_patient_id)
-                      END AS perfect_score_percentage
-                    FROM "patients" p
-                    LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
-                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
-                    LEFT JOIN "users" u ON e.user_id = u.user_id
-                    WHERE p.simulation_group_id = ${simulationGroupId}
-                    AND 'student' = ANY(u.roles)
-                    GROUP BY p.patient_id;
+
+                  // Query to get the percentage of perfect scores for each patient, filtering by student role
+                  const perfectScores = await sqlConnection`
+                      SELECT p.patient_id, 
+                          CASE 
+                              WHEN COUNT(sp.student_patient_id) = 0 THEN 0 
+                              ELSE COUNT(CASE WHEN sp.patient_score = 100 THEN 1 END) * 100.0 / COUNT(sp.student_patient_id)
+                          END AS perfect_score_percentage
+                      FROM "patients" p
+                      LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                      LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                      LEFT JOIN "users" u ON e.user_id = u.user_id
+                      WHERE p.simulation_group_id = ${simulationGroupId}
+                      AND 'student' = ANY(u.roles)
+                      GROUP BY p.patient_id;
                   `;
-        
-              // Combine all data into a single response, ensuring all patients are included
-              const analyticsData = messageCreations.map((patient) => {
-                const accesses =
-                  patientAccesses.find((pa) => pa.patient_id === patient.patient_id) ||
-                  {};
-                const scores =
-                  averageScores.find((as) => as.patient_id === patient.patient_id) ||
-                  {};
-                const perfectScore =
-                  perfectScores.find((ps) => ps.patient_id === patient.patient_id) ||
-                  {};
-        
-                return {
-                  patient_id: patient.patient_id,
-                  patient_name: patient.patient_name,
-                  message_count: patient.message_count || 0,
-                  access_count: accesses.access_count || 0,
-                  average_score: parseFloat(scores.average_score) || 0,
-                  perfect_score_percentage:
-                    parseFloat(perfectScore.perfect_score_percentage) || 0,
-                };
-              });
-        
-              response.statusCode = 200;
-              response.body = JSON.stringify(analyticsData);
-            } catch (err) {
-              response.statusCode = 500;
-              console.error(err);
-              response.body = JSON.stringify({ error: "Internal server error" });
-            }
+
+                  // Combine all data into a single response, ensuring all patients are included
+                  const analyticsData = messageCreations.map((patient) => {
+                      const accesses =
+                          patientAccesses.find((pa) => pa.patient_id === patient.patient_id) || {};
+                      const scores =
+                          averageScores.find((as) => as.patient_id === patient.patient_id) || {};
+                      const perfectScore =
+                          perfectScores.find((ps) => ps.patient_id === patient.patient_id) || {};
+
+                      return {
+                          patient_id: patient.patient_id,
+                          patient_name: patient.patient_name,
+                          patient_number: patient.patient_number,  // New addition based on schema
+                          message_count: patient.message_count || 0,
+                          access_count: accesses.access_count || 0,
+                          average_score: parseFloat(scores.average_score) || 0,
+                          perfect_score_percentage:
+                              parseFloat(perfectScore.perfect_score_percentage) || 0,
+                      };
+                  });
+
+                  response.statusCode = 200;
+                  response.body = JSON.stringify(analyticsData);
+              } catch (err) {
+                  response.statusCode = 500;
+                  console.error(err);
+                  response.body = JSON.stringify({ error: "Internal server error" });
+              }
           } else {
-            response.statusCode = 400;
-            response.body = JSON.stringify({ error: "simulation_group_id is required" });
+              response.statusCode = 400;
+              response.body = JSON.stringify({ error: "simulation_group_id is required" });
           }
           break;
       case "PUT /instructor/update_metadata":
@@ -399,35 +397,35 @@ exports.handler = async (event) => {
           });
         }
         break;
-      case "PUT /instructor/reorder_module":
+      case "PUT /instructor/reorder_patient":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.module_id &&
-          event.queryStringParameters.module_number &&
+          event.queryStringParameters.patient_id &&
+          event.queryStringParameters.patient_number &&
           event.queryStringParameters.instructor_email
         ) {
-          const { module_id, module_number, instructor_email } =
+          const { patient_id, patient_number, instructor_email } =
             event.queryStringParameters;
-          const { module_name } = JSON.parse(event.body || "{}");
+          const { patient_name } = JSON.parse(event.body || "{}");
 
-          if (module_name) {
+          if (patient_name) {
             try {
-              // Update the module in the Course_Modules table
+              // Update the patient in the patients table
               await sqlConnection`
-                    UPDATE "Course_Modules"
-                    SET module_name = ${module_name}, module_number = ${module_number}
-                    WHERE module_id = ${module_id};
+                    UPDATE "patients"
+                    SET patient_name = ${patient_name}, patient_number = ${patient_number}
+                    WHERE patient_id = ${patient_id};
                   `;
 
               // Insert into User Engagement Log
               await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), (SELECT user_id FROM "Users" WHERE user_email = ${instructor_email}), NULL, ${module_id}, NULL, CURRENT_TIMESTAMP, 'instructor_edited_module');
+                    INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
+                    VALUES (uuid_generate_v4(), (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}), NULL, ${patient_id}, NULL, CURRENT_TIMESTAMP, 'instructor_edited_module');
                   `;
 
               response.statusCode = 200;
               response.body = JSON.stringify({
-                message: "Module updated successfully",
+                message: "Patient updated successfully",
               });
             } catch (err) {
               response.statusCode = 500;
@@ -439,14 +437,14 @@ exports.handler = async (event) => {
           } else {
             response.statusCode = 400;
             response.body = JSON.stringify({
-              error: "module_name is required in the body",
+              error: "patient_name is required in the body",
             });
           }
         } else {
           response.statusCode = 400;
           response.body = JSON.stringify({
             error:
-              "module_id, module_number, or instructor_email is missing in query string parameters",
+              "patient_id, patient_number, or instructor_email is missing in query string parameters",
           });
         }
         break;
@@ -681,35 +679,34 @@ exports.handler = async (event) => {
           });
         }
         break;
-      case "GET /instructor/view_modules":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.course_id
-        ) {
-          const { course_id } = event.queryStringParameters;
-
-          try {
-            // Query to get all modules for the given course
-            const courseModules = await sqlConnection`
-        SELECT cm.module_id, cm.module_name, cm.module_number, cc.concept_name, cc.concept_number
-        FROM "Course_Modules" cm
-        JOIN "Course_Concepts" cc ON cm.concept_id = cc.concept_id
-        WHERE cc.course_id = ${course_id}
-        ORDER BY cc.concept_number ASC, cm.module_number ASC;
-      `;
-
-            response.statusCode = 200;
-            response.body = JSON.stringify(courseModules);
-          } catch (err) {
-            response.statusCode = 500;
-            console.error(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
+        case "GET /instructor/view_patients":
+          if (
+              event.queryStringParameters != null &&
+              event.queryStringParameters.simulation_group_id
+          ) {
+              const { simulation_group_id } = event.queryStringParameters;
+      
+              try {
+                  // Query to get all patients for the given simulation group
+                  const simulationPatients = await sqlConnection`
+                      SELECT p.patient_id, p.patient_name, p.patient_age, p.patient_gender
+                      FROM "patients" p
+                      WHERE p.simulation_group_id = ${simulation_group_id}
+                      ORDER BY p.patient_name ASC;
+                  `;
+      
+                  response.statusCode = 200;
+                  response.body = JSON.stringify(simulationPatients);
+              } catch (err) {
+                  response.statusCode = 500;
+                  console.error(err);
+                  response.body = JSON.stringify({ error: "Internal server error" });
+              }
+          } else {
+              response.statusCode = 400;
+              response.body = JSON.stringify({ error: "simulation_group_id is required" });
           }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({ error: "course_id is required" });
-        }
-        break;
+          break;
       case "DELETE /instructor/delete_module":
         if (
           event.queryStringParameters != null &&

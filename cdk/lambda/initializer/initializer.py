@@ -76,7 +76,8 @@ def handler(event, context):
                 "simulation_group_id" uuid,
                 "patient_name" varchar,
                 "patient_age" integer,
-                "patient_gender" varchar
+                "patient_gender" varchar,
+                "patient_number" integer
             );
 
             CREATE TABLE IF NOT EXISTS "enrolments" (
