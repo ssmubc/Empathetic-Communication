@@ -8,11 +8,6 @@ import {
   Paper,
   Button,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  OutlinedInput,
-  Chip,
   Grid,
   Divider,
   Dialog,
@@ -21,48 +16,36 @@ import {
   DialogTitle,
   DialogContentText,
   Autocomplete,
-  TextField
+  TextField,
 } from "@mui/material";
 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: 200,
-      overflowY: "auto",
-    },
-  },
-};
-
+// Function to convert string to title case
 function titleCase(str) {
-  if (typeof str !== "string") {
-    return str;
-  }
+  if (typeof str !== "string") return "";
   return str
     .toLowerCase()
     .split(" ")
-    .map(function (word) {
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
 const InstructorDetails = ({ instructorData, onBack }) => {
   const instructor = instructorData;
-  const [activeCourses, setActiveCourses] = useState([]);
-  const [allCourses, setAllCourses] = useState([]);
-  const [courseLoading, setCourseLoading] = useState(true);
-  const [activeCourseLoading, setActiveCourseLoading] = useState(true);
+  const [activeGroups, setActiveGroups] = useState([]);
+  const [allGroups, setAllGroups] = useState([]);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
   useEffect(() => {
-    const fetchCourses = async () => {
+    // Fetch all simulation groups
+    const fetchGroups = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken
+        const token = session.tokens.idToken;
         const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}admin/courses`,
+          `${import.meta.env.VITE_API_ENDPOINT}admin/simulation_groups`,
           {
             method: "GET",
             headers: {
@@ -73,24 +56,24 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          setAllCourses(data);
-          setCourseLoading(false);
+          setAllGroups(data);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching groups:", error);
       }
     };
 
-    const fetchActiveCourses = async () => {
+    // Fetch active groups for the instructor
+    const fetchActiveGroups = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken
+        const token = session.tokens.idToken;
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/instructorCourses?instructor_email=${encodeURIComponent(
+          }admin/instructorGroups?instructor_email=${encodeURIComponent(
             instructorData.email
           )}`,
           {
@@ -103,48 +86,35 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          setActiveCourses(data);
-          setActiveCourseLoading(false);
+          setActiveGroups(data);
         } else {
-          console.error("Failed to fetch courses:", response.statusText);
+          console.error("Failed to fetch active groups:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching active groups:", error);
       }
     };
-    fetchActiveCourses();
-    fetchCourses();
-  }, []);
+
+    fetchGroups();
+    fetchActiveGroups();
+  }, [instructorData.email]);
 
   if (!instructor) {
     return <Typography>No data found for this instructor.</Typography>;
   }
-  const handleConfirmDeleteOpen = () => {
-    setConfirmDeleteOpen(true);
-  };
 
-  const handleConfirmDeleteClose = () => {
-    setConfirmDeleteOpen(false);
-  };
+  const handleConfirmDeleteOpen = () => setConfirmDeleteOpen(true);
+  const handleConfirmDeleteClose = () => setConfirmDeleteOpen(false);
 
   const handleConfirmDelete = async () => {
     handleConfirmDeleteClose();
     handleDelete();
   };
 
-  const handleCoursesChange = (event) => {
-    const newCourses = event.target.value;
-    // Filter out duplicates
-    const uniqueCourses = Array.from(
-      new Map(newCourses.map((course) => [course.course_id, course])).values()
-    );
-    setActiveCourses(uniqueCourses);
-  };
-
   const handleDelete = async () => {
     try {
       const session = await fetchAuthSession();
-      var token = session.tokens.idToken
+      const token = session.tokens.idToken;
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
@@ -160,7 +130,6 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         }
       );
       if (response.ok) {
-        const data = await response.json();
         toast.success("Instructor Demoted Successfully", {
           position: "top-center",
           autoClose: 1000,
@@ -171,9 +140,7 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           progress: undefined,
           theme: "colored",
         });
-        setTimeout(function () {
-          onBack();
-        }, 1000);
+        setTimeout(() => onBack(), 1000);
       } else {
         console.error("Failed to demote instructor:", response.statusText);
       }
@@ -185,8 +152,8 @@ const InstructorDetails = ({ instructorData, onBack }) => {
   const handleSave = async () => {
     try {
       const session = await fetchAuthSession();
-      const token = session.tokens.idToken
-      console.log(instructor);
+      const token = session.tokens.idToken;
+
       // Delete existing enrolments for the instructor
       const deleteResponse = await fetch(
         `${
@@ -217,13 +184,14 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         });
         return;
       }
-      // Enroll instructor in multiple courses in parallel
-      const enrollPromises = activeCourses.map((course) =>
+
+      // Enroll instructor in selected groups
+      const enrollPromises = activeGroups.map((group) =>
         fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }admin/enroll_instructor?course_id=${encodeURIComponent(
-            course.course_id
+          }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
           )}&instructor_email=${encodeURIComponent(instructor.email)}`,
           {
             method: "POST",
@@ -232,38 +200,16 @@ const InstructorDetails = ({ instructorData, onBack }) => {
               "Content-Type": "application/json",
             },
           }
-        ).then((enrollResponse) => {
-          if (enrollResponse.ok) {
-            return enrollResponse.json().then((enrollData) => {
-              return { success: true };
-            });
-          } else {
-            console.error(
-              "Failed to enroll instructor:",
-              enrollResponse.statusText
-            );
-            toast.error("Enroll Instructor Failed", {
-              position: "top-center",
-              autoClose: 1000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "colored",
-            });
-            return { success: false };
-          }
-        })
+        )
       );
 
       const enrollResults = await Promise.all(enrollPromises);
       const allEnrolledSuccessfully = enrollResults.every(
-        (result) => result.success
+        (result) => result.ok
       );
 
       if (allEnrolledSuccessfully) {
-        toast.success("🦄 Enrolment Updated!", {
+        toast.success("Enrolment Updated!", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -296,21 +242,17 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         draggable: true,
         progress: undefined,
         theme: "colored",
-        transition: "Bounce",
       });
     }
   };
 
   return (
     <>
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, p: 3, marginTop: 1, textAlign: "left" }}
-      >
+      <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: 1, textAlign: "left" }}>
         <Toolbar />
         <Paper sx={{ p: 2, marginBottom: 4, textAlign: "left" }}>
           <Typography variant="h5" sx={{ marginBottom: 2, p: 1 }}>
-            Instructor: {titleCase(instructorData.user)}
+            Instructor: {titleCase(instructorData?.first_name)} {titleCase(instructorData?.last_name)}
           </Typography>
           <Divider sx={{ p: 1, marginBottom: 3 }} />
           <Typography variant="h7" sx={{ marginBottom: 1, p: 1 }}>
@@ -319,32 +261,27 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           <FormControl sx={{ width: "100%", marginBottom: 2, marginTop: 5 }}>
             <Autocomplete
               multiple
-              id="active-courses-autocomplete"
-              options={allCourses}
-              value={activeCourses}
+              id="active-groups-autocomplete"
+              options={allGroups}
+              value={activeGroups}
+              getOptionLabel={(option) => option.group_name || ""}
               onChange={(event, newValue) => {
-                // Filter out duplicates
-                const uniqueCourses = Array.from(
+                const uniqueGroups = Array.from(
                   new Map(
-                    newValue.map((course) => [course.course_id, course])
+                    newValue.map((group) => [group.simulation_group_id, group])
                   ).values()
                 );
-                setActiveCourses(uniqueCourses);
+                setActiveGroups(uniqueGroups);
               }}
-              getOptionLabel={(option) =>
-                `${option.course_department.toUpperCase()} ${
-                  option.course_number
-                }`
-              }
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Active Courses"
+                  label="Active Groups"
                   variant="outlined"
                 />
               )}
               isOptionEqualToValue={(option, value) =>
-                option.course_id === value.course_id
+                option.simulation_group_id === value.simulation_group_id
               }
             />
           </FormControl>
