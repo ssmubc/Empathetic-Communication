@@ -28,7 +28,7 @@ import PageContainer from "../Container";
 import InstructorHeader from "../../components/InstructorHeader";
 import InstructorSidebar from "./InstructorSidebar";
 import InstructorAnalytics from "./InstructorAnalytics";
-import InstructorEditCourse from "./InstructorEditCourse";
+import InstructorEditPatients from "./InstructorEditPatients";
 import PromptSettings from "./PromptSettings";
 import ViewStudents from "./ViewStudents";
 import InstructorModules from "./InstructorModules";
@@ -63,7 +63,7 @@ const GroupDetails = () => {
         return (
           <InstructorAnalytics groupName={groupName} simulation_group_id={simulation_group_id} />
         );
-      case "InstructorEditCourse":
+      case "InstructorEditPatients":
         return (
           <InstructorModules groupName={groupName} simulation_group_id={simulation_group_id} />
         );
@@ -291,7 +291,7 @@ const InstructorHomepage = () => {
       <Route exact path=":groupName/*" element={<GroupDetails />} />
       <Route
         path=":groupName/edit-module/:moduleId"
-        element={<InstructorEditCourse />}
+        element={<InstructorEditPatients />}
       />
       <Route path=":groupName/new-module" element={<InstructorNewModule />} />
       <Route

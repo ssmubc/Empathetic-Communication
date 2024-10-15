@@ -74,7 +74,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
           <Divider />
           <ListItem
             button
-            onClick={() => handleNavigation("InstructorEditCourse")}
+            onClick={() => handleNavigation("InstructorEditPatients")}
           >
             <ListItemIcon>
               <EditIcon />
