@@ -34,9 +34,6 @@ import ViewStudents from "./ViewStudents";
 import InstructorModules from "./InstructorModules";
 import InstructorNewModule from "./InstructorNewModule";
 import StudentDetails from "./StudentDetails";
-import InstructorNewConcept from "./InstructorNewConcept";
-import InstructorConcepts from "./InstructorConcepts";
-import InstructorEditConcept from "./InstructorEditConcept";
 import { UserContext } from "../../App";
 function titleCase(str) {
   if (typeof str !== "string") {
@@ -69,10 +66,6 @@ const GroupDetails = () => {
       case "InstructorEditCourse":
         return (
           <InstructorModules groupName={groupName} simulation_group_id={simulation_group_id} />
-        );
-      case "InstructorEditConcepts":
-        return (
-          <InstructorConcepts groupName={groupName} simulation_group_id={simulation_group_id} setSelectedComponent={setSelectedComponent}/>
         );
       case "PromptSettings":
         return <PromptSettings groupName={groupName} simulation_group_id={simulation_group_id} />;
@@ -300,15 +293,7 @@ const InstructorHomepage = () => {
         path=":groupName/edit-module/:moduleId"
         element={<InstructorEditCourse />}
       />
-      <Route
-        path=":groupName/edit-concept/:conceptId"
-        element={<InstructorEditConcept />}
-      />
       <Route path=":groupName/new-module" element={<InstructorNewModule />} />
-      <Route
-        path=":groupName/new-concept"
-        element={<InstructorNewConcept />}
-      />
       <Route
         path=":groupName/student/:studentId"
         element={<StudentDetails />}
