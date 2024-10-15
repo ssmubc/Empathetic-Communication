@@ -90,7 +90,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
               {drawerWidth > 160 && <ListItemText primary="Analytics" />}
             </ListItem>
             <Divider />
-            <ListItem button onClick={() => handleNavigation("InstructorEditConcepts")}>
+            <ListItem button onClick={() => handleNavigation("InstructorEditPatients")}>
               <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
                 <EditIcon />
               </ListItemIcon>
