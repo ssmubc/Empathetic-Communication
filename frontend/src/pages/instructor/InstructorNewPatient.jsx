@@ -29,8 +29,7 @@ function titleCase(str) {
   }).join(' ');
 }
 
-
-export const InstructorNewModule = ({ courseId }) => {
+export const InstructorNewPatient = () => {
   const [files, setFiles] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
   const [savedFiles, setSavedFiles] = useState([]);
@@ -39,12 +38,10 @@ export const InstructorNewModule = ({ courseId }) => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [moduleName, setModuleName] = useState("");
-  const [concept, setConcept] = useState("");
-  const [allConcepts, setAllConcept] = useState([]);
+  const [patientName, setPatientName] = useState("");
   const location = useLocation();
-  const { data, course_id } = location.state || {};
-  const [nextModuleNumber, setNextModuleNumber] = useState(data.length + 1);
+  const { data, simulation_group_id } = location.state || {};
+  const [nextPatientNumber, setNextPatientNumber] = useState(data.length + 1);
 
   const cleanFileName = (fileName) => {
     return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -66,56 +63,23 @@ export const InstructorNewModule = ({ courseId }) => {
     }
   };
 
-  useEffect(() => {
-    const fetchConcepts = async () => {
-      try {
-        const session = await fetchAuthSession();
-        var token = session.tokens.idToken
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_concepts?course_id=${encodeURIComponent(course_id)}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.ok) {
-          const conceptData = await response.json();
-          setAllConcept(conceptData);
-        } else {
-          console.error("Failed to fetch courses:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      }
-    };
-    fetchConcepts();
-  }, [courseId]);
-
   const handleInputChange = (e) => {
-    setModuleName(e.target.value);
+    setPatientName(e.target.value);
   };
 
-  const handleConceptInputChange = (e) => {
-    setConcept(e.target.value);
-  };
-  const uploadFiles = async (newFiles, token, moduleid) => {
+  const uploadFiles = async (newFiles, token, patientId) => {
     const newFilePromises = newFiles.map((file) => {
       const fileType = getFileType(file.name);
       const fileName = cleanFileName(removeFileExtension(file.name));
       return fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/generate_presigned_url?course_id=${encodeURIComponent(
-          course_id
-        )}&module_id=${encodeURIComponent(
-          moduleid
-        )}&module_name=${encodeURIComponent(
-          moduleName
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patientId
+        )}&patient_name=${encodeURIComponent(
+          patientName
         )}&file_type=${encodeURIComponent(
           fileType
         )}&file_name=${encodeURIComponent(fileName)}`,
@@ -146,8 +110,8 @@ export const InstructorNewModule = ({ courseId }) => {
     if (isSaving) return;
 
     // Validation check
-    if (!moduleName || !concept) {
-      toast.error("Module Name and Concept are required.", {
+    if (!patientName) {
+      toast.error("Patient Name is required.", {
         position: "top-center",
         autoClose: 2000,
         hideProgressBar: false,
@@ -162,7 +126,6 @@ export const InstructorNewModule = ({ courseId }) => {
 
     setIsSaving(true);
 
-    const selectedConcept = allConcepts.find((c) => c.concept_name === concept);
     try {
       const session = await fetchAuthSession();
       const token = session.tokens.idToken
@@ -170,14 +133,12 @@ export const InstructorNewModule = ({ courseId }) => {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/create_module?course_id=${encodeURIComponent(
-          course_id
-        )}&concept_id=${encodeURIComponent(
-          selectedConcept.concept_id
-        )}&module_name=${encodeURIComponent(
-          moduleName
-        )}&module_number=${encodeURIComponent(
-          nextModuleNumber
+        }instructor/create_patient?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&patient_number=${encodeURIComponent(
+          nextPatientNumber
         )}&instructor_email=${encodeURIComponent(email)}`,
         {
           method: "POST",
@@ -188,8 +149,8 @@ export const InstructorNewModule = ({ courseId }) => {
         }
       );
       if (!response.ok) {
-        console.error(`Failed to create module`, response.statusText);
-        toast.error("Module Creation Failed", {
+        console.error(`Failed to create patient`, response.statusText);
+        toast.error("Patient Creation Failed", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -200,8 +161,8 @@ export const InstructorNewModule = ({ courseId }) => {
           theme: "colored",
         });
       } else {
-        const updatedModule = await response.json();
-        await uploadFiles(newFiles, token, updatedModule.module_id);
+        const updatedPatient = await response.json();
+        await uploadFiles(newFiles, token, updatedPatient.patient_id);
 
         setFiles((prevFiles) =>
           prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
@@ -210,7 +171,7 @@ export const InstructorNewModule = ({ courseId }) => {
 
         setDeletedFiles([]);
         setNewFiles([]);
-        toast.success("Module Created Successfully", {
+        toast.success("Patient Created Successfully", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -225,7 +186,7 @@ export const InstructorNewModule = ({ courseId }) => {
       console.error("Error saving changes:", error);
     } finally {
       setIsSaving(false);
-      setNextModuleNumber(nextModuleNumber + 1);
+      setNextPatientNumber(nextPatientNumber + 1);
       setTimeout(function () {
         handleBackClick();
       }, 1000);
@@ -235,35 +196,17 @@ export const InstructorNewModule = ({ courseId }) => {
   return (
     <PageContainer>
       <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
-        <Typography variant="h6">New Module </Typography>
+        <Typography variant="h6">New Patient</Typography>
 
         <TextField
-          label="Module Name"
+          label="Patient Name"
           name="name"
-          value={moduleName}
+          value={patientName}
           onChange={handleInputChange}
           fullWidth
           margin="normal"
           inputProps={{ maxLength: 50 }}
         />
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="concept-select-label">Concept</InputLabel>
-          <Select
-            labelId="concept-select-label"
-            id="concept-select"
-            value={concept}
-            onChange={handleConceptInputChange}
-            label="Concept"
-            sx={{ textAlign: "left" }}
-          >
-            {allConcepts.map((concept) => (
-              <MenuItem key={concept.concept_id} value={concept.concept_name}>
-                {titleCase(concept.concept_name)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
 
         <FileManagement
           newFiles={newFiles}
@@ -299,7 +242,7 @@ export const InstructorNewModule = ({ courseId }) => {
               onClick={handleSave}
               style={{ width: "30%" }}
             >
-              Save Module
+              Save Patient
             </Button>
           </Grid>
         </Grid>
@@ -320,4 +263,4 @@ export const InstructorNewModule = ({ courseId }) => {
   );
 };
 
-export default InstructorNewModule;
+export default InstructorNewPatient;

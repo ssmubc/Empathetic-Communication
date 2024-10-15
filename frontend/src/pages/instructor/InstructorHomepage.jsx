@@ -32,7 +32,7 @@ import InstructorEditPatients from "./InstructorEditPatients";
 import PromptSettings from "./PromptSettings";
 import ViewStudents from "./ViewStudents";
 import InstructorPatients from "./InstructorPatients";
-import InstructorNewModule from "./InstructorNewModule";
+import InstructorNewPatient from "./InstructorNewPatient";
 import StudentDetails from "./StudentDetails";
 import { UserContext } from "../../App";
 function titleCase(str) {
@@ -288,10 +288,10 @@ const InstructorHomepage = () => {
       />
       <Route exact path=":groupName/*" element={<GroupDetails />} />
       <Route
-        path=":groupName/edit-module/:moduleId"
+        path=":groupName/edit-patient/:moduleId"
         element={<InstructorEditPatients />}
       />
-      <Route path=":groupName/new-module" element={<InstructorNewModule />} />
+      <Route path=":groupName/new-patient" element={<InstructorNewPatient />} />
       <Route
         path=":groupName/student/:studentId"
         element={<StudentDetails />}

@@ -319,84 +319,88 @@ exports.handler = async (event) => {
           });
         }
         break;
-      case "POST /instructor/create_module":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.concept_id &&
-          event.queryStringParameters.module_name &&
-          event.queryStringParameters.module_number &&
-          event.queryStringParameters.instructor_email
-        ) {
-          const {
-            course_id,
-            concept_id,
-            module_name,
-            module_number,
-            instructor_email,
-          } = event.queryStringParameters;
-
-          try {
-            // Check if a module with the same name already exists
-            const existingModule = await sqlConnection`
-                    SELECT * FROM "Course_Modules"
-                    WHERE concept_id = ${concept_id}
-                    AND module_name = ${module_name};
-                  `;
-
-            if (existingModule.length > 0) {
-              response.statusCode = 400;
-              response.body = JSON.stringify({
-                error:
-                  "A module with this name already exists in the given concept.",
-              });
-              break;
-            }
-
-            // Insert new module into Course_Modules table
-            const newModule = await sqlConnection`
-                    INSERT INTO "Course_Modules" (module_id, concept_id, module_name, module_number)
-                    VALUES (uuid_generate_v4(), ${concept_id}, ${module_name}, ${module_number})
-                    RETURNING *;
-                  `;
-
-            // Insert into User Engagement Log
-            await sqlConnection`
-                  INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                  VALUES (uuid_generate_v4(), (SELECT user_id FROM "Users" WHERE user_email = ${instructor_email}), ${course_id}, ${newModule[0].module_id}, null, CURRENT_TIMESTAMP, 'instructor_created_module')
+        case "POST /instructor/create_patient":
+          if (
+            event.queryStringParameters != null &&
+            event.queryStringParameters.simulation_group_id &&
+            event.queryStringParameters.patient_name &&
+            event.queryStringParameters.patient_number &&
+            event.queryStringParameters.instructor_email
+          ) {
+            const {
+              simulation_group_id,
+              patient_name,
+              patient_number,
+              instructor_email,
+            } = event.queryStringParameters;
+        
+            try {
+              // Check if a patient with the same name already exists in the simulation group
+              const existingPatient = await sqlConnection`
+                SELECT * FROM "patients"
+                WHERE simulation_group_id = ${simulation_group_id}
+                AND patient_name = ${patient_name};
               `;
-
-            // Find all student enrolments for the given course_id
-            const enrolments = await sqlConnection`
-                    SELECT enrolment_id FROM "Enrolments"
-                    WHERE course_id = ${course_id};
+        
+              if (existingPatient.length > 0) {
+                response.statusCode = 400;
+                response.body = JSON.stringify({
+                  error: "A patient with this name already exists in the given simulation group.",
+                });
+                break;
+              }
+        
+              // Insert new patient into the "patients" table
+              const newPatient = await sqlConnection`
+                INSERT INTO "patients" (patient_id, simulation_group_id, patient_name, patient_number)
+                VALUES (uuid_generate_v4(), ${simulation_group_id}, ${patient_name}, ${patient_number})
+                RETURNING *;
+              `;
+        
+              // Log the patient creation in the User Engagement Log
+              await sqlConnection`
+                INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
+                VALUES (
+                  uuid_generate_v4(),
+                  (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
+                  ${simulation_group_id},
+                  ${newPatient[0].patient_id},
+                  null,
+                  CURRENT_TIMESTAMP,
+                  'instructor_created_patient'
+                );
+              `;
+        
+              // Find all student enrolments for the given simulation group
+              const enrolments = await sqlConnection`
+                SELECT enrolment_id FROM "enrolments"
+                WHERE simulation_group_id = ${simulation_group_id};
+              `;
+        
+              // Create entries for each enrolment in the "student_patients" table
+              await Promise.all(
+                enrolments.map(async (enrolment) => {
+                  await sqlConnection`
+                    INSERT INTO "student_patients" (student_patient_id, patient_id, enrolment_id, patient_score)
+                    VALUES (uuid_generate_v4(), ${newPatient[0].patient_id}, ${enrolment.enrolment_id}, 0);
                   `;
-
-            // Create Student_Module entries for each enrolment
-            await Promise.all(
-              enrolments.map(async (enrolment) => {
-                await sqlConnection`
-                      INSERT INTO "Student_Modules" (student_module_id, course_module_id, enrolment_id, module_score)
-                      VALUES (uuid_generate_v4(), ${newModule[0].module_id}, ${enrolment.enrolment_id}, 0);
-                    `;
-              })
-            );
-
-            response.statusCode = 201;
-            response.body = JSON.stringify(newModule[0]);
-          } catch (err) {
-            response.statusCode = 500;
-            console.log(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
+                })
+              );
+        
+              response.statusCode = 201;
+              response.body = JSON.stringify(newPatient[0]);
+            } catch (err) {
+              response.statusCode = 500;
+              console.error(err);
+              response.body = JSON.stringify({ error: "Internal server error" });
+            }
+          } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({
+              error: "simulation_group_id, patient_name, patient_number, or instructor_email is missing",
+            });
           }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error:
-              "course_id, concept_id, module_name, module_number, or instructor_email is missing",
-          });
-        }
-        break;
+          break;
       case "PUT /instructor/reorder_patient":
         if (
           event.queryStringParameters != null &&

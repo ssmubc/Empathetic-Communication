@@ -2003,7 +2003,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /instructor/create_module:
+  /instructor/create_patient:
     options:
       summary: CORS support
       description: |
@@ -2031,42 +2031,36 @@ paths:
     post:
       tags:
         - Instructor
-      summary: Create a new module within a course
-      operationId: instructor_create_module_POST
+      summary: Create a new patient within a course
+      operationId: instructor_create_patient_POST
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course where the module will be created
+          description: ID of the course where the patient will be created
           schema:
             type: string
         - in: query
-          name: concept_id
+          name: patient_name
           required: true
-          description: ID of the concept associated with the module
+          description: Name of the new patient
           schema:
             type: string
         - in: query
-          name: module_name
+          name: patient_number
           required: true
-          description: Name of the new module
-          schema:
-            type: string
-        - in: query
-          name: module_number
-          required: true
-          description: Number of the new module
+          description: Number of the new patient
           schema:
             type: integer
         - in: query
           name: instructor_email
           required: true
-          description: Email of the instructor creating the module
+          description: Email of the instructor creating the patient
           schema:
             type: string
       responses:
         "200":
-          description: Module created successfully
+          description: Patient created successfully
         "400":
           description: Bad Request
         "401":

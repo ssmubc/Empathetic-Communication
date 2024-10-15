@@ -33,23 +33,23 @@ def lambda_handler(event, context):
             'body': json.dumps('Missing queries to generate pre-signed URL')
         }
 
-    course_id = query_params.get("course_id", "")
-    module_id = query_params.get("module_id", "")
+    simulation_group_id = query_params.get("simulation_group_id", "")
+    patient_id = query_params.get("patient_id", "")
     file_type = query_params.get("file_type", "")
     file_name = query_params.get("file_name", "")
 
-    if not course_id:
+    if not simulation_group_id:
         return {
             'statusCode': 400,
-            'body': json.dumps('Missing required parameter: course_id')
+            'body': json.dumps('Missing required parameter: simulation_group_id')
         }
 
-    if not module_id:
+    if not patient_id:
         return {
             'statusCode': 400,
-            'body': json.dumps('Missing required parameter: module_id')
+            'body': json.dumps('Missing required parameter: patient_id')
         }
-    
+
     if not file_name:
         return {
             'statusCode': 400,
@@ -67,9 +67,9 @@ def lambda_handler(event, context):
         "mobi": "application/x-mobipocket-ebook",
         "cbz": "application/vnd.comicbook+zip"
     }
-    
+
     if file_type in allowed_document_types:
-        key = f"{course_id}/{module_id}/documents/{file_name}.{file_type}"
+        key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
     else:
         return {
@@ -78,8 +78,8 @@ def lambda_handler(event, context):
         }
 
     logger.info({
-        "course_id": course_id,
-        "module_id": module_id,
+        "simulation_group_id": simulation_group_id,
+        "patient_id": patient_id,
         "file_type": file_type,
         "file_name": file_name,
     })
@@ -109,7 +109,7 @@ def lambda_handler(event, context):
         }
     
     except Exception as e:
-        logger.error(f"Error generating presigned URL or uploading txt file: {e}")
+        logger.error(f"Error generating presigned URL: {e}")
         return {
             'statusCode': 500,
             'body': json.dumps('Internal server error')
