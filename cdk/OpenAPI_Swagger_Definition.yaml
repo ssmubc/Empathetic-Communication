@@ -1813,7 +1813,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /instructor/view_modules:
+  /instructor/view_patients:
     options:
       summary: CORS support
       description: |
@@ -1841,18 +1841,18 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Get all modules in a given course
-      operationId: instructor_view_modules_GET
+      summary: Get all patients in a given group
+      operationId: instructor_view_patients_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: The ID of the course to retrieve modules from
+          description: The ID of the group to retrieve patients from
           schema:
             type: string
       responses:
         "200":
-          description: Modules retrieved successfully
+          description: Patients retrieved successfully
         "400":
           description: Bad Request
         "401":
@@ -1925,7 +1925,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /instructor/reorder_module:
+  /instructor/reorder_patient:
     options:
       summary: CORS support
       description: |
@@ -1953,19 +1953,19 @@ paths:
     put:
       tags:
         - Instructor
-      summary: Reorder and edit an existing module
-      operationId: instructor_reorder_module_PUT
+      summary: Reorder and edit an existing patient
+      operationId: instructor_reorder_patient_PUT
       parameters:
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module to be reordered or edited
+          description: ID of the patient to be reordered or edited
           schema:
             type: string
         - in: query
-          name: module_number
+          name: patient_number
           required: true
-          description: New number for the module
+          description: New number for the patient
           schema:
             type: integer
         - in: query
@@ -1981,12 +1981,12 @@ paths:
             schema:
               type: object
               properties:
-                module_name:
+                patient_name:
                   type: string
-                  description: New name for the module
+                  description: New name for the patient
       responses:
         "200":
-          description: Module updated successfully
+          description: Patient updated successfully
         "400":
           description: Bad Request
         "401":

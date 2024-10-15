@@ -8,7 +8,7 @@ import InstructorSidebar from "./InstructorSidebar";
 import InstructorAnalytics from "./InstructorAnalytics";
 import PromptSettings from "./PromptSettings";
 import ViewStudents from "./ViewStudents";
-import InstructorModules from "./InstructorModules";
+import InstructorPatients from "./InstructorPatients";
 
 // course details page
 const CourseDetails = () => {
@@ -61,7 +61,7 @@ const CourseDetails = () => {
           <InstructorAnalytics courseId={courseId} course_id={course_id} />
         );
       case "InstructorEditPatients":
-        return <InstructorModules courseId={courseId} course_id={course_id}/>;
+        return <InstructorPatients courseId={courseId} course_id={course_id}/>;
       case "PromptSettings":
         return <PromptSettings courseId={courseId} />;
       case "ViewStudents":
