@@ -185,13 +185,11 @@ const GroupDetails = ({ group, onBack }) => {
   const handleSave = async () => {
     try {
       const session = await fetchAuthSession();
-      const token = session.tokens.idToken
-
+      const token = session.tokens.idToken;
+  
       // Delete existing enrollments
       const deleteResponse = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }admin/delete_group_instructor_enrolments?&simulation_group_id=${encodeURIComponent(
+        `${import.meta.env.VITE_API_ENDPOINT}admin/delete_group_instructor_enrolments?&simulation_group_id=${encodeURIComponent(
           group.id
         )}`,
         {
@@ -202,7 +200,7 @@ const GroupDetails = ({ group, onBack }) => {
           },
         }
       );
-
+  
       if (!deleteResponse.ok) {
         console.error("Failed to update enrolment:", deleteResponse.statusText);
         toast.error("Update enrolment Failed", {
@@ -217,12 +215,11 @@ const GroupDetails = ({ group, onBack }) => {
         });
         return;
       }
+  
       // Enroll new instructors in parallel
       const enrollPromises = activeInstructors.map((instructor) =>
         fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
+          `${import.meta.env.VITE_API_ENDPOINT}admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
             group.id
           )}&instructor_email=${encodeURIComponent(instructor.user_email)}`,
           {
@@ -234,14 +231,9 @@ const GroupDetails = ({ group, onBack }) => {
           }
         ).then((enrollResponse) => {
           if (enrollResponse.ok) {
-            return enrollResponse.json().then((enrollData) => {
-              return { success: true };
-            });
+            return enrollResponse.json().then(() => ({ success: true }));
           } else {
-            console.error(
-              "Failed to enroll instructor:",
-              enrollResponse.statusText
-            );
+            console.error("Failed to enroll instructor:", enrollResponse.statusText);
             toast.error("Enroll Instructor Failed", {
               position: "top-center",
               autoClose: 1000,
@@ -256,14 +248,12 @@ const GroupDetails = ({ group, onBack }) => {
           }
         })
       );
-
+  
       const enrollResults = await Promise.all(enrollPromises);
-      const allEnrolledSuccessfully = enrollResults.every(
-        (result) => result.success
-      );
-
-      if (!allEnrolledSuccessfully) {
-        toast.error("Some instructors could not be enrolled", {
+      const allEnrolledSuccessfully = enrollResults.every((result) => result.success);
+  
+      if (allEnrolledSuccessfully) {
+        toast.success("Enrolment Updated!", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -274,7 +264,7 @@ const GroupDetails = ({ group, onBack }) => {
           theme: "colored",
         });
       } else {
-        toast.success("🦄 Enrolment Updated!", {
+        toast.error("Some instructors could not be enrolled", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -285,12 +275,10 @@ const GroupDetails = ({ group, onBack }) => {
           theme: "colored",
         });
       }
-
+  
       // Update group access
       const updateGroupAccess = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }admin/updateGroupAccess?&simulation_group_id=${encodeURIComponent(
+        `${import.meta.env.VITE_API_ENDPOINT}admin/updateGroupAccess?&simulation_group_id=${encodeURIComponent(
           group.id
         )}&access=${encodeURIComponent(isActive)}`,
         {
@@ -301,12 +289,9 @@ const GroupDetails = ({ group, onBack }) => {
           },
         }
       );
-
+  
       if (!updateGroupAccess.ok) {
-        console.error(
-          "Failed to update group access:",
-          updateGroupAccess.statusText
-        );
+        console.error("Failed to update group access:", updateGroupAccess.statusText);
         toast.error("Update group access Failed", {
           position: "top-center",
           autoClose: 1000,
@@ -318,10 +303,10 @@ const GroupDetails = ({ group, onBack }) => {
           theme: "colored",
         });
       } else {
-        console.log(
-          "Update group access data:",
-          await updateGroupAccess.json()
-        );
+        console.log("Group access updated successfully");
+  
+        // Close the dialog after successful save
+        onBack();
       }
     } catch (error) {
       console.error("Error in handleSave:", error);
@@ -334,11 +319,10 @@ const GroupDetails = ({ group, onBack }) => {
         draggable: true,
         progress: undefined,
         theme: "colored",
-        transition: "Bounce",
       });
     }
   };
-
+  
   return (
     <>
       {!loading && (

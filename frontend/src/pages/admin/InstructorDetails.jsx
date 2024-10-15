@@ -153,12 +153,10 @@ const InstructorDetails = ({ instructorData, onBack }) => {
     try {
       const session = await fetchAuthSession();
       const token = session.tokens.idToken;
-
-      // Delete existing enrolments for the instructor
+  
+      // Delete existing enrollments for the instructor
       const deleteResponse = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }admin/delete_instructor_enrolments?instructor_email=${encodeURIComponent(
+        `${import.meta.env.VITE_API_ENDPOINT}admin/delete_instructor_enrolments?instructor_email=${encodeURIComponent(
           instructor.email
         )}`,
         {
@@ -169,7 +167,7 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           },
         }
       );
-
+  
       if (!deleteResponse.ok) {
         console.error("Failed to update enrolment:", deleteResponse.statusText);
         toast.error("Update enrolment Failed", {
@@ -184,13 +182,11 @@ const InstructorDetails = ({ instructorData, onBack }) => {
         });
         return;
       }
-
+  
       // Enroll instructor in selected groups
       const enrollPromises = activeGroups.map((group) =>
         fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
+          `${import.meta.env.VITE_API_ENDPOINT}admin/enroll_instructor?simulation_group_id=${encodeURIComponent(
             group.simulation_group_id
           )}&instructor_email=${encodeURIComponent(instructor.email)}`,
           {
@@ -202,12 +198,12 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           }
         )
       );
-
+  
       const enrollResults = await Promise.all(enrollPromises);
       const allEnrolledSuccessfully = enrollResults.every(
         (result) => result.ok
       );
-
+  
       if (allEnrolledSuccessfully) {
         toast.success("Enrolment Updated!", {
           position: "top-center",
@@ -219,6 +215,8 @@ const InstructorDetails = ({ instructorData, onBack }) => {
           progress: undefined,
           theme: "colored",
         });
+        // Close the dialog after successful save
+        onBack();
       } else {
         toast.error("Some enrolments failed", {
           position: "top-center",
@@ -245,7 +243,7 @@ const InstructorDetails = ({ instructorData, onBack }) => {
       });
     }
   };
-
+  
   return (
     <>
       <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: 1, textAlign: "left" }}>
