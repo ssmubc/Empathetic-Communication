@@ -36,7 +36,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-const InstructorAnalytics = ({ courseName, course_id }) => {
+const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
   const [value, setValue] = useState(0);
   const [graphData, setGraphData] = useState([]);
   const [data, setData] = useState([]);
@@ -50,7 +50,7 @@ const InstructorAnalytics = ({ courseName, course_id }) => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/analytics?course_id=${encodeURIComponent(course_id)}`,
+          }instructor/analytics?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
           {
             method: "GET",
             headers: {
@@ -76,7 +76,7 @@ const InstructorAnalytics = ({ courseName, course_id }) => {
     };
 
     fetchAnalytics();
-  }, [course_id]);
+  }, [simulation_group_id]);
 
   useEffect(() => {
     if (graphData.length > 0) {
@@ -98,7 +98,7 @@ const InstructorAnalytics = ({ courseName, course_id }) => {
         variant="h6"
         gutterBottom
       >
-        {titleCase(courseName)}
+        {titleCase(groupName)}
       </Typography>
       <Paper>
         <Box mb={4}>

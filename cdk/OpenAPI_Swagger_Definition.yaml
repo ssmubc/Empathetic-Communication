@@ -2009,13 +2009,13 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Get analytics data for a specific course
-      operationId: instructor_get_analytics_GET
+      summary: Get analytics data for a specific group
+      operationId: instructor_analytics_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course for which analytics are requested
+          description: ID of the group for which analytics are requested
           schema:
             type: string
       responses:

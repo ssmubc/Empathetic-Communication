@@ -159,112 +159,105 @@ exports.handler = async (event) => {
           response.body = JSON.stringify({ error: "email is required" });
         }
         break;
-      case "GET /instructor/analytics":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.course_id
-        ) {
-          const courseId = event.queryStringParameters.course_id;
-
-          try {
-            // Query to get all modules and their message counts, filtering by student role
-            const messageCreations = await sqlConnection`
-                  SELECT cm.module_id, cm.module_name, COUNT(m.message_id) AS message_count, cm.module_number, cc.concept_number
-                  FROM "Course_Modules" cm
-                  JOIN "Course_Concepts" cc ON cm.concept_id = cc.concept_id
-                  LEFT JOIN "Student_Modules" sm ON cm.module_id = sm.course_module_id
-                  LEFT JOIN "Sessions" s ON sm.student_module_id = s.student_module_id
-                  LEFT JOIN "Messages" m ON s.session_id = m.session_id
-                  LEFT JOIN "Enrolments" e ON sm.enrolment_id = e.enrolment_id
-                  LEFT JOIN "Users" u ON e.user_id = u.user_id
-                  WHERE cc.course_id = ${courseId}
-                  AND 'student' = ANY(u.roles)
-                  GROUP BY cm.module_id, cm.module_name, cm.module_number, cc.concept_number
-                  ORDER BY cc.concept_number ASC, cm.module_number ASC;
-                `;
-
-            // Query to get the number of module accesses using User_Engagement_Log, filtering by student role
-            const moduleAccesses = await sqlConnection`
-                  SELECT cm.module_id, COUNT(uel.log_id) AS access_count
-                  FROM "Course_Modules" cm
-                  JOIN "Course_Concepts" cc ON cm.concept_id = cc.concept_id
-                  LEFT JOIN "User_Engagement_Log" uel ON cm.module_id = uel.module_id
-                  LEFT JOIN "Enrolments" e ON uel.enrolment_id = e.enrolment_id
-                  LEFT JOIN "Users" u ON e.user_id = u.user_id
-                  WHERE cc.course_id = ${courseId} 
-                  AND uel.engagement_type = 'module access'
-                  AND 'student' = ANY(u.roles)
-                  GROUP BY cm.module_id;
-                `;
-
-            // Query to get the average score for each module, filtering by student role
-            const averageScores = await sqlConnection`
-                  SELECT cm.module_id, AVG(sm.module_score) AS average_score
-                  FROM "Course_Modules" cm
-                  JOIN "Course_Concepts" cc ON cm.concept_id = cc.concept_id
-                  LEFT JOIN "Student_Modules" sm ON cm.module_id = sm.course_module_id
-                  LEFT JOIN "Enrolments" e ON sm.enrolment_id = e.enrolment_id
-                  LEFT JOIN "Users" u ON e.user_id = u.user_id
-                  WHERE cc.course_id = ${courseId}
-                  AND 'student' = ANY(u.roles)
-                  GROUP BY cm.module_id;
-                `;
-
-            // Query to get the percentage of perfect scores for each module, filtering by student role
-            const perfectScores = await sqlConnection`
-                  SELECT cm.module_id, 
-                    CASE 
-                        WHEN COUNT(sm.student_module_id) = 0 THEN 0 
-                        ELSE COUNT(CASE WHEN sm.module_score = 100 THEN 1 END) * 100.0 / COUNT(sm.student_module_id)
-                    END AS perfect_score_percentage
-                  FROM "Course_Modules" cm
-                  JOIN "Course_Concepts" cc ON cm.concept_id = cc.concept_id
-                  LEFT JOIN "Student_Modules" sm ON cm.module_id = sm.course_module_id
-                  LEFT JOIN "Enrolments" e ON sm.enrolment_id = e.enrolment_id
-                  LEFT JOIN "Users" u ON e.user_id = u.user_id
-                  WHERE cc.course_id = ${courseId}
-                  AND 'student' = ANY(u.roles)
-                  GROUP BY cm.module_id;
-                `;
-
-            // Combine all data into a single response, ensuring all modules are included
-            const analyticsData = messageCreations.map((module) => {
-              const accesses =
-                moduleAccesses.find(
-                  (ma) => ma.module_id === module.module_id
-                ) || {};
-              const scores =
-                averageScores.find((as) => as.module_id === module.module_id) ||
-                {};
-              const perfectScore =
-                perfectScores.find((ps) => ps.module_id === module.module_id) ||
-                {};
-
-              return {
-                module_id: module.module_id,
-                module_name: module.module_name,
-                concept_number: module.concept_number,
-                module_number: module.module_number,
-                message_count: module.message_count || 0,
-                access_count: accesses.access_count || 0,
-                average_score: parseFloat(scores.average_score) || 0,
-                perfect_score_percentage:
-                  parseFloat(perfectScore.perfect_score_percentage) || 0,
-              };
-            });
-
-            response.statusCode = 200;
-            response.body = JSON.stringify(analyticsData);
-          } catch (err) {
-            response.statusCode = 500;
-            console.error(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
+        case "GET /instructor/analytics":
+          if (
+            event.queryStringParameters != null &&
+            event.queryStringParameters.simulation_group_id
+          ) {
+            const simulationGroupId = event.queryStringParameters.simulation_group_id;
+        
+            try {
+              // Query to get all patients and their message counts, filtering by student role
+              const messageCreations = await sqlConnection`
+                    SELECT p.patient_id, p.patient_name, COUNT(m.message_id) AS message_count
+                    FROM "patients" p
+                    LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                    LEFT JOIN "sessions" s ON sp.student_patient_id = s.student_patient_id
+                    LEFT JOIN "messages" m ON s.session_id = m.session_id
+                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                    LEFT JOIN "users" u ON e.user_id = u.user_id
+                    WHERE p.simulation_group_id = ${simulationGroupId}
+                    AND 'student' = ANY(u.roles)
+                    GROUP BY p.patient_id, p.patient_name
+                    ORDER BY p.patient_name ASC;
+                  `;
+        
+              // Query to get the number of patient accesses using User_Engagement_Log, filtering by student role
+              const patientAccesses = await sqlConnection`
+                    SELECT p.patient_id, COUNT(uel.log_id) AS access_count
+                    FROM "patients" p
+                    LEFT JOIN "user_engagement_log" uel ON p.patient_id = uel.patient_id
+                    LEFT JOIN "enrolments" e ON uel.enrolment_id = e.enrolment_id
+                    LEFT JOIN "users" u ON e.user_id = u.user_id
+                    WHERE p.simulation_group_id = ${simulationGroupId}
+                    AND uel.engagement_type = 'patient access'
+                    AND 'student' = ANY(u.roles)
+                    GROUP BY p.patient_id;
+                  `;
+        
+              // Query to get the average score for each patient, filtering by student role
+              const averageScores = await sqlConnection`
+                    SELECT p.patient_id, AVG(sp.patient_score) AS average_score
+                    FROM "patients" p
+                    LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                    LEFT JOIN "users" u ON e.user_id = u.user_id
+                    WHERE p.simulation_group_id = ${simulationGroupId}
+                    AND 'student' = ANY(u.roles)
+                    GROUP BY p.patient_id;
+                  `;
+        
+              // Query to get the percentage of perfect scores for each patient, filtering by student role
+              const perfectScores = await sqlConnection`
+                    SELECT p.patient_id, 
+                      CASE 
+                          WHEN COUNT(sp.student_patient_id) = 0 THEN 0 
+                          ELSE COUNT(CASE WHEN sp.patient_score = 100 THEN 1 END) * 100.0 / COUNT(sp.student_patient_id)
+                      END AS perfect_score_percentage
+                    FROM "patients" p
+                    LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                    LEFT JOIN "users" u ON e.user_id = u.user_id
+                    WHERE p.simulation_group_id = ${simulationGroupId}
+                    AND 'student' = ANY(u.roles)
+                    GROUP BY p.patient_id;
+                  `;
+        
+              // Combine all data into a single response, ensuring all patients are included
+              const analyticsData = messageCreations.map((patient) => {
+                const accesses =
+                  patientAccesses.find((pa) => pa.patient_id === patient.patient_id) ||
+                  {};
+                const scores =
+                  averageScores.find((as) => as.patient_id === patient.patient_id) ||
+                  {};
+                const perfectScore =
+                  perfectScores.find((ps) => ps.patient_id === patient.patient_id) ||
+                  {};
+        
+                return {
+                  patient_id: patient.patient_id,
+                  patient_name: patient.patient_name,
+                  message_count: patient.message_count || 0,
+                  access_count: accesses.access_count || 0,
+                  average_score: parseFloat(scores.average_score) || 0,
+                  perfect_score_percentage:
+                    parseFloat(perfectScore.perfect_score_percentage) || 0,
+                };
+              });
+        
+              response.statusCode = 200;
+              response.body = JSON.stringify(analyticsData);
+            } catch (err) {
+              response.statusCode = 500;
+              console.error(err);
+              response.body = JSON.stringify({ error: "Internal server error" });
+            }
+          } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "simulation_group_id is required" });
           }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({ error: "course_id is required" });
-        }
-        break;
+          break;
       case "POST /instructor/create_concept":
         if (
           event.queryStringParameters != null &&
