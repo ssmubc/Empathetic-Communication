@@ -30,7 +30,7 @@ const InstructorHeader = () => {
       <div className="flex items-center space-x-4">
         <button
           type="button"
-          className="bg-[#5536DA] text-white px-4 py-2 rounded hover:bg-violet-700"
+          className="bg-[#099433] text-white px-4 py-2 rounded hover:bg-green-700"
           onClick={handleViewAsStudent} // Set context state to true
         >
           Student View
