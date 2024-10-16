@@ -87,7 +87,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
       try {
         const session = await fetchAuthSession();
         const { email } = await fetchUserAttributes();
-
+  
         const token = session.tokens.idToken
         const response = await fetch(
           `${
@@ -102,7 +102,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
               "Content-Type": "application/json",
             },
           }
-        );
+        );  
         if (response.ok) {
           const data = await response.json();
           setData(data);
@@ -114,7 +114,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
       } catch (error) {
         console.error("Error fetching name:", error);
       }
-    };
+    };  
     fetchGroupPage();
   }, [group]);
 

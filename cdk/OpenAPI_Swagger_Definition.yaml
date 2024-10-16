@@ -87,9 +87,9 @@ paths:
       operationId: student_text_generation_POST
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
         - in: query
@@ -99,9 +99,9 @@ paths:
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module used to find the module name which becomes the conversation's label
+          description: ID of the patient used to find the patient name which becomes the conversation's label
           schema:
             type: string
         - in: query
@@ -673,13 +673,13 @@ paths:
     post:
       tags:
         - Student
-      summary: Create a session for a student module
+      summary: Create a session for a student patient
       operationId: student_create_session_POST
       parameters:
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module
+          description: ID of the patient
           schema:
             type: string
         - in: query
@@ -689,9 +689,9 @@ paths:
           schema:
             type: string
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
         - in: query
@@ -763,15 +763,15 @@ paths:
           schema:
             type: string
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module
+          description: ID of the patient
           schema:
             type: string
       responses:
@@ -845,15 +845,15 @@ paths:
           schema:
             type: string
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course related to the session
+          description: ID of the group related to the session
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module related to the session
+          description: ID of the patient related to the session
           schema:
             type: string
       requestBody:
@@ -940,15 +940,15 @@ paths:
           schema:
             type: string
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course related to the session
+          description: ID of the group related to the session
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module related to the session
+          description: ID of the patient related to the session
           schema:
             type: string
       requestBody:
@@ -1161,7 +1161,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /student/update_module_score:
+  /student/update_patient_score:
     options:
       summary: CORS support
       description: |
@@ -1189,15 +1189,15 @@ paths:
     post:
       tags:
         - Student
-      summary: Update module score based on LLM verdict
-      operationId: student_update_module_score_POST
+      summary: Update patient score based on LLM verdict
+      operationId: student_update_patient_score_POST
       parameters:
         - in: query
-          name: module_id
+          name: patient_id
           required: true
           schema:
             type: string
-          description: ID of the course module
+          description: ID of the course patient
         - in: query
           name: student_email
           required: true
@@ -1205,7 +1205,7 @@ paths:
             type: string
           description: Email of the student
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
           schema:
             type: string
