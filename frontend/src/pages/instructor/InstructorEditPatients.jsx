@@ -49,9 +49,9 @@ const InstructorEditPatients = () => {
   const [deletedFiles, setDeletedFiles] = useState([]);
 
   const location = useLocation();
-  const [module, setModule] = useState(null);
-  const { moduleData, course_id } = location.state || {};
-  const [moduleName, setModuleName] = useState("");
+  const [patient, setPatient] = useState(null);
+  const { patientData, simulation_group_id } = location.state || {};
+  const [patientName, setPatientName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleBackClick = () => {
@@ -98,11 +98,11 @@ const InstructorEditPatients = () => {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/get_all_files?course_id=${encodeURIComponent(
-          course_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
-        )}&module_name=${encodeURIComponent(moduleName)}`,
+        }instructor/get_all_files?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(patientName)}`,
         {
           method: "GET",
           headers: {
@@ -124,17 +124,17 @@ const InstructorEditPatients = () => {
   };
 
   useEffect(() => {
-    if (moduleData) {
-      setModule(moduleData);
-      setModuleName(moduleData.module_name);
+    if (patientData) {
+      setPatient(patientData);
+      setPatientName(patientData.patient_name);
     }
-  }, [moduleData]);
+  }, [patientData]);
 
   useEffect(() => {
-    if (module) {
+    if (patient) {
       fetchFiles();
     }
-  }, [module]);
+  }, [patient]);
 
   const handleDelete = async () => {
     try {
@@ -143,11 +143,11 @@ const InstructorEditPatients = () => {
       const s3Response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/delete_module_s3?course_id=${encodeURIComponent(
-          course_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
-        )}&module_name=${encodeURIComponent(module.module_name)}`,
+        }instructor/delete_patient_s3?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(patient.patient_name)}`,
         {
           method: "DELETE",
           headers: {
@@ -158,13 +158,13 @@ const InstructorEditPatients = () => {
       );
 
       if (!s3Response.ok) {
-        throw new Error("Failed to delete module from S3");
+        throw new Error("Failed to delete patient from S3");
       }
-      const moduleResponse = await fetch(
+      const patientResponse = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/delete_module?module_id=${encodeURIComponent(
-          module.module_id
+        }instructor/delete_patient?patient_id=${encodeURIComponent(
+          patient.patient_id
         )}`,
         {
           method: "DELETE",
@@ -175,7 +175,7 @@ const InstructorEditPatients = () => {
         }
       );
 
-      if (moduleResponse.ok) {
+      if (patientResponse.ok) {
         toast.success("Successfully Deleted", {
           position: "top-center",
           autoClose: 1000,
@@ -190,11 +190,11 @@ const InstructorEditPatients = () => {
           handleBackClick();
         }, 1000);
       } else {
-        throw new Error("Failed to delete module");
+        throw new Error("Failed to delete patient");
       }
     } catch (error) {
       console.error(error.message);
-      toast.error("Failed to delete module", {
+      toast.error("Failed to delete patient", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -208,7 +208,7 @@ const InstructorEditPatients = () => {
   };
 
   const handleInputChange = (e) => {
-    setModuleName(e.target.value);
+    setPatientName(e.target.value);
   };
 
   const getFileType = (filename) => {
@@ -223,14 +223,14 @@ const InstructorEditPatients = () => {
     }
   };
 
-  const updateModule = async () => {
+  const updatePatient = async () => {
     const { token, email } = await getAuthSessionAndEmail();
 
-    const editModuleResponse = await fetch(
+    const editPatientResponse = await fetch(
       `${
         import.meta.env.VITE_API_ENDPOINT
-      }instructor/edit_module?module_id=${encodeURIComponent(
-        module.module_id
+      }instructor/edit_patient?patient_id=${encodeURIComponent(
+        patient.patient_id
       )}&instructor_email=${encodeURIComponent(email)}`,
       {
         method: "PUT",
@@ -239,16 +239,16 @@ const InstructorEditPatients = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          module_name: moduleName,
+          patient_name: patientName,
         }),
       }
     );
 
-    if (!editModuleResponse.ok) {
-      throw new Error(editModuleResponse.statusText);
+    if (!editPatientResponse.ok) {
+      throw new Error(editPatientResponse.statusText);
     }
 
-    return editModuleResponse;
+    return editPatientResponse;
   };
 
   const deleteFiles = async (deletedFiles, token) => {
@@ -258,12 +258,12 @@ const InstructorEditPatients = () => {
       return fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/delete_file?course_id=${encodeURIComponent(
-          course_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
-        )}&module_name=${encodeURIComponent(
-          moduleName
+        }instructor/delete_file?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
         )}&file_type=${encodeURIComponent(
           fileType
         )}&file_name=${encodeURIComponent(fileName)}`,
@@ -292,12 +292,12 @@ const InstructorEditPatients = () => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/generate_presigned_url?course_id=${encodeURIComponent(
-            course_id
-          )}&module_id=${encodeURIComponent(
-            module.module_id
-          )}&module_name=${encodeURIComponent(
-            moduleName
+          }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+          )}&patient_id=${encodeURIComponent(
+            patient.patient_id
+          )}&patient_name=${encodeURIComponent(
+            patientName
           )}&file_type=${encodeURIComponent(
             fileType
           )}&file_name=${encodeURIComponent(fileName)}`,
@@ -345,8 +345,8 @@ const InstructorEditPatients = () => {
     if (isSaving) return;
     setIsSaving(true);
 
-    if (!moduleName) {
-      toast.error("Module Name is required.", {
+    if (!patientName) {
+      toast.error("Patient Name is required.", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -359,7 +359,7 @@ const InstructorEditPatients = () => {
       return;
     }
     try {
-      await updateModule();
+      await updatePatient();
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
       await uploadFiles(newFiles, token);
@@ -374,7 +374,7 @@ const InstructorEditPatients = () => {
 
       setDeletedFiles([]);
       setNewFiles([]);
-      toast.success("Module updated successfully", {
+      toast.success("Patient updated successfully", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -385,8 +385,8 @@ const InstructorEditPatients = () => {
         theme: "colored",
       });
     } catch (error) {
-      console.error("Error fetching courses:", error);
-      toast.error("Module failed to update", {
+      console.error("Error fetching groups:", error);
+      toast.error("Patient failed to update", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -412,8 +412,8 @@ const InstructorEditPatients = () => {
       return fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/update_metadata?module_id=${encodeURIComponent(
-          module.module_id
+        }instructor/update_metadata?patient_id=${encodeURIComponent(
+          patient.patient_id
         )}&filename=${encodeURIComponent(
           fileName
         )}&filetype=${encodeURIComponent(fileType)}`,
@@ -435,19 +435,19 @@ const InstructorEditPatients = () => {
     return { token, email };
   };
 
-  if (!module) return <Typography>Loading...</Typography>;
+  if (!patient) return <Typography>Loading...</Typography>;
 
   return (
     <PageContainer>
       <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
         <Typography variant="h6">
-          Edit Module {titleCase(module.module_name)}{" "}
+          Edit Patient {titleCase(patient.patient_name)}{" "}
         </Typography>
 
         <TextField
-          label="Module Name"
+          label="Patient Name"
           name="name"
-          value={moduleName}
+          value={patientName}
           onChange={handleInputChange}
           fullWidth
           margin="normal"
@@ -484,7 +484,7 @@ const InstructorEditPatients = () => {
                 onClick={handleDeleteConfirmation}
                 sx={{ width: "30%" }}
               >
-                Delete Module
+                Delete Patient
               </Button>
             </Box>
           </Grid>
@@ -496,7 +496,7 @@ const InstructorEditPatients = () => {
               onClick={handleSave}
               style={{ width: "30%" }}
             >
-              Save Module
+              Save Patient
             </Button>
           </Grid>
         </Grid>
@@ -514,10 +514,10 @@ const InstructorEditPatients = () => {
         theme="colored"
       />
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
-        <DialogTitle>{"Delete Module"}</DialogTitle>
+        <DialogTitle>{"Delete Patient"}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this module? This action cannot be
+            Are you sure you want to delete this patient? This action cannot be
             undone.
           </DialogContentText>
         </DialogContent>

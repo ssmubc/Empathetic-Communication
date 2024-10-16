@@ -11,13 +11,13 @@ BUCKET = os.environ["BUCKET"]
 @logger.inject_lambda_context
 def lambda_handler(event, context):
     query_params = event.get("queryStringParameters", {})
-    course_id = query_params.get("course_id", "")
-    module_id = query_params.get("module_id", "")
+    simulation_group_id = query_params.get("simulation_group_id", "")
+    patient_id = query_params.get("patient_id", "")
 
-    if not course_id or not module_id:
+    if not simulation_group_id or not patient_id:
         logger.error("Missing required parameters", extra={
-            "course_id": course_id,
-            "module_id": module_id
+            "simulation_group_id": simulation_group_id,
+            "patient_id": patient_id
         })
         return {
             'statusCode': 400,
@@ -27,29 +27,30 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "*",
             },
-            'body': json.dumps("Missing required parameters: course_id, or module_id")
+            'body': json.dumps("Missing required parameters: simulation_group_id or patient_id")
         }
 
     try:
-        module_prefix = f"{course_id}/{module_id}/"
+        # Define the prefix for the patient’s files
+        patient_prefix = f"{simulation_group_id}/{patient_id}/"
 
         objects_to_delete = []
         continuation_token = None
-        
-        # Fetch all objects in the module directory, handling pagination
+
+        # Fetch all objects in the patient's directory, handling pagination
         while True:
             if continuation_token:
                 response = s3.list_objects_v2(
-                    Bucket=BUCKET, 
-                    Prefix=module_prefix, 
+                    Bucket=BUCKET,
+                    Prefix=patient_prefix,
                     ContinuationToken=continuation_token
                 )
             else:
-                response = s3.list_objects_v2(Bucket=BUCKET, Prefix=module_prefix)
+                response = s3.list_objects_v2(Bucket=BUCKET, Prefix=patient_prefix)
 
             if 'Contents' in response:
                 objects_to_delete.extend([{'Key': obj['Key']} for obj in response['Contents']])
-            
+
             # Check if there's more data to fetch
             if response.get('IsTruncated'):
                 continuation_token = response.get('NextContinuationToken')
@@ -57,7 +58,7 @@ def lambda_handler(event, context):
                 break
 
         if objects_to_delete:
-            # Delete all objects in the module directory
+            # Delete all objects in the patient's directory
             delete_response = s3.delete_objects(
                 Bucket=BUCKET,
                 Delete={'Objects': objects_to_delete}
@@ -71,10 +72,10 @@ def lambda_handler(event, context):
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "*",
                 },
-                'body': json.dumps(f"Deleted module directory: {module_prefix}")
+                'body': json.dumps(f"Deleted patient directory: {patient_prefix}")
             }
         else:
-            logger.info(f"No objects found in module directory: {module_prefix}")
+            logger.info(f"No objects found in patient directory: {patient_prefix}")
             return {
                 'statusCode': 200,
                 "headers": {
@@ -83,11 +84,11 @@ def lambda_handler(event, context):
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "*",
                 },
-                'body': json.dumps(f"No objects found in module directory: {module_prefix}")
+                'body': json.dumps(f"No objects found in patient directory: {patient_prefix}")
             }
 
     except Exception as e:
-        logger.exception(f"Error deleting module directory: {e}")
+        logger.exception(f"Error deleting patient directory: {e}")
         return {
             'statusCode': 500,
             "headers": {

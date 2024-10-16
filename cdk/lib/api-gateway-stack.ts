@@ -1108,31 +1108,31 @@ export class ApiGatewayStack extends cdk.Stack {
      *
      * Create Lambda function to delete an entire module directory
      */
-    const deleteModuleFunction = new lambda.Function(this, "DeleteModuleFunc", {
+    const deletePatientFunction = new lambda.Function(this, "DeletePatientFunc", {
       runtime: lambda.Runtime.PYTHON_3_9,
-      code: lambda.Code.fromAsset("lambda/deleteModule"),
-      handler: "deleteModule.lambda_handler",
+      code: lambda.Code.fromAsset("lambda/deletePatient"),
+      handler: "deletePatient.lambda_handler",
       timeout: Duration.seconds(300),
       memorySize: 128,
       environment: {
         BUCKET: dataIngestionBucket.bucketName,
         REGION: this.region,
       },
-      functionName: "DeleteModuleFunc",
+      functionName: "DeletePatientFunc",
       layers: [powertoolsLayer],
     });
 
     // Override the Logical ID of the Lambda Function to get ARN in OpenAPI
-    const cfnDeleteModuleFunction = deleteModuleFunction.node
+    const cfnDeletePatientFunction = deletePatientFunction.node
       .defaultChild as lambda.CfnFunction;
-    cfnDeleteModuleFunction.overrideLogicalId("DeleteModuleFunc");
+    cfnDeletePatientFunction.overrideLogicalId("DeletePatientFunc");
 
     // Grant the Lambda function the necessary permissions
-    dataIngestionBucket.grantRead(deleteModuleFunction);
-    dataIngestionBucket.grantDelete(deleteModuleFunction);
+    dataIngestionBucket.grantRead(deletePatientFunction);
+    dataIngestionBucket.grantDelete(deletePatientFunction);
 
     // Add the permission to the Lambda function's policy to allow API Gateway access
-    deleteModuleFunction.addPermission("AllowApiGatewayInvoke", {
+    deletePatientFunction.addPermission("AllowApiGatewayInvoke", {
       principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
       action: "lambda:InvokeFunction",
       sourceArn: `arn:aws:execute-api:${this.region}:${this.account}:${this.api.restApiId}/*/*/instructor*`,

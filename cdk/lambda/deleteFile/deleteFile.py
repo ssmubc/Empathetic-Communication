@@ -39,7 +39,7 @@ def connect_to_db():
             connection.close()
         return None
 
-def delete_file_from_db(module_id, file_name, file_type):
+def delete_file_from_db(patient_id, file_name, file_type):
     connection = connect_to_db()
     if connection is None:
         logger.error("No database connection available.")
@@ -52,13 +52,13 @@ def delete_file_from_db(module_id, file_name, file_type):
         cur = connection.cursor()
 
         delete_query = """
-            DELETE FROM "Module_Files" 
-            WHERE module_id = %s AND filename = %s AND filetype = %s;
+            DELETE FROM "patient_data" 
+            WHERE patient_id = %s AND filename = %s AND filetype = %s;
         """
-        cur.execute(delete_query, (module_id, file_name, file_type))
+        cur.execute(delete_query, (patient_id, file_name, file_type))
 
         connection.commit()
-        logger.info(f"Successfully deleted file {file_name}.{file_type} for module {module_id}.")
+        logger.info(f"Successfully deleted file {file_name}.{file_type} for patient {patient_id}.")
 
         cur.close()
         connection.close()
@@ -75,15 +75,15 @@ def delete_file_from_db(module_id, file_name, file_type):
 def lambda_handler(event, context):
     query_params = event.get("queryStringParameters", {})
 
-    course_id = query_params.get("course_id", "")
-    module_id = query_params.get("module_id", "")
+    simulation_group_id = query_params.get("simulation_group_id", "")
+    patient_id = query_params.get("patient_id", "")
     file_name = query_params.get("file_name", "")
     file_type = query_params.get("file_type", "")
 
-    if not course_id or not module_id or not file_name or not file_type:
+    if not simulation_group_id or not patient_id or not file_name or not file_type:
         logger.error("Missing required parameters", extra={
-            "course_id": course_id,
-            "module_id": module_id,
+            "simulation_group_id": simulation_group_id,
+            "patient_id": patient_id,
             "file_name": file_name,
             "file_type": file_type
         })
@@ -95,7 +95,7 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "*",
             },
-            'body': json.dumps('Missing required parameters: course_id, module_id, file_name, or file_type')
+            'body': json.dumps('Missing required parameters: simulation_group_id, patient_id, file_name, or file_type')
         }
 
     try:
@@ -108,7 +108,7 @@ def lambda_handler(event, context):
         # Determine the folder based on the file type
         if file_type in allowed_document_types:
             folder = "documents"
-            objects_to_delete.append({"Key": f"{course_id}/{module_id}/{folder}/{file_name}.{file_type}"})
+            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/{folder}/{file_name}.{file_type}"})
         else:
             return {
                 'statusCode': 400,
@@ -135,7 +135,7 @@ def lambda_handler(event, context):
 
         # Delete the file from the database
         try:
-            delete_file_from_db(module_id, file_name, file_type)
+            delete_file_from_db(patient_id, file_name, file_type)
             logger.info(f"File {file_name}.{file_type} deleted from the database.")
         except Exception as e:
             logger.error(f"Error deleting file {file_name}.{file_type} from the database: {e}")

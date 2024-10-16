@@ -1428,30 +1428,30 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Get a list of all the document files for a specific course, concept, and module
+      summary: Get a list of all the document files for a specific group and patient
       operationId: instructor_get_all_files_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module
+          description: ID of the patient
           schema:
             type: string
         - in: query
-          name: module_name
+          name: patient_name
           required: true
-          description: Name of the module
+          description: Name of the patient
           schema:
             type: string
       responses:
         "200":
-          description: Recieved all the files for the course, concept, and module successfully
+          description: Recieved all the files for the group and patient successfully
           content:
             application/json:
               schema:
@@ -1459,7 +1459,7 @@ paths:
                 properties:
                   files:
                     type: array
-                    description: A list of file names in the specified course, concept, and module directory
+                    description: A list of file names in the specified group and patient directory
                     items:
                       type: string
                       description: Name of the file
@@ -1567,21 +1567,21 @@ paths:
       operationId: instructor_delete_file_DELETE
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
           description: ID of the course
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module
+          description: ID of the patient
           schema:
             type: string
         - in: query
-          name: module_name
+          name: patient_name
           required: true
-          description: Name of the module
+          description: Name of the patient
           schema:
             type: string
         - in: query
@@ -1615,7 +1615,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /instructor/delete_module_s3:
+  /instructor/delete_patient_s3:
     options:
       summary: CORS support
       description: |
@@ -1644,24 +1644,24 @@ paths:
       tags:
         - Instructor
       summary: Delete certain file
-      operationId: instructor_delete_module_s3_DELETE
+      operationId: instructor_delete_patient_s3_DELETE
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module
+          description: ID of the patient
           schema:
             type: string
         - in: query
-          name: module_name
+          name: patient_name
           required: true
-          description: Name of the module
+          description: Name of the patient
           schema:
             type: string
       responses:
@@ -1679,7 +1679,7 @@ paths:
         - instructorAuthorizer: []
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteModuleFunc.Arn}/invocations"
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeletePatientFunc.Arn}/invocations"
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
@@ -1711,13 +1711,13 @@ paths:
     put:
       tags:
         - Instructor
-      summary: Update the metadata of a file in a module
+      summary: Update the metadata of a file in a patient
       operationId: instructor_update_metadata_PUT
       parameters:
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module containing the file
+          description: ID of the patient containing the file
           schema:
             type: string
         - in: query
@@ -2080,7 +2080,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /instructor/edit_module:
+  /instructor/edit_patient:
     options:
       summary: CORS support
       description: |
@@ -2108,25 +2108,19 @@ paths:
     put:
       tags:
         - Instructor
-      summary: Update details of a module within a course
-      operationId: instructor_edit_module_PUT
+      summary: Update details of a patient within a group
+      operationId: instructor_edit_patient_PUT
       parameters:
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module to be updated
+          description: ID of the patient to be updated
           schema:
             type: string
         - in: query
           name: instructor_email
           required: true
-          description: Email of the instructor updating the module
-          schema:
-            type: string
-        - in: query
-          name: concept_id
-          required: true
-          description: ID of the concept to which the module will be reassigned
+          description: Email of the instructor updating the patient
           schema:
             type: string
       requestBody:
@@ -2136,13 +2130,13 @@ paths:
             schema:
               type: object
               properties:
-                module_name:
+                patient_name:
                   type: string
               required:
-                - module_name
+                - patient_name
       responses:
         "200":
-          description: Module updated successfully
+          description: Patient updated successfully
         "400":
           description: Bad Request
         "401":
@@ -2430,7 +2424,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /instructor/delete_module:
+  /instructor/delete_patient:
     options:
       summary: CORS support
       description: |
@@ -2458,18 +2452,18 @@ paths:
     delete:
       tags:
         - Instructor
-      summary: Delete a module
-      operationId: instructor_delete_module_DELETE
+      summary: Delete a patient
+      operationId: instructor_delete_patient_DELETE
       parameters:
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: The ID of the module to delete
+          description: The ID of the patient to delete
           schema:
             type: string
       responses:
         "200":
-          description: Module deleted successfully
+          description: Patient deleted successfully
         "400":
           description: Bad Request
         "401":

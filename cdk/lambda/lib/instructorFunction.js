@@ -259,28 +259,28 @@ exports.handler = async (event) => {
       case "PUT /instructor/update_metadata":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.module_id &&
+          event.queryStringParameters.patient_id &&
           event.queryStringParameters.filename &&
           event.queryStringParameters.filetype
         ) {
-          const moduleId = event.queryStringParameters.module_id;
+          const patient_id = event.queryStringParameters.patient_id;
           const filename = event.queryStringParameters.filename;
           const filetype = event.queryStringParameters.filetype;
           const { metadata } = JSON.parse(event.body);
 
           try {
-            // Query to find the file with the given module_id and filename
+            // Query to find the file with the given patient_id and filename
             const existingFile = await sqlConnection`
-                      SELECT * FROM "Module_Files"
-                      WHERE module_id = ${moduleId}
+                      SELECT * FROM "patient_data"
+                      WHERE patient_id = ${patient_id}
                       AND filename = ${filename}
                       AND filetype = ${filetype};
                   `;
 
             if (existingFile.length === 0) {
               const result = await sqlConnection`
-                INSERT INTO "Module_Files" (module_id, filename, filetype, metadata)
-                VALUES (${moduleId}, ${filename}, ${filetype}, ${metadata})
+                INSERT INTO "patient_data" (patient_id, filename, filetype, metadata)
+                VALUES (${patient_id}, ${filename}, ${filetype}, ${metadata})
                 RETURNING *;
               `;
               response.body = JSON.stringify({
@@ -290,9 +290,9 @@ exports.handler = async (event) => {
 
             // Update the metadata field
             const result = await sqlConnection`
-                      UPDATE "Module_Files"
+                      UPDATE "patient_data"
                       SET metadata = ${metadata}
-                      WHERE module_id = ${moduleId}
+                      WHERE patient_id = ${patient_id}
                       AND filename = ${filename}
                       AND filetype = ${filetype}
                       RETURNING *;
@@ -315,7 +315,7 @@ exports.handler = async (event) => {
         } else {
           response.statusCode = 400;
           response.body = JSON.stringify({
-            error: "module_id and filename are required",
+            error: "patient_id and filename are required",
           });
         }
         break;
@@ -424,7 +424,7 @@ exports.handler = async (event) => {
               // Insert into User Engagement Log
               await sqlConnection`
                     INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}), NULL, ${patient_id}, NULL, CURRENT_TIMESTAMP, 'instructor_edited_module');
+                    VALUES (uuid_generate_v4(), (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}), NULL, ${patient_id}, NULL, CURRENT_TIMESTAMP, 'instructor_edited_patient');
                   `;
 
               response.statusCode = 200;
@@ -452,74 +452,77 @@ exports.handler = async (event) => {
           });
         }
         break;
-      case "PUT /instructor/edit_module":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.module_id &&
-          event.queryStringParameters.instructor_email &&
-          event.queryStringParameters.concept_id
-        ) {
-          const { module_id, instructor_email, concept_id } =
-            event.queryStringParameters;
-          const { module_name } = JSON.parse(event.body || "{}");
-
-          if (module_name) {
-            try {
-              // Check if another module with the same name already exists under the same concept
-              const existingModule = await sqlConnection`
-                    SELECT * FROM "Course_Modules"
-                    WHERE concept_id = ${concept_id}
-                    AND module_name = ${module_name}
-                    AND module_id != ${module_id};
-                  `;
-
-              if (existingModule.length > 0) {
-                response.statusCode = 400;
-                response.body = JSON.stringify({
-                  error:
-                    "A module with this name already exists under the same concept.",
-                });
-                break;
+        case "PUT /instructor/edit_patient":
+          if (
+              event.queryStringParameters != null &&
+              event.queryStringParameters.patient_id &&
+              event.queryStringParameters.instructor_email
+          ) {
+              const { patient_id, instructor_email } = event.queryStringParameters;
+              const { patient_name } = JSON.parse(event.body || "{}");
+      
+              if (patient_name) {
+                  try {
+                      // Check if another patient with the same name already exists under the same simulation group
+                      const existingPatient = await sqlConnection`
+                          SELECT * FROM "patients"
+                          WHERE patient_name = ${patient_name}
+                          AND patient_id != ${patient_id};
+                      `;
+      
+                      if (existingPatient.length > 0) {
+                          response.statusCode = 400;
+                          response.body = JSON.stringify({
+                              error: "A patient with this name already exists.",
+                          });
+                          break;
+                      }
+      
+                      // Update the patient in the patients table
+                      await sqlConnection`
+                          UPDATE "patients"
+                          SET patient_name = ${patient_name}
+                          WHERE patient_id = ${patient_id};
+                      `;
+      
+                      // Insert into User Engagement Log
+                      await sqlConnection`
+                          INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
+                          VALUES (
+                              uuid_generate_v4(), 
+                              (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
+                              (SELECT simulation_group_id FROM "patients" WHERE patient_id = ${patient_id}),
+                              ${patient_id}, 
+                              NULL, 
+                              CURRENT_TIMESTAMP, 
+                              'instructor_edited_patient'
+                          );
+                      `;
+      
+                      response.statusCode = 200;
+                      response.body = JSON.stringify({
+                          message: "Patient updated successfully",
+                      });
+                  } catch (err) {
+                      response.statusCode = 500;
+                      console.error(err);
+                      response.body = JSON.stringify({
+                          error: "Internal server error",
+                      });
+                  }
+              } else {
+                  response.statusCode = 400;
+                  response.body = JSON.stringify({
+                      error: "patient_name is required in the body",
+                  });
               }
-
-              // Update the module in the Course_Modules table
-              await sqlConnection`
-                    UPDATE "Course_Modules"
-                    SET module_name = ${module_name}, concept_id = ${concept_id}
-                    WHERE module_id = ${module_id};
-                  `;
-
-              // Insert into User Engagement Log
-              await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), (SELECT user_id FROM "Users" WHERE user_email = ${instructor_email}), NULL, ${module_id}, NULL, CURRENT_TIMESTAMP, 'instructor_edited_module');
-                  `;
-
-              response.statusCode = 200;
-              response.body = JSON.stringify({
-                message: "Module updated successfully",
-              });
-            } catch (err) {
-              response.statusCode = 500;
-              console.error(err);
-              response.body = JSON.stringify({
-                error: "Internal server error",
-              });
-            }
           } else {
-            response.statusCode = 400;
-            response.body = JSON.stringify({
-              error: "module_name is required in the body",
-            });
+              response.statusCode = 400;
+              response.body = JSON.stringify({
+                  error: "patient_id or instructor_email is missing in query string parameters",
+              });
           }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error:
-              "module_id, instructor_email, or concept_id is missing in query string parameters",
-          });
-        }
-        break;
+          break;
       case "PUT /instructor/prompt":
         if (
           event.queryStringParameters != null &&
@@ -711,34 +714,34 @@ exports.handler = async (event) => {
               response.body = JSON.stringify({ error: "simulation_group_id is required" });
           }
           break;
-      case "DELETE /instructor/delete_module":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.module_id
-        ) {
-          const moduleId = event.queryStringParameters.module_id;
-
-          try {
-            // Delete the module from the Course_Modules table
-            await sqlConnection`
-                DELETE FROM "Course_Modules"
-                WHERE module_id = ${moduleId};
-              `;
-
-            response.statusCode = 200;
-            response.body = JSON.stringify({
-              message: "Module deleted successfully",
-            });
-          } catch (err) {
-            response.statusCode = 500;
-            console.error(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
-          }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({ error: "module_id is required" });
-        }
-        break;
+          case "DELETE /instructor/delete_patient":
+            if (
+                event.queryStringParameters != null &&
+                event.queryStringParameters.patient_id
+            ) {
+                const patientId = event.queryStringParameters.patient_id;
+        
+                try {
+                    // Delete the patient from the patients table
+                    await sqlConnection`
+                        DELETE FROM "patients"
+                        WHERE patient_id = ${patientId};
+                    `;
+        
+                    response.statusCode = 200;
+                    response.body = JSON.stringify({
+                        message: "Patient deleted successfully",
+                    });
+                } catch (err) {
+                    response.statusCode = 500;
+                    console.error(err);
+                    response.body = JSON.stringify({ error: "Internal server error" });
+                }
+            } else {
+                response.statusCode = 400;
+                response.body = JSON.stringify({ error: "patient_id is required" });
+            }
+            break;
       case "GET /instructor/get_prompt":
         if (
           event.queryStringParameters != null &&
