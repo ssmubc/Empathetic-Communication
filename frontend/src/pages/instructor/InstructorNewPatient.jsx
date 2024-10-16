@@ -39,6 +39,8 @@ export const InstructorNewPatient = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [patientName, setPatientName] = useState("");
+  const [patientAge, setPatientAge] = useState(""); // Added state for patient age
+  const [patientGender, setPatientGender] = useState(""); // Added state for patient gender
   const location = useLocation();
   const { data, simulation_group_id } = location.state || {};
   const [nextPatientNumber, setNextPatientNumber] = useState(data.length + 1);
@@ -128,7 +130,7 @@ export const InstructorNewPatient = () => {
 
     try {
       const session = await fetchAuthSession();
-      const token = session.tokens.idToken
+      const token = session.tokens.idToken;
       const { email } = await fetchUserAttributes();
       const response = await fetch(
         `${
@@ -139,6 +141,10 @@ export const InstructorNewPatient = () => {
           patientName
         )}&patient_number=${encodeURIComponent(
           nextPatientNumber
+        )}&patient_age=${encodeURIComponent(
+          patientAge
+        )}&patient_gender=${encodeURIComponent(
+          patientGender
         )}&instructor_email=${encodeURIComponent(email)}`,
         {
           method: "POST",
@@ -207,6 +213,26 @@ export const InstructorNewPatient = () => {
           margin="normal"
           inputProps={{ maxLength: 50 }}
         />
+
+        <TextField
+          label="Patient Age"
+          value={patientAge}
+          onChange={(e) => setPatientAge(e.target.value)}
+          fullWidth
+          margin="normal"
+        />
+
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Gender</InputLabel>
+          <Select
+            value={patientGender}
+            onChange={(e) => setPatientGender(e.target.value)}
+          >
+            <MenuItem value="Male">Male</MenuItem>
+            <MenuItem value="Female">Female</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </Select>
+        </FormControl>
 
         <FileManagement
           newFiles={newFiles}

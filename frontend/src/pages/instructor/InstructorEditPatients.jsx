@@ -52,6 +52,8 @@ const InstructorEditPatients = () => {
   const [patient, setPatient] = useState(null);
   const { patientData, simulation_group_id } = location.state || {};
   const [patientName, setPatientName] = useState("");
+  const [patientAge, setPatientAge] = useState(""); // Added state for patient age
+  const [patientGender, setPatientGender] = useState(""); // Added state for patient gender
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleBackClick = () => {
@@ -127,6 +129,8 @@ const InstructorEditPatients = () => {
     if (patientData) {
       setPatient(patientData);
       setPatientName(patientData.patient_name);
+      setPatientAge(patientData.patient_age); // Set initial age
+      setPatientGender(patientData.patient_gender); // Set initial gender
     }
   }, [patientData]);
 
@@ -240,6 +244,8 @@ const InstructorEditPatients = () => {
         },
         body: JSON.stringify({
           patient_name: patientName,
+          patient_age: patientAge, // Include age in request
+          patient_gender: patientGender, // Include gender in request
         }),
       }
     );
@@ -453,6 +459,27 @@ const InstructorEditPatients = () => {
           margin="normal"
           inputProps={{ maxLength: 50 }}
         />
+        
+        <TextField
+          label="Patient Age"
+          name="age"
+          value={patientAge}
+          onChange={(e) => setPatientAge(e.target.value)}
+          fullWidth
+          margin="normal"
+        />
+        
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Gender</InputLabel>
+          <Select
+            value={patientGender}
+            onChange={(e) => setPatientGender(e.target.value)}
+          >
+            <MenuItem value="Male">Male</MenuItem>
+            <MenuItem value="Female">Female</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </Select>
+        </FormControl>
 
         <FileManagement
           newFiles={newFiles}

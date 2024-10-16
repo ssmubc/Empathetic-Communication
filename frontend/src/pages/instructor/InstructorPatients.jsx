@@ -10,40 +10,51 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function groupTitleCase(str) {
-  if (typeof str !== 'string') {
+  if (typeof str !== "string") {
     return str;
   }
-  const words = str.split(' ');
-  return words.map((word, index) => {
-    if (index === 0) {
-      return word.toUpperCase(); // First word entirely in uppercase
-    } else {
-      return word.charAt(0).toUpperCase() + word.slice(1); // Only capitalize first letter, keep the rest unchanged
-    }
-  }).join(' ');
+  const words = str.split(" ");
+  return words
+    .map((word, index) => {
+      if (index === 0) {
+        return word.toUpperCase(); // First word entirely in uppercase
+      } else {
+        return word.charAt(0).toUpperCase() + word.slice(1); // Only capitalize first letter, keep the rest unchanged
+      }
+    })
+    .join(" ");
 }
-
 
 function titleCase(str) {
-  if (typeof str !== 'string') {
+  if (typeof str !== "string") {
     return str;
   }
-  return str.split(' ').map(function(word) {
-    return word.charAt(0).toUpperCase() + word.slice(1); // Capitalize only the first letter, leave the rest of the word unchanged
-  }).join(' ');
+  return str
+    .split(" ")
+    .map(function (word) {
+      return word.charAt(0).toUpperCase() + word.slice(1); // Capitalize only the first letter, leave the rest of the word unchanged
+    })
+    .join(" ");
 }
-
-
 
 const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
+
   const columns = useMemo(
     () => [
       {
         accessorKey: "patient_name",
         header: "Patient Name",
-        Cell: ({ cell }) => titleCase(cell.getValue())
+        Cell: ({ cell }) => titleCase(cell.getValue()),
+      },
+      {
+        accessorKey: "patient_age",
+        header: "Age",
+      },
+      {
+        accessorKey: "patient_gender",
+        header: "Gender",
       },
       {
         accessorKey: "actions",
@@ -52,7 +63,6 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
           <Button
             variant="contained"
             color="primary"
-            text
             onClick={() => handleEditClick(row.original)}
           >
             Edit
@@ -89,11 +99,13 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     const fetchPatients = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken
+        var token = session.tokens.idToken;
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_patients?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
+          }instructor/view_patients?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+          )}`,
           {
             method: "GET",
             headers: {
@@ -127,16 +139,15 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
       state: { data, simulation_group_id },
     });
   };
+
   const handleSaveChanges = async () => {
     try {
       const session = await fetchAuthSession();
-      const token = session.tokens.idToken
+      const token = session.tokens.idToken;
       const { email } = await fetchUserAttributes();
 
-      // Create an array of promises for updating patients
       const updatePromises = data.map((patient, index) => {
         const patientNumber = index + 1;
-
         return fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
@@ -173,14 +184,13 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
             });
             return { success: false };
           } else {
-            return response.json().then((updatedPatient) => {
+            return response.json().then(() => {
               return { success: true };
             });
           }
         });
       });
 
-      // Wait for all promises to complete
       const updateResults = await Promise.all(updatePromises);
       const allUpdatesSuccessful = updateResults.every(
         (result) => result.success
@@ -220,7 +230,6 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
         draggable: true,
         progress: undefined,
         theme: "colored",
-        transition: "Bounce",
       });
     }
   };

@@ -87,8 +87,6 @@ const StudentHeader = () => {
           >
             Instructor view
           </button>
-                      // primary: createColor("#36bd78"),
-                      // bg: createColor("#F8F9FD"),
         )}
         <button
           className="bg-gray-800 text-white hover:bg-gray-700 px-4 py-2 rounded"
