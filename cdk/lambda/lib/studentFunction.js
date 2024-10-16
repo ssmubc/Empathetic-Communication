@@ -301,105 +301,107 @@ exports.handler = async (event) => {
           response.body = "Invalid value";
         }
         break;
-      case "GET /student/module":
+      case "GET /student/patient":
         if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.email &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.module_id
+            event.queryStringParameters != null &&
+            event.queryStringParameters.email &&
+            event.queryStringParameters.simulation_group_id &&
+            event.queryStringParameters.patient_id
         ) {
-          const moduleId = event.queryStringParameters.module_id;
-          const studentEmail = event.queryStringParameters.email;
-          const courseId = event.queryStringParameters.course_id;
-
-          try {
-            // Step 1: Get the user ID using the student_email
-            const userResult = await sqlConnection`
-                  SELECT user_id
-                  FROM "Users"
-                  WHERE user_email = ${studentEmail}
-                  LIMIT 1;
-              `;
-
-            if (userResult.length === 0) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({
-                error: "Student not found.",
-              });
-              break;
-            }
-
-            const userId = userResult[0].user_id;
-
-            // Step 2: Get the student_module_id for the specific student and module
-            const studentModuleData = await sqlConnection`
-                  SELECT student_module_id
-                  FROM "Student_Modules"
-                  WHERE course_module_id = ${moduleId}
+            const patientId = event.queryStringParameters.patient_id;
+            const studentEmail = event.queryStringParameters.email;
+            const simulationGroupId = event.queryStringParameters.simulation_group_id;
+    
+            try {
+                // Step 1: Get the user ID using the student_email
+                const userResult = await sqlConnection`
+                    SELECT user_id
+                    FROM "users"
+                    WHERE user_email = ${studentEmail}
+                    LIMIT 1;
+                `;
+    
+                if (userResult.length === 0) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({
+                        error: "Student not found.",
+                    });
+                    break;
+                }
+    
+                const userId = userResult[0].user_id;
+    
+                // Step 2: Get the student_patient_id for the specific student and patient
+                const studentPatientData = await sqlConnection`
+                    SELECT student_patient_id
+                    FROM "student_patients"
+                    WHERE patient_id = ${patientId}
                     AND enrolment_id = (
-                      SELECT enrolment_id
-                      FROM "Enrolments"
-                      WHERE user_id = ${userId} AND course_id = ${courseId}
+                        SELECT enrolment_id
+                        FROM "enrolments"
+                        WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId}
                     )
-              `;
-
-            const studentModuleId = studentModuleData[0]?.student_module_id;
-
-            if (!studentModuleId) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({
-                error: "Student module not found",
-              });
-              break;
+                `;
+    
+                const studentPatientId = studentPatientData[0]?.student_patient_id;
+    
+                if (!studentPatientId) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({
+                        error: "Student patient not found",
+                    });
+                    break;
+                }
+    
+                // Step 3: Update the last accessed timestamp for the Student_Patients entry
+                await sqlConnection`
+                    UPDATE "student_patients"
+                    SET last_accessed = CURRENT_TIMESTAMP
+                    WHERE student_patient_id = ${studentPatientId};
+                `;
+    
+                // Step 4: Retrieve session data specific to the student's patient
+                const data = await sqlConnection`
+                    SELECT "sessions".*
+                    FROM "sessions"
+                    WHERE student_patient_id = ${studentPatientId}
+                    ORDER BY "sessions".last_accessed, "sessions".session_id;
+                `;
+    
+                // Step 5: Get enrolment ID for the log entry
+                const enrolmentData = await sqlConnection`
+                    SELECT enrolment_id
+                    FROM "enrolments"
+                    WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId};
+                `;
+    
+                const enrolmentId = enrolmentData[0]?.enrolment_id;
+    
+                // Step 6: Insert into User_Engagement_Log using user_id
+                await sqlConnection`
+                    INSERT INTO "user_engagement_log" (
+                        log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                    )
+                    VALUES (
+                        uuid_generate_v4(),
+                        ${userId},
+                        ${simulationGroupId},
+                        ${patientId},
+                        ${enrolmentId},
+                        CURRENT_TIMESTAMP,
+                        'patient access'
+                    );
+                `;
+    
+                response.body = JSON.stringify(data);
+            } catch (err) {
+                console.error(err);
+                response.statusCode = 500;
+                response.body = JSON.stringify({ error: "Internal server error" });
             }
-
-            // Step 3: Update the last accessed timestamp for the Student_Modules entry
-            await sqlConnection`
-                  UPDATE "Student_Modules"
-                  SET last_accessed = CURRENT_TIMESTAMP
-                  WHERE student_module_id = ${studentModuleId};
-              `;
-
-            // Step 4: Retrieve session data specific to the student's module
-            const data = await sqlConnection`
-                  SELECT "Sessions".*
-                  FROM "Sessions"
-                  WHERE student_module_id = ${studentModuleId}
-                  ORDER BY "Sessions".last_accessed, "Sessions".session_id;
-              `;
-
-            // Step 5: Get enrolment ID for the log entry
-            const enrolmentData = await sqlConnection`
-                  SELECT "Enrolments".enrolment_id
-                  FROM "Enrolments"
-                  WHERE user_id = ${userId} AND course_id = ${courseId};
-              `;
-
-            const enrolmentId = enrolmentData[0]?.enrolment_id;
-
-            // Step 6: Insert into User_Engagement_Log using user_id
-            await sqlConnection`
-                  INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                  VALUES (
-                    uuid_generate_v4(),
-                    ${userId},
-                    ${courseId},
-                    ${moduleId},
-                    ${enrolmentId},
-                    CURRENT_TIMESTAMP,
-                    'module access'
-                  )
-              `;
-
-            response.body = JSON.stringify(data);
-          } catch (err) {
-            console.error(err);
-            response.statusCode = 500;
-            response.body = JSON.stringify({ error: "Internal server error" });
-          }
         } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({ error: "Invalid value" });
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "Invalid value" });
         }
         break;
       case "POST /student/create_session":

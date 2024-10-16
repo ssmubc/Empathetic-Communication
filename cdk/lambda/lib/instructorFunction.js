@@ -964,7 +964,7 @@ exports.handler = async (event) => {
             // Query to get all previous prompts for the given simulation group and instructor
             const previousPrompts = await sqlConnection`
               SELECT timestamp, engagement_details AS previous_prompt
-              FROM "user_Engagement_Log"
+              FROM "user_engagement_log"
               WHERE simulation_group_id = ${simulation_group_id}
                 AND engagement_type = 'instructor_updated_prompt'
               ORDER BY timestamp DESC;

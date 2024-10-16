@@ -37,7 +37,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-const StudentChat = ({ course, module, setModule, setCourse }) => {
+const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [sessions, setSessions] = useState([]);
@@ -79,9 +79,9 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
   }, [session, newMessage, currentSessionId]);
 
   useEffect(() => {
-    const fetchModule = async () => {
+    const fetchPatient = async () => {
       setLoading(true);
-      if (!course || !module) {
+      if (!group || !patient) {
         return;
       }
 
@@ -92,11 +92,11 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }student/module?email=${encodeURIComponent(
+          }student/patient?email=${encodeURIComponent(
             email
-          )}&course_id=${encodeURIComponent(
-            course.course_id
-          )}&module_id=${encodeURIComponent(module.module_id)}`,
+          )}&simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
+          )}&patient_id=${encodeURIComponent(patient.patient_id)}`,
           {
             method: "GET",
             headers: {
@@ -110,17 +110,17 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
           setSessions(data);
           setSession(data[data.length - 1]);
         } else {
-          console.error("Failed to fetch module:", response.statusText);
+          console.error("Failed to fetch patient:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching module:", error);
+        console.error("Error fetching patient:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchModule();
-  }, [course, module]);
+    fetchPatient();
+  }, [group, patient]);
 
   const getMostRecentStudentMessageIndex = () => {
     const studentMessages = messages
@@ -148,9 +148,9 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
             import.meta.env.VITE_API_ENDPOINT
           }student/create_ai_message?session_id=${encodeURIComponent(
             sessionId
-          )}&email=${encodeURIComponent(email)}&course_id=${encodeURIComponent(
-            course.course_id
-          )}&module_id=${encodeURIComponent(module.module_id)}`,
+          )}&email=${encodeURIComponent(email)}&simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
+          )}&patient_id=${encodeURIComponent(patient.patient_id)}`,
           {
             method: "POST",
             headers: {
@@ -220,9 +220,9 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
           newSession.session_id
         )}&email=${encodeURIComponent(
           userEmail
-        )}&course_id=${encodeURIComponent(
-          course.course_id
-        )}&module_id=${encodeURIComponent(module.module_id)}`;
+        )}&simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
+        )}&patient_id=${encodeURIComponent(patient.patient_id)}`;
 
         return fetch(messageUrl, {
           method: "POST",
@@ -250,12 +250,12 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
 
         const textGenUrl = `${
           import.meta.env.VITE_API_ENDPOINT
-        }student/text_generation?course_id=${encodeURIComponent(
-          course.course_id
+        }student/text_generation?simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
         )}&session_id=${encodeURIComponent(
           newSession.session_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
         )}&session_name=${encodeURIComponent(newSession.session_name)}`;
 
         return fetch(textGenUrl, {
@@ -296,14 +296,14 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
           );
         });
 
-        const updateModuleScore = `${
+        const updatePatientScore = `${
           import.meta.env.VITE_API_ENDPOINT
-        }student/update_module_score?module_id=${encodeURIComponent(
-          module.module_id
+        }student/update_patient_score?patient_id=${encodeURIComponent(
+          patient.patient_id
         )}&student_email=${encodeURIComponent(
           userEmail
-        )}&course_id=${encodeURIComponent(
-          course.course_id
+        )}&simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
         )}&llm_verdict=${encodeURIComponent(textGenData.llm_verdict)}`;
 
         return Promise.all([
@@ -317,7 +317,7 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
               session_name: textGenData.session_name,
             }),
           }),
-          fetch(updateModuleScore, {
+          fetch(updatePatientScore, {
             method: "POST",
             headers: {
               Authorization: authToken,
@@ -356,7 +356,7 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
   };
 
   const handleBack = () => {
-    sessionStorage.removeItem("module");
+    sessionStorage.removeItem("patient");
     navigate(-1);
   };
 
@@ -377,10 +377,10 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
           import.meta.env.VITE_API_ENDPOINT
         }student/create_session?email=${encodeURIComponent(
           userEmail
-        )}&course_id=${encodeURIComponent(
-          course.course_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
+        )}&simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
         )}&session_name=${encodeURIComponent(session_name)}`;
 
         return fetch(url, {
@@ -406,12 +406,12 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
 
         const textGenUrl = `${
           import.meta.env.VITE_API_ENDPOINT
-        }student/text_generation?course_id=${encodeURIComponent(
-          course.course_id
+        }student/text_generation?simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
         )}&session_id=${encodeURIComponent(
           sessionData.session_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
         )}&session_name=${encodeURIComponent("New chat")}`;
 
         return fetch(textGenUrl, {
@@ -457,10 +457,10 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
           import.meta.env.VITE_API_ENDPOINT
         }student/delete_session?email=${encodeURIComponent(
           email
-        )}&course_id=${encodeURIComponent(
-          course.course_id
-        )}&module_id=${encodeURIComponent(
-          module.module_id
+        )}&simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
         )}&session_id=${encodeURIComponent(sessionDelete.session_id)}`,
         {
           method: "DELETE",
@@ -560,18 +560,18 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
     };
   }, [textareaRef.currrent, handleKeyDown]);
   useEffect(() => {
-    const storedModule = sessionStorage.getItem("module");
-    if (storedModule) {
-      setModule(JSON.parse(storedModule));
+    const storedPatient = sessionStorage.getItem("patient");
+    if (storedPatient) {
+      setPatient(JSON.parse(storedPatient));
     }
-  }, [setModule]);
+  }, [setPatient]);
 
   useEffect(() => {
-    const storedCourse = sessionStorage.getItem("course");
-    if (storedCourse) {
-      setCourse(JSON.parse(storedCourse));
+    const storedGroup = sessionStorage.getItem("group");
+    if (storedGroup) {
+      setGroup(JSON.parse(storedGroup));
     }
-  }, [setCourse]);
+  }, [setGroup]);
 
   const getMessages = async () => {
     try {
@@ -610,7 +610,7 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
     }
   }, [session]);
 
-  if (!module) {
+  if (!patient) {
     return <div>Loading...</div>;
   }
 
@@ -625,7 +625,7 @@ const StudentChat = ({ course, module, setModule, setCourse }) => {
             alt="back"
           />
           <div className="ml-3 pt-0.5 text-black font-roboto font-bold text-lg">
-            {titleCase(module.module_name)}
+            {titleCase(patient.patient_name)}
           </div>
         </div>
         <button
