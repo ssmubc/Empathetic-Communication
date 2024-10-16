@@ -2,6 +2,7 @@ import { useEffect, useState, useContext } from "react";
 import StudentHeader from "../../components/StudentHeader";
 import Container from "../Container";
 import { fetchAuthSession } from "aws-amplify/auth";
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -17,7 +18,9 @@ import {
   Button,
   Typography,
   Box,
+  Grid,
   Stack,
+  Skeleton,
   Dialog,
   DialogActions,
   DialogContent,
@@ -29,7 +32,7 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../App";
-
+// MUI theming
 const { palette } = createTheme();
 const { augmentColor } = palette;
 const createColor = (mainColor) => augmentColor({ color: { main: mainColor } });
@@ -55,10 +58,12 @@ function titleCase(str) {
 
 export const StudentHomepage = ({ setGroup }) => {
   const navigate = useNavigate();
+
   const [groups, setGroups] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { isInstructorAsStudent, setIsInstructorAsStudent } = useContext(UserContext);
+  const { isInstructorAsStudent, setIsInstructorAsStudent } =
+    useContext(UserContext);
 
   useEffect(() => {
     if (!loading && groups.length === 0) {
@@ -78,7 +83,7 @@ export const StudentHomepage = ({ setGroup }) => {
       const session = await fetchAuthSession();
       const { email } = await fetchUserAttributes();
 
-      const token = session.tokens.idToken;
+      var token = session.tokens.idToken
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
@@ -93,8 +98,8 @@ export const StudentHomepage = ({ setGroup }) => {
           },
         }
       );
-
       if (response.ok) {
+        const data = await response.json();
         toast.success("Successfully Joined Group!", {
           position: "top-center",
           autoClose: 1000,
@@ -102,11 +107,13 @@ export const StudentHomepage = ({ setGroup }) => {
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
+          progress: undefined,
           theme: "colored",
         });
         fetchGroups();
         handleClose();
       } else {
+        console.error("Failed to fetch groups:", response.statusText);
         toast.error("Failed to Join Group", {
           position: "top-center",
           autoClose: 1000,
@@ -114,10 +121,12 @@ export const StudentHomepage = ({ setGroup }) => {
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
+          progress: undefined,
           theme: "colored",
         });
       }
     } catch (error) {
+      console.error("Error fetching groups:", error);
       toast.error("Failed to Join Group", {
         position: "top-center",
         autoClose: 1000,
@@ -125,20 +134,26 @@ export const StudentHomepage = ({ setGroup }) => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
+        progress: undefined,
         theme: "colored",
       });
     }
   };
 
-  const handleClickOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
 
   const fetchGroups = async () => {
     try {
       const session = await fetchAuthSession();
       const { email } = await fetchUserAttributes();
 
-      const token = session.tokens.idToken;
+      var token = session.tokens.idToken
       let response;
       if (isInstructorAsStudent) {
         response = await fetch(
@@ -167,11 +182,12 @@ export const StudentHomepage = ({ setGroup }) => {
           }
         );
       }
-
       if (response.ok) {
         const data = await response.json();
         setGroups(data);
         setLoading(false);
+      } else {
+        console.error("Failed to fetch group:", response.statusText);
       }
     } catch (error) {
       console.error("Error fetching group:", error);
@@ -195,6 +211,7 @@ export const StudentHomepage = ({ setGroup }) => {
           justifyContent: "flex-start",
           alignItems: "stretch",
           width: "100%",
+          maxWidth: "100%",
           pb: 0,
         }}
       >
@@ -202,7 +219,7 @@ export const StudentHomepage = ({ setGroup }) => {
           sx={{
             flex: 1,
             width: "100%",
-            padding: 2,
+            maxWidth: "100%",
           }}
         >
           <Box
@@ -210,8 +227,9 @@ export const StudentHomepage = ({ setGroup }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              width: "100%",
-              padding: 2,
+              width: "calc(100% - 240px)",
+              paddingLeft: 4,
+              paddingRight: 5,
             }}
           >
             <Typography
@@ -220,6 +238,9 @@ export const StudentHomepage = ({ setGroup }) => {
               color="black"
               sx={{
                 fontWeight: "500",
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
                 fontSize: "1.5rem",
               }}
               textAlign="left"
@@ -229,9 +250,13 @@ export const StudentHomepage = ({ setGroup }) => {
             <Button
               variant="outlined"
               sx={{
+                alignSelf: "flex-end",
                 borderColor: "black",
                 color: "black",
                 borderWidth: "1px",
+                marginLeft: "auto",
+                marginRight: 1,
+                marginBottom: "15px",
                 "&:hover": {
                   bgcolor: "white",
                   borderColor: "black",
@@ -252,10 +277,16 @@ export const StudentHomepage = ({ setGroup }) => {
                 width: "100%",
               }}
             >     
-              <l-cardio size="50" stroke="4" speed="2" color="Black"></l-cardio>
+              <l-cardio
+                size="50" // pulse for loading animation  
+                stroke="4"
+                speed="2" 
+                color="Black" 
+              ></l-cardio>
             </Box>
           ) : (
             <Box
+              paddingLeft={3}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -265,7 +296,6 @@ export const StudentHomepage = ({ setGroup }) => {
                 height: "calc(90vh - 100px)",
                 overflowY: "auto",
                 overflowX: "hidden",
-                padding: 2,
               }}
             >
               {groups.length === 0 ? (
@@ -285,36 +315,64 @@ export const StudentHomepage = ({ setGroup }) => {
                   <Card
                     key={index}
                     sx={{
-                      mb: 2,
-                      width: "100%",
-                      background: "#99DFB2",
+                      mb: 1,
+                      width: "calc(100% - 285px)",
+                      maxWidth: "calc(100% - 255px)",
+                      minWidth: "calc(100% - 285px)",
+                      minHeight: "120px",
+                      bgcolor: "transparent",
+                      background: "#99DFB2", 
                     }}
                   >
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        component="div"
-                        sx={{
-                          fontWeight: "600",
-                          fontSize: "1.25rem",
-                          textAlign: "left",
-                        }}
-                      >
-                        {titleCase(group.group_name)}
-                      </Typography>
+                    <CardContent sx={{ height: "50%" }}>
+                      <Grid container alignItems="center">
+                        <Grid item xs={8}>
+                          <Typography
+                            variant="h6"
+                            component="div"
+                            sx={{
+                              textAlign: "left",
+                              fontWeight: "600",
+                              fontSize: "1.25rem",
+                            }}
+                          >
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ textAlign: "left", mt: 1, fontSize: "1rem" }}
+                          >
+                            {titleCase(group.group_name)}
+                          </Typography>
+                        </Grid>
+                        <Grid
+                          item
+                          xs={4}
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-end",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          {/* Empty grid item to push the button to the bottom right */}
+                        </Grid>
+                      </Grid>
                     </CardContent>
                     <CardActions
                       sx={{
                         display: "flex",
                         justifyContent: "flex-end",
                         p: 1,
+                        pr: 2,
+                        height: "50%",
                       }}
                     >
                       <Button
                         size="small"
                         sx={{
                           bgcolor: "#A8A3A3",
+                          p: 1,
                           color: "black",
+                          fontWeight: "dark",
                           ":hover": { bgcolor: "grey" },
                         }}
                         onClick={() => enterGroup(group)}

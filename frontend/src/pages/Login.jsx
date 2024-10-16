@@ -484,7 +484,8 @@ export const Login = () => {
                   fontWeight: 'bold',
                   fontSize: '2rem', // Increase the font size for a bolder look
                   lineHeight: '1.5', // Adjust line height for better spacing
-                  marginTop: '10px', // Add space between the image and the text
+                  marginTop: '15px', // Add space between the image and the text
+                  marginLeft: '-15px', // Add space between the image and the text
                 }}  
               >
                 Welcome to
