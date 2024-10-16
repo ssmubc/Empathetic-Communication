@@ -212,7 +212,7 @@ const PromptSettings = ({ courseName, course_id }) => {
           </Typography>
           <Typography variant="h8">
             Changes to the prompt will be applied to the LLM for this specific
-            course.
+            simulation group.
           </Typography>
           <Typography variant="h6">
             <br />
