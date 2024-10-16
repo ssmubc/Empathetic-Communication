@@ -38,7 +38,7 @@ const { augmentColor } = palette;
 const createColor = (mainColor) => augmentColor({ color: { main: mainColor } });
 const theme = createTheme({
   palette: {
-    primary: createColor("#5536DA"),
+    primary: createColor("#4de698"),
     bg: createColor("#F8F9FD"),
   },
 });
@@ -100,7 +100,7 @@ export const StudentHomepage = ({ setGroup }) => {
       );
       if (response.ok) {
         const data = await response.json();
-        toast.success("🦄 Successfully Joined Group!", {
+        toast.success("Successfully Joined Group!", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -321,7 +321,7 @@ export const StudentHomepage = ({ setGroup }) => {
                       minWidth: "calc(100% - 285px)",
                       minHeight: "120px",
                       bgcolor: "transparent",
-                      background: `linear-gradient(10deg, rgb(83.137% 92.157% 99.608%) 0%, rgb(83.213% 92.029% 99.612%) 6.25%, rgb(83.436% 91.649% 99.623%) 12.5%, rgb(83.798% 91.033% 99.641%) 18.75%, rgb(84.286% 90.204% 99.665%) 25%, rgb(84.88% 89.194% 99.695%) 31.25%, rgb(85.558% 88.041% 99.729%) 37.5%, rgb(86.294% 86.791% 99.766%) 43.75%, rgb(87.059% 85.49% 99.804%) 50%, rgb(87.824% 84.19% 99.842%) 56.25%, rgb(88.56% 82.939% 99.879%) 62.5%, rgb(89.238% 81.786% 99.913%) 68.75%, rgb(89.832% 80.776% 99.943%) 75%, rgb(90.319% 79.947% 99.967%) 81.25%, rgb(90.682% 79.331% 99.985%) 87.5%, rgb(90.905% 78.952% 99.996%) 93.75%, rgb(90.98% 78.824% 100%) 100%)`,
+                      background: "#99DFB2", 
                     }}
                   >
                     <CardContent sx={{ height: "50%" }}>
@@ -369,11 +369,11 @@ export const StudentHomepage = ({ setGroup }) => {
                       <Button
                         size="small"
                         sx={{
-                          bgcolor: "#5536DA",
+                          bgcolor: "#A8A3A3",
                           p: 1,
-                          color: "white",
-                          fontWeight: "light",
-                          ":hover": { bgcolor: "purple" },
+                          color: "black",
+                          fontWeight: "dark",
+                          ":hover": { bgcolor: "grey" },
                         }}
                         onClick={() => enterGroup(group)}
                       >
