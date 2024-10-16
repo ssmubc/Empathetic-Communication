@@ -459,7 +459,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /student/course:
+  /student/simulation_group:
     options:
       summary: CORS support
       description: |
@@ -487,8 +487,8 @@ paths:
     get:
       tags:
         - Student
-      summary: Get courses enrolled by a student
-      operationId: student_get_courses_GET
+      summary: Get groups enrolled by a student
+      operationId: student_simulation_group_GET
       parameters:
         - in: query
           name: email
@@ -515,7 +515,7 @@ paths:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
-  /student/course_page:
+  /student/simulation_group_page:
     options:
       summary: CORS support
       description: |
@@ -543,8 +543,8 @@ paths:
     get:
       tags:
         - Student
-      summary: Get course page details for a student
-      operationId: student_get_course_page_GET
+      summary: Get simulation group page details for a student
+      operationId: student_simulation_group_page_GET
       parameters:
         - in: query
           name: email
@@ -553,14 +553,14 @@ paths:
           schema:
             type: string
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
       responses:
         "200":
-          description: Course page details
+          description: Group page details
         "400":
           description: Invalid value
         "401":
@@ -1018,7 +1018,7 @@ paths:
     post:
       tags:
         - Student
-      summary: Enroll a student in a course
+      summary: Enroll a student in a group
       operationId: admin_enroll_student_POST
       parameters:
         - in: query
@@ -1028,11 +1028,11 @@ paths:
             type: string
           description: Email of the student to enroll
         - in: query
-          name: course_access_code
+          name: group_access_code
           required: true
           schema:
             type: string
-          description: Access code of the course
+          description: Access code of the group
       responses:
         "200":
           description: Student enrolled successfully

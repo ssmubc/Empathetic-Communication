@@ -54,38 +54,6 @@ const calculateColor = (score) => {
   return `rgb(${r}, ${g}, ${b})`;
 };
 
-// Function to get unique concept names and average scores
-function getUniqueConceptNames(data) {
-  const conceptMap = new Map();
-
-  // Iterate over the array and populate the Map with unique concept_id as keys and concept_name as values
-  data.forEach((item) => {
-    if (!conceptMap.has(item.concept_id)) {
-      // Calculate the average module score
-      const averageScore =
-        data
-          .filter((d) => d.concept_id === item.concept_id)
-          .reduce((acc, curr) => acc + (curr.module_score || 0), 0) /
-        data.filter((d) => d.concept_id === item.concept_id).length;
-
-      conceptMap.set(item.concept_id, {
-        concept_name: item.concept_name,
-        average_score: averageScore,
-      });
-    }
-  });
-
-  // Convert the Map to an array of objects
-  return Array.from(
-    conceptMap,
-    ([concept_id, { concept_name, average_score }]) => ({
-      concept_id,
-      concept_name,
-      average_score,
-    })
-  );
-}
-
 function titleCase(str) {
   if (typeof str !== "string") {
     return str;
@@ -98,25 +66,24 @@ function titleCase(str) {
     .join(" ");
 }
 
-export const CourseView = ({ course, setModule, setCourse }) => {
-  const [concepts, setConcepts] = useState([]);
+export const GroupView = ({ group, setPatient, setGroup }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
-  const enterModule = (module) => {
-    setModule(module);
-    sessionStorage.setItem("module", JSON.stringify(module));
+  const enterPatient = (patient) => {
+    setPatient(patient);
+    sessionStorage.setItem("patient", JSON.stringify(patient));
     navigate(`/student_chat`);
   };
 
   const handleBack = () => {
-    sessionStorage.removeItem("course");
+    sessionStorage.removeItem("group");
     navigate("/home");
   };
 
   useEffect(() => {
-    const fetchCoursePage = async () => {
+    const fetchGroupPage = async () => {
       try {
         const session = await fetchAuthSession();
         const { email } = await fetchUserAttributes();
@@ -125,9 +92,9 @@ export const CourseView = ({ course, setModule, setCourse }) => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }student/course_page?email=${encodeURIComponent(
+          }student/simulation_group_page?email=${encodeURIComponent(
             email
-          )}&course_id=${encodeURIComponent(course.course_id)}`,
+          )}&simulation_group_id=${encodeURIComponent(group.simulation_group_id)}`,
           {
             method: "GET",
             headers: {
@@ -139,7 +106,6 @@ export const CourseView = ({ course, setModule, setCourse }) => {
         if (response.ok) {
           const data = await response.json();
           setData(data);
-          setConcepts(getUniqueConceptNames(data));
           setLoading(false);
           console.log(data);
         } else {
@@ -149,16 +115,16 @@ export const CourseView = ({ course, setModule, setCourse }) => {
         console.error("Error fetching name:", error);
       }
     };
-    fetchCoursePage();
-  }, [course]);
+    fetchGroupPage();
+  }, [group]);
 
   useEffect(() => {
-    sessionStorage.removeItem("module");
-    const storedCourse = sessionStorage.getItem("course");
-    if (storedCourse) {
-      setCourse(JSON.parse(storedCourse));
+    sessionStorage.removeItem("patient");
+    const storedGroup = sessionStorage.getItem("group");
+    if (storedGroup) {
+      setGroup(JSON.parse(storedGroup));
     }
-  }, [setCourse]);
+  }, [setGroup]);
 
   if (loading) {
     return (
@@ -173,7 +139,7 @@ export const CourseView = ({ course, setModule, setCourse }) => {
     );
   }
 
-  if (!course) {
+  if (!group) {
     return <div>Loading...</div>;
   }
 
@@ -187,43 +153,16 @@ export const CourseView = ({ course, setModule, setCourse }) => {
             src="./ArrowCircleDownRounded.png"
             alt="back"
           />
-          {course.course_department.toUpperCase()} {course.course_number}
         </div>
       </header>
       <div className="flex flex-col">
         <div className="text-black text-start text-xl font-roboto font-semibold p-2 ml-4">
-          Learning Journey
-        </div>
-        <div className="p-2 ml-4 flex flex-row justify-center gap-x-20">
-          {concepts.map((concept, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <div
-                className="flex items-center justify-center w-8 h-8 text-white font-bold rounded-full mb-2"
-                style={{
-                  backgroundColor: calculateColor(concept.average_score),
-                }}
-              >
-                {concept.average_score === 100 ? (
-                  <span className="text-xl">
-                    <BiCheck />
-                  </span>
-                ) : (
-                  index + 1
-                )}
-              </div>
-              <div className="text-black text-start text-sm font-roboto">
-                {titleCase(concept.concept_name)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="text-black text-start text-xl font-roboto font-semibold p-2 ml-4">
-          Modules
+          Patients
         </div>
         <div className="flex justify-center items-center">
           {data.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
-              No concepts/modules to display
+              No patients to display
             </div>
           ) : (
             <TableContainer
@@ -238,49 +177,39 @@ export const CourseView = ({ course, setModule, setCourse }) => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontSize: "1.1rem" }}>Module</TableCell>
-                    <TableCell sx={{ fontSize: "1.1rem" }}>
-                      Concept
-                    </TableCell>{" "}
-                    <TableCell sx={{ fontSize: "1.1rem" }}>
-                      Completion
-                    </TableCell>
+                    <TableCell sx={{ fontSize: "1.1rem" }}>Patient</TableCell>
+                    <TableCell sx={{ fontSize: "1.1rem" }}>Completion</TableCell>
                     <TableCell sx={{ fontSize: "1.1rem" }}>Review</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {data.map((entry, index) => (
-                    <TableRow key={entry.module_id + index}>
+                    <TableRow key={entry.patient_id + index}>
                       <TableCell sx={{ fontSize: "1rem" }}>
                         <div className="flex flex-row gap-1 items-center">
                           <FaInfoCircle className="text-xs" />
                           <span className="text-base">
-                            {titleCase(entry.module_name)}
+                            {titleCase(entry.patient_name)}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
-                        {titleCase(entry.concept_name)}{" "}
-                      </TableCell>
-                      {entry.module_score === 100 ? (
-                        <TableCell sx={{ fontSize: "1rem" }}>
+                        {entry.patient_score === 100 ? (
                           <span
                             className="bg-[#2E7D32] text-white text-light rounded px-2 py-2"
                             style={{ display: "inline-block" }}
                           >
                             Complete
                           </span>
-                        </TableCell>
-                      ) : (
-                        <TableCell sx={{ fontSize: "1rem" }}>
-                          Incomplete
-                        </TableCell>
-                      )}
+                        ) : (
+                          "Incomplete"
+                        )}
+                      </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() => enterModule(entry)}
+                          onClick={() => enterPatient(entry)}
                           sx={{ textTransform: "none", fontSize: "0.9rem" }}
                         >
                           Review
@@ -298,4 +227,4 @@ export const CourseView = ({ course, setModule, setCourse }) => {
   );
 };
 
-export default CourseView;
+export default GroupView;
