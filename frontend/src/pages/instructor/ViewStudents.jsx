@@ -1,7 +1,6 @@
 import {
   Typography,
   Box,
-  AppBar,
   Toolbar,
   Table,
   TableBody,
@@ -14,13 +13,12 @@ import {
   Button,
   TableFooter,
   TablePagination,
-  OutlinedInput,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAuthSession } from "aws-amplify/auth";
 
-// populate with dummy data
+// Helper function to create data and format text
 const createData = (name, email) => {
   return { name, email };
 };
@@ -32,25 +30,7 @@ function titleCase(str) {
   return str
     .toLowerCase()
     .split(" ")
-    .map(function (word) {
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .join(" ");
-}
-
-function courseTitleCase(str) {
-  if (typeof str !== "string") {
-    return str;
-  }
-  const words = str.split(" ");
-  return words
-    .map((word, index) => {
-      if (index === 0) {
-        return word.toUpperCase();
-      } else {
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-      }
-    })
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -63,18 +43,16 @@ export const ViewStudents = ({ courseName, course_id }) => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [loading, setLoading] = useState(false);
   const [accessCode, setAccessCode] = useState("loading...");
-
   const navigate = useNavigate();
 
+  // Fetch access code and student data
   useEffect(() => {
     const fetchCode = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken
+        const token = session.tokens.idToken;
         const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/get_access_code?course_id=${encodeURIComponent(
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_access_code?course_id=${encodeURIComponent(
             course_id
           )}`,
           {
@@ -88,26 +66,23 @@ export const ViewStudents = ({ courseName, course_id }) => {
         if (response.ok) {
           const codeData = await response.json();
           setAccessCode(codeData.course_access_code);
-        } else {
-          console.error("Failed to fetch courses:", response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error fetching access code:", error);
       }
     };
-
     fetchCode();
   }, [course_id]);
-  // retrieve analytics data
+
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken
+        const token = session.tokens.idToken;
         const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_students?course_id=${encodeURIComponent(course_id)}`,
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/view_students?course_id=${encodeURIComponent(
+            course_id
+          )}`,
           {
             method: "GET",
             headers: {
@@ -120,9 +95,7 @@ export const ViewStudents = ({ courseName, course_id }) => {
           const data = await response.json();
           const formattedData = data.map((student) => {
             return createData(
-              `${titleCase(student.first_name)} ${titleCase(
-                student.last_name
-              )}`,
+              `${titleCase(student.first_name)} ${titleCase(student.last_name)}`,
               student.user_email
             );
           });
@@ -134,38 +107,10 @@ export const ViewStudents = ({ courseName, course_id }) => {
         console.error("Error fetching data:", error);
       }
     };
-
     fetchStudents();
-  }, []);
+  }, [course_id]);
 
-  const handleGenerateAccessCode = async () => {
-    try {
-      const session = await fetchAuthSession();
-      var token = session.tokens.idToken
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }instructor/generate_access_code?course_id=${encodeURIComponent(
-          course_id
-        )}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.ok) {
-        const codeData = await response.json();
-        setAccessCode(codeData.access_code);
-      } else {
-        console.error("Failed to fetch courses:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
+  // Handlers for pagination, searching, and navigation
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
   };
@@ -179,112 +124,77 @@ export const ViewStudents = ({ courseName, course_id }) => {
     setPage(0);
   };
 
-  const filteredRows = rows.filter((row) =>
-    row.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
   const handleRowClick = (student) => {
     navigate(`/group/${course_id}/student/${student.name}`, {
       state: { course_id, student },
     });
   };
 
+  const filteredRows = rows.filter((row) =>
+    row.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div>
-      <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: 1 }}>
-        <Toolbar />
-        <Typography
-          color="black"
-          fontStyle="semibold"
-          textAlign="left"
-          variant="h6"
-        >
-          {courseTitleCase(courseName)} Students
-        </Typography>
-        <Paper sx={{ width: "170%", overflow: "hidden", marginTop: 2 }}>
-          <TableContainer sx = {{ maxHeight: '50vh', overflowY: "auto"}}>
-            <TextField
-              label="Search by Student"
-              variant="outlined"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              sx={{ margin: 2, width: "95%", alignContent: "left" }}
-            />
-            <Table aria-label="student table">
-              {!loading ? (
-                <>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ width: "50%" }}>Student</TableCell>
-                      <TableCell>Email</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredRows && filteredRows.length > 0 ? (
-                      filteredRows
-                        .slice(
-                          page * rowsPerPage,
-                          page * rowsPerPage + rowsPerPage
-                        )
-                        .map((row, index) => (
-                          <TableRow
-                            key={index}
-                            onClick={() => handleRowClick(row)}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <TableCell>{row.name}</TableCell>
-                            <TableCell>{row.email}</TableCell>
-                          </TableRow>
-                        ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={2} align="center">
-                          No students enrolled in course
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </>
+    <Box component="main" sx={{ flexGrow: 1, p: 2, mt: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Toolbar />
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        {titleCase(courseName)} Students
+      </Typography>
+      <Paper sx={{ width: "100%", maxWidth: "1000px", overflow: "hidden", p: 2, mb: 2 }}>
+        <TableContainer sx={{ maxHeight: "50vh", overflowY: "auto" }}>
+          <TextField
+            label="Search by Student"
+            variant="outlined"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            sx={{ mb: 2, width: "100%" }}
+          />
+          <Table aria-label="student table" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: "50%" }}>Student</TableCell>
+                <TableCell>Email</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredRows.length > 0 ? (
+                filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => (
+                  <TableRow key={index} onClick={() => handleRowClick(row)} sx={{ cursor: "pointer" }}>
+                    <TableCell>{row.name}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                  </TableRow>
+                ))
               ) : (
-                <>loading...</>
-              )}
-              <TableFooter>
                 <TableRow>
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={filteredRows.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
+                  <TableCell colSpan={2} align="center">
+                    No students enrolled in this course
+                  </TableCell>
                 </TableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
-        </Paper>
-        <Paper
-          sx={{
-            marginTop: 5,
-            marginLeft: 25,
-            display: "flex-start",
-            p: 5,
-            width: "100%",
-          }}
-        >
-          <Typography variant="subtitle1" color="black">
-            Access Code: {accessCode}
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleGenerateAccessCode}
-          >
-            Generate New Access Code
-          </Button>
-        </Paper>
-      </Box>
-    </div>
+              )}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={filteredRows.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </TableContainer>
+      </Paper>
+      <Paper sx={{ p: 2, width: "100%", maxWidth: "1000px" }}>
+        <Typography variant="subtitle1">Access Code: {accessCode}</Typography>
+        <Button variant="contained" color="primary" onClick={() => handleGenerateAccessCode()}>
+          Generate New Access Code
+        </Button>
+      </Paper>
+    </Box>
   );
 };
 
