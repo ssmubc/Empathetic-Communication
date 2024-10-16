@@ -159,7 +159,7 @@ export const StudentHomepage = ({ setCourse }) => {
         response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/student_course?email=${encodeURIComponent(email)}`,
+          }instructor/student_group?email=${encodeURIComponent(email)}`,
           {
             method: "GET",
             headers: {

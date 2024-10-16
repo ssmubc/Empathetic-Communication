@@ -65,7 +65,7 @@ const formatMessages = (messages) => {
 const StudentDetails = () => {
   const { studentId } = useParams();
   const location = useLocation();
-  const { course_id, student } = location.state;
+  const { simulation_group_id, student } = location.state;
   const [unenroll, setUnenroll] = useState(false);
   const [chatHistory, setChatHistory] = useState(`loading...`);
   const textFieldRef = useRef(null);
@@ -78,8 +78,8 @@ const StudentDetails = () => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_student_messages?course_id=${encodeURIComponent(
-            course_id
+          }instructor/view_student_messages?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
           )}&student_email=${encodeURIComponent(student.email)}`,
           {
             method: "GET",
@@ -102,7 +102,7 @@ const StudentDetails = () => {
     };
 
     fetchHistory();
-  }, [course_id, student.email]); 
+  }, [simulation_group_id, student.email]); 
 
   useEffect(() => {
     if (textFieldRef.current) {
@@ -139,8 +139,8 @@ const StudentDetails = () => {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/delete_student?course_id=${encodeURIComponent(
-          course_id
+        }instructor/delete_student?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
         )}&user_email=${encodeURIComponent(
           student.email
         )}&instructor_email=${encodeURIComponent(email)}`,
@@ -208,7 +208,7 @@ const StudentDetails = () => {
             <Divider sx={{ my: 2 }} />
             <Typography variant="body1">Email: {student.email}</Typography>
             <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography variant="body1">Unenroll from Course:</Typography>
+              <Typography variant="body1">Unenroll from Simulation Group:</Typography>
               <Switch checked={unenroll} onChange={handleToggle} />
             </Box>
             <TextField

@@ -80,37 +80,47 @@ exports.handler = async (event) => {
   try {
     const pathData = event.httpMethod + " " + event.resource;
     switch (pathData) {
-      case "GET /instructor/student_course":
+      case "GET /instructor/student_group":
         if (
           event.queryStringParameters != null &&
           event.queryStringParameters.email
         ) {
           const email = event.queryStringParameters.email;
 
-          // First, get the user_id for the given email
-          const userResult = await sqlConnection`
-            SELECT user_id FROM "Users" WHERE user_email = ${email};
-          `;
+          try {
+            // First, get the user_id for the given email
+            const userResult = await sqlConnection`
+              SELECT user_id FROM "users" WHERE user_email = ${email};
+            `;
 
-          if (userResult.length === 0) {
-            response.statusCode = 404;
-            response.body = "User not found";
-            break;
+            if (userResult.length === 0) {
+              response.statusCode = 404;
+              response.body = JSON.stringify({ error: "User not found" });
+              break;
+            }
+
+            const userId = userResult[0].user_id;
+
+            // Now, fetch the simulation groups for that user_id
+            const data = await sqlConnection`
+              SELECT sg.*
+              FROM "enrolments" e
+              JOIN "simulation_groups" sg 
+              ON e.simulation_group_id = sg.simulation_group_id
+              WHERE e.user_id = ${userId}
+              ORDER BY sg.group_name, sg.simulation_group_id;
+            `;
+
+            response.statusCode = 200;
+            response.body = JSON.stringify(data);
+          } catch (err) {
+            response.statusCode = 500;
+            console.error(err);
+            response.body = JSON.stringify({ error: "Internal server error" });
           }
-
-          const userId = userResult[0].user_id;
-
-          // Now, fetch the courses for that user_id
-          data = await sqlConnection`SELECT "Courses".*
-            FROM "Enrolments"
-            JOIN "Courses" ON "Enrolments".course_id = "Courses".course_id
-            WHERE "Enrolments".user_id = ${userId}
-            ORDER BY "Courses".course_name, "Courses".course_id;`;
-
-          response.body = JSON.stringify(data);
         } else {
           response.statusCode = 400;
-          response.body = "Invalid value";
+          response.body = JSON.stringify({ error: "Invalid value" });
         }
         break;
       case "GET /instructor/groups":
@@ -452,163 +462,166 @@ exports.handler = async (event) => {
           });
         }
         break;
-        case "PUT /instructor/edit_patient":
-          if (
-              event.queryStringParameters != null &&
-              event.queryStringParameters.patient_id &&
-              event.queryStringParameters.instructor_email
-          ) {
-              const { patient_id, instructor_email } = event.queryStringParameters;
-              const { patient_name } = JSON.parse(event.body || "{}");
-      
-              if (patient_name) {
-                  try {
-                      // Check if another patient with the same name already exists under the same simulation group
-                      const existingPatient = await sqlConnection`
-                          SELECT * FROM "patients"
-                          WHERE patient_name = ${patient_name}
-                          AND patient_id != ${patient_id};
-                      `;
-      
-                      if (existingPatient.length > 0) {
-                          response.statusCode = 400;
-                          response.body = JSON.stringify({
-                              error: "A patient with this name already exists.",
-                          });
-                          break;
-                      }
-      
-                      // Update the patient in the patients table
-                      await sqlConnection`
-                          UPDATE "patients"
-                          SET patient_name = ${patient_name}
-                          WHERE patient_id = ${patient_id};
-                      `;
-      
-                      // Insert into User Engagement Log
-                      await sqlConnection`
-                          INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
-                          VALUES (
-                              uuid_generate_v4(), 
-                              (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
-                              (SELECT simulation_group_id FROM "patients" WHERE patient_id = ${patient_id}),
-                              ${patient_id}, 
-                              NULL, 
-                              CURRENT_TIMESTAMP, 
-                              'instructor_edited_patient'
-                          );
-                      `;
-      
-                      response.statusCode = 200;
-                      response.body = JSON.stringify({
-                          message: "Patient updated successfully",
-                      });
-                  } catch (err) {
-                      response.statusCode = 500;
-                      console.error(err);
-                      response.body = JSON.stringify({
-                          error: "Internal server error",
-                      });
-                  }
-              } else {
-                  response.statusCode = 400;
-                  response.body = JSON.stringify({
-                      error: "patient_name is required in the body",
-                  });
-              }
-          } else {
-              response.statusCode = 400;
-              response.body = JSON.stringify({
-                  error: "patient_id or instructor_email is missing in query string parameters",
-              });
-          }
-          break;
+      case "PUT /instructor/edit_patient":
+        if (
+            event.queryStringParameters != null &&
+            event.queryStringParameters.patient_id &&
+            event.queryStringParameters.instructor_email
+        ) {
+            const { patient_id, instructor_email } = event.queryStringParameters;
+            const { patient_name } = JSON.parse(event.body || "{}");
+    
+            if (patient_name) {
+                try {
+                    // Check if another patient with the same name already exists under the same simulation group
+                    const existingPatient = await sqlConnection`
+                        SELECT * FROM "patients"
+                        WHERE patient_name = ${patient_name}
+                        AND patient_id != ${patient_id};
+                    `;
+    
+                    if (existingPatient.length > 0) {
+                        response.statusCode = 400;
+                        response.body = JSON.stringify({
+                            error: "A patient with this name already exists.",
+                        });
+                        break;
+                    }
+    
+                    // Update the patient in the patients table
+                    await sqlConnection`
+                        UPDATE "patients"
+                        SET patient_name = ${patient_name}
+                        WHERE patient_id = ${patient_id};
+                    `;
+    
+                    // Insert into User Engagement Log
+                    await sqlConnection`
+                        INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
+                        VALUES (
+                            uuid_generate_v4(), 
+                            (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
+                            (SELECT simulation_group_id FROM "patients" WHERE patient_id = ${patient_id}),
+                            ${patient_id}, 
+                            NULL, 
+                            CURRENT_TIMESTAMP, 
+                            'instructor_edited_patient'
+                        );
+                    `;
+    
+                    response.statusCode = 200;
+                    response.body = JSON.stringify({
+                        message: "Patient updated successfully",
+                    });
+                } catch (err) {
+                    response.statusCode = 500;
+                    console.error(err);
+                    response.body = JSON.stringify({
+                        error: "Internal server error",
+                    });
+                }
+            } else {
+                response.statusCode = 400;
+                response.body = JSON.stringify({
+                    error: "patient_name is required in the body",
+                });
+            }
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({
+                error: "patient_id or instructor_email is missing in query string parameters",
+            });
+        }
+        break;
       case "PUT /instructor/prompt":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id &&
+          event.queryStringParameters.simulation_group_id &&
           event.queryStringParameters.instructor_email &&
           event.body
         ) {
           try {
-            const { course_id, instructor_email } = event.queryStringParameters;
+            const { simulation_group_id, instructor_email } = event.queryStringParameters;
             const { prompt } = JSON.parse(event.body);
-
+    
             // Retrieve the current system prompt
             const currentPromptResult = await sqlConnection`
-                      SELECT system_prompt
-                      FROM "Courses"
-                      WHERE course_id = ${course_id};
-                    `;
-
+              SELECT system_prompt
+              FROM "simulation_groups"
+              WHERE simulation_group_id = ${simulation_group_id};
+            `;
+    
             if (currentPromptResult.length === 0) {
               response.statusCode = 404;
-              response.body = JSON.stringify({ error: "Course not found" });
+              response.body = JSON.stringify({ error: "Simulation Group not found" });
               break;
             }
-
+    
             const oldPrompt = currentPromptResult[0].system_prompt;
-
-            // Update system prompt for the course in Courses table
-            const updatedCourse = await sqlConnection`
-                      UPDATE "Courses"
-                      SET system_prompt = ${prompt}
-                      WHERE course_id = ${course_id}
-                      RETURNING *;
-                    `;
-
-            // Insert into User Engagement Log with old prompt in engagement_details
+    
+            // Update the system prompt for the simulation group
+            const updatedGroup = await sqlConnection`
+              UPDATE "simulation_groups"
+              SET system_prompt = ${prompt}
+              WHERE simulation_group_id = ${simulation_group_id}
+              RETURNING *;
+            `;
+    
+            // Log the change in the User Engagement Log with the old prompt
             await sqlConnection`
-                      INSERT INTO "User_Engagement_Log" (
-                        log_id,
-                        user_id,
-                        course_id,
-                        module_id,
-                        enrolment_id,
-                        timestamp,
-                        engagement_type,
-                        engagement_details
-                      )
-                      VALUES (
-                        uuid_generate_v4(),
-                        (SELECT user_id FROM "Users" WHERE user_email = ${instructor_email}),
-                        ${course_id},
-                        null,
-                        null,
-                        CURRENT_TIMESTAMP,
-                        'instructor_updated_prompt',
-                        ${oldPrompt}
-                      );
-                    `;
-
-            response.body = JSON.stringify(updatedCourse[0]);
+              INSERT INTO "user_engagement_log" (
+                log_id,
+                user_id,
+                simulation_group_id,
+                patient_id,
+                enrolment_id,
+                timestamp,
+                engagement_type,
+                engagement_details
+              )
+              VALUES (
+                uuid_generate_v4(),
+                (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
+                ${simulation_group_id},
+                null,
+                null,
+                CURRENT_TIMESTAMP,
+                'instructor_updated_prompt',
+                ${oldPrompt}
+              );
+            `;
+    
+            response.statusCode = 200;
+            response.body = JSON.stringify(updatedGroup[0]);
           } catch (err) {
             response.statusCode = 500;
-            console.log(err);
+            console.error(err);
             response.body = JSON.stringify({ error: "Internal server error" });
           }
         } else {
           response.statusCode = 400;
-          response.body =
-            "course_id, instructor_email, or request body is missing";
+          response.body = JSON.stringify({
+            error: "simulation_group_id, instructor_email, or request body is missing",
+          });
         }
         break;
       case "GET /instructor/view_students":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id
+          event.queryStringParameters.simulation_group_id
         ) {
-          const { course_id } = event.queryStringParameters;
-
+          const { simulation_group_id } = event.queryStringParameters;
+    
           try {
-            // Query to get all students enrolled in the given course
+            // Query to get all students enrolled in the given simulation group
             const enrolledStudents = await sqlConnection`
-                    SELECT u.user_email, u.username, u.first_name, u.last_name
-                    FROM "Enrolments" e
-                    JOIN "Users" u ON e.user_id = u.user_id  -- Change to use user_id
-                    WHERE e.course_id = ${course_id} AND e.enrolment_type = 'student';
-                  `;
-
+              SELECT u.user_email, u.username, u.first_name, u.last_name
+              FROM "enrolments" e
+              JOIN "users" u ON e.user_id = u.user_id
+              WHERE e.simulation_group_id = ${simulation_group_id}
+                AND e.enrolment_type = 'student';
+            `;
+    
             response.statusCode = 200;
             response.body = JSON.stringify(enrolledStudents);
           } catch (err) {
@@ -618,30 +631,32 @@ exports.handler = async (event) => {
           }
         } else {
           response.statusCode = 400;
-          response.body = JSON.stringify({ error: "course_id is required" });
+          response.body = JSON.stringify({
+            error: "simulation_group_id is required",
+          });
         }
         break;
       case "DELETE /instructor/delete_student":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id &&
+          event.queryStringParameters.simulation_group_id &&
           event.queryStringParameters.instructor_email &&
           event.queryStringParameters.user_email
         ) {
-          const { course_id, instructor_email, user_email } =
+          const { simulation_group_id, instructor_email, user_email } =
             event.queryStringParameters;
-
+    
           try {
             // Step 1: Get the user ID from the user email
             const userResult = await sqlConnection`
-                  SELECT user_id
-                  FROM "Users"
-                  WHERE user_email = ${user_email}
-                  LIMIT 1;
-              `;
-
+              SELECT user_id
+              FROM "users"
+              WHERE user_email = ${user_email}
+              LIMIT 1;
+            `;
+    
             const userId = userResult[0]?.user_id;
-
+    
             if (!userId) {
               response.statusCode = 404;
               response.body = JSON.stringify({
@@ -649,29 +664,34 @@ exports.handler = async (event) => {
               });
               break;
             }
-
-            // Step 2: Delete the student from the course enrolments
+    
+            // Step 2: Delete the student from the simulation group enrolments
             const deleteResult = await sqlConnection`
-                  DELETE FROM "Enrolments"
-                  WHERE course_id = ${course_id}
-                    AND user_id = ${userId}  -- Use user_id instead of user_email
-                    AND enrolment_type = 'student'
-                  RETURNING *;
-              `;
-
+              DELETE FROM "enrolments"
+              WHERE simulation_group_id = ${simulation_group_id}
+                AND user_id = ${userId}
+                AND enrolment_type = 'student'
+              RETURNING *;
+            `;
+    
             if (deleteResult.length > 0) {
-              response.statusCode = 200; // Set status to 200 on successful deletion
+              response.statusCode = 200;
               response.body = JSON.stringify(deleteResult[0]);
-
+    
               // Step 3: Insert into User Engagement Log
               await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), ${userId}, ${course_id}, null, null, CURRENT_TIMESTAMP, 'instructor_deleted_student')
-                `;
+                INSERT INTO "user_engagement_log" (
+                  log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                )
+                VALUES (
+                  uuid_generate_v4(), ${userId}, ${simulation_group_id}, null, null, 
+                  CURRENT_TIMESTAMP, 'instructor_deleted_student'
+                );
+              `;
             } else {
               response.statusCode = 404;
               response.body = JSON.stringify({
-                error: "Student not found in the course",
+                error: "Student not found in the simulation group",
               });
             }
           } catch (err) {
@@ -682,87 +702,87 @@ exports.handler = async (event) => {
         } else {
           response.statusCode = 400;
           response.body = JSON.stringify({
-            error: "course_id, user_email, and instructor_email are required",
+            error: "simulation_group_id, user_email, and instructor_email are required",
           });
         }
         break;
-        case "GET /instructor/view_patients":
-          if (
-              event.queryStringParameters != null &&
-              event.queryStringParameters.simulation_group_id
-          ) {
-              const { simulation_group_id } = event.queryStringParameters;
-      
-              try {
-                  // Query to get all patients for the given simulation group
-                  const simulationPatients = await sqlConnection`
-                      SELECT p.patient_id, p.patient_name, p.patient_age, p.patient_gender
-                      FROM "patients" p
-                      WHERE p.simulation_group_id = ${simulation_group_id}
-                      ORDER BY p.patient_name ASC;
-                  `;
-      
-                  response.statusCode = 200;
-                  response.body = JSON.stringify(simulationPatients);
-              } catch (err) {
-                  response.statusCode = 500;
-                  console.error(err);
-                  response.body = JSON.stringify({ error: "Internal server error" });
-              }
-          } else {
-              response.statusCode = 400;
-              response.body = JSON.stringify({ error: "simulation_group_id is required" });
-          }
-          break;
-          case "DELETE /instructor/delete_patient":
-            if (
-                event.queryStringParameters != null &&
-                event.queryStringParameters.patient_id
-            ) {
-                const patientId = event.queryStringParameters.patient_id;
-        
-                try {
-                    // Delete the patient from the patients table
-                    await sqlConnection`
-                        DELETE FROM "patients"
-                        WHERE patient_id = ${patientId};
-                    `;
-        
-                    response.statusCode = 200;
-                    response.body = JSON.stringify({
-                        message: "Patient deleted successfully",
-                    });
-                } catch (err) {
-                    response.statusCode = 500;
-                    console.error(err);
-                    response.body = JSON.stringify({ error: "Internal server error" });
-                }
-            } else {
-                response.statusCode = 400;
-                response.body = JSON.stringify({ error: "patient_id is required" });
+      case "GET /instructor/view_patients":
+        if (
+            event.queryStringParameters != null &&
+            event.queryStringParameters.simulation_group_id
+        ) {
+            const { simulation_group_id } = event.queryStringParameters;
+    
+            try {
+                // Query to get all patients for the given simulation group
+                const simulationPatients = await sqlConnection`
+                    SELECT p.patient_id, p.patient_name, p.patient_age, p.patient_gender
+                    FROM "patients" p
+                    WHERE p.simulation_group_id = ${simulation_group_id}
+                    ORDER BY p.patient_name ASC;
+                `;
+    
+                response.statusCode = 200;
+                response.body = JSON.stringify(simulationPatients);
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
             }
-            break;
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "simulation_group_id is required" });
+        }
+        break;
+      case "DELETE /instructor/delete_patient":
+        if (
+            event.queryStringParameters != null &&
+            event.queryStringParameters.patient_id
+        ) {
+            const patientId = event.queryStringParameters.patient_id;
+    
+            try {
+                // Delete the patient from the patients table
+                await sqlConnection`
+                    DELETE FROM "patients"
+                    WHERE patient_id = ${patientId};
+                `;
+    
+                response.statusCode = 200;
+                response.body = JSON.stringify({
+                    message: "Patient deleted successfully",
+                });
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
+            }
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "patient_id is required" });
+        }
+        break;
       case "GET /instructor/get_prompt":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id
+          event.queryStringParameters.simulation_group_id
         ) {
           try {
-            const { course_id } = event.queryStringParameters;
-
-            // Retrieve the system prompt from the Courses table
-            const coursePrompt = await sqlConnection`
-                    SELECT system_prompt 
-                    FROM "Courses"
-                    WHERE course_id = ${course_id};
-                  `;
-
-            if (coursePrompt.length > 0) {
+            const { simulation_group_id } = event.queryStringParameters;
+    
+            // Retrieve the system prompt from the simulation_groups table
+            const groupPrompt = await sqlConnection`
+              SELECT system_prompt
+              FROM "simulation_groups"
+              WHERE simulation_group_id = ${simulation_group_id};
+            `;
+    
+            if (groupPrompt.length > 0) {
               response.statusCode = 200;
-              response.body = JSON.stringify(coursePrompt[0]);
+              response.body = JSON.stringify(groupPrompt[0]);
             } else {
               response.statusCode = 404;
-              response.body = JSON.stringify({ error: "Course not found" });
+              response.body = JSON.stringify({ error: "Simulation group not found" });
             }
           } catch (err) {
             response.statusCode = 500;
@@ -771,49 +791,47 @@ exports.handler = async (event) => {
           }
         } else {
           response.statusCode = 400;
-          response.body = "course_id is missing";
+          response.body = "simulation_group_id is missing";
         }
         break;
       case "GET /instructor/view_student_messages":
         if (
           event.queryStringParameters != null &&
           event.queryStringParameters.student_email &&
-          event.queryStringParameters.course_id
+          event.queryStringParameters.simulation_group_id
         ) {
           const studentEmail = event.queryStringParameters.student_email;
-          const courseId = event.queryStringParameters.course_id;
-
+          const simulationGroupId = event.queryStringParameters.simulation_group_id;
+    
           try {
             // Step 1: Get the user ID from the user email
             const userResult = await sqlConnection`
-                  SELECT user_id
-                  FROM "Users"
-                  WHERE user_email = ${studentEmail}
-                  LIMIT 1;
-              `;
-
+              SELECT user_id
+              FROM "users"
+              WHERE user_email = ${studentEmail}
+              LIMIT 1;
+            `;
+    
             const userId = userResult[0]?.user_id;
-
+    
             if (!userId) {
               response.statusCode = 404;
-              response.body = JSON.stringify({
-                error: "User not found",
-              });
+              response.body = JSON.stringify({ error: "User not found" });
               break;
             }
-
-            // Step 2: Query to get the student's messages for a specific course
+    
+            // Step 2: Query to get the student's messages for a specific simulation group
             const messages = await sqlConnection`
-                  SELECT m.message_content, m.time_sent, m.student_sent
-                  FROM "Messages" m
-                  JOIN "Sessions" s ON m.session_id = s.session_id
-                  JOIN "Student_Modules" sm ON s.student_module_id = sm.student_module_id
-                  JOIN "Enrolments" e ON sm.enrolment_id = e.enrolment_id
-                  WHERE e.user_id = ${userId}  -- Use user_id instead of user_email
-                  AND e.course_id = ${courseId}
-                  ORDER BY m.time_sent;
-              `;
-
+              SELECT m.message_content, m.time_sent, m.student_sent
+              FROM "messages" m
+              JOIN "sessions" s ON m.session_id = s.session_id
+              JOIN "student_patients" sp ON s.student_patient_id = sp.student_patient_id
+              JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+              WHERE e.user_id = ${userId}
+              AND e.simulation_group_id = ${simulationGroupId}
+              ORDER BY m.time_sent;
+            `;
+    
             response.statusCode = 200;
             response.body = JSON.stringify(messages);
           } catch (err) {
@@ -824,28 +842,28 @@ exports.handler = async (event) => {
         } else {
           response.statusCode = 400;
           response.body = JSON.stringify({
-            error: "student_email and course_id are required",
+            error: "student_email and simulation_group_id are required",
           });
         }
         break;
       case "PUT /instructor/generate_access_code":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id
+          event.queryStringParameters.simulation_group_id
         ) {
-          const courseId = event.queryStringParameters.course_id;
-
+          const simulationGroupId = event.queryStringParameters.simulation_group_id;
+    
           try {
             const newAccessCode = generateAccessCode();
-
-            // Update the access code in the Courses table
-            const updatedCourse = await sqlConnection`
-              UPDATE "Courses"
-              SET course_access_code = ${newAccessCode}
-              WHERE course_id = ${courseId}
+    
+            // Update the access code in the simulation_groups table
+            const updatedGroup = await sqlConnection`
+              UPDATE "simulation_groups"
+              SET group_access_code = ${newAccessCode}
+              WHERE simulation_group_id = ${simulationGroupId}
               RETURNING *;
             `;
-
+    
             response.statusCode = 200;
             response.body = JSON.stringify({
               message: "Access code generated successfully",
@@ -858,24 +876,24 @@ exports.handler = async (event) => {
           }
         } else {
           response.statusCode = 400;
-          response.body = JSON.stringify({ error: "course_id is required" });
+          response.body = JSON.stringify({ error: "simulation_group_id is required" });
         }
         break;
       case "GET /instructor/get_access_code":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id
+          event.queryStringParameters.simulation_group_id
         ) {
-          const courseId = event.queryStringParameters.course_id;
-
+          const simulationGroupId = event.queryStringParameters.simulation_group_id;
+    
           try {
             // Query to get the access code
             const accessCode = await sqlConnection`
-        SELECT course_access_code
-        FROM "Courses"
-        WHERE course_id = ${courseId};
-      `;
-
+              SELECT group_access_code
+              FROM "simulation_groups"
+              WHERE simulation_group_id = ${simulationGroupId};
+            `;
+    
             response.statusCode = 200;
             response.body = JSON.stringify(accessCode[0]);
           } catch (err) {
@@ -885,37 +903,38 @@ exports.handler = async (event) => {
           }
         } else {
           response.statusCode = 400;
-          response.body = JSON.stringify({ error: "course_id is required" });
+          response.body = JSON.stringify({ error: "simulation_group_id is required" });
         }
         break;
       case "GET /instructor/previous_prompts":
         if (
           event.queryStringParameters != null &&
-          event.queryStringParameters.course_id &&
+          event.queryStringParameters.simulation_group_id &&
           event.queryStringParameters.instructor_email
         ) {
           try {
-            const { course_id, instructor_email } = event.queryStringParameters;
-
-            // Query to get all previous prompts for the given course and instructor
+            const { simulation_group_id, instructor_email } = event.queryStringParameters;
+    
+            // Query to get all previous prompts for the given simulation group and instructor
             const previousPrompts = await sqlConnection`
-                    SELECT timestamp, engagement_details AS previous_prompt
-                    FROM "User_Engagement_Log"
-                    WHERE course_id = ${course_id}
-                      AND engagement_type = 'instructor_updated_prompt'
-                    ORDER BY timestamp DESC;
-                  `;
-
+              SELECT timestamp, engagement_details AS previous_prompt
+              FROM "User_Engagement_Log"
+              WHERE simulation_group_id = ${simulation_group_id}
+                AND engagement_type = 'instructor_updated_prompt'
+              ORDER BY timestamp DESC;
+            `;
+    
             response.body = JSON.stringify(previousPrompts);
           } catch (err) {
             response.statusCode = 500;
-            console.log(err);
+            console.error(err);
             response.body = JSON.stringify({ error: "Internal server error" });
           }
         } else {
           response.statusCode = 400;
-          response.body =
-            "course_id or instructor_email query parameter is required";
+          response.body = JSON.stringify({
+            error: "simulation_group_id or instructor_email query parameter is required",
+          });
         }
         break;
 

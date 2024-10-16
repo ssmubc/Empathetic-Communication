@@ -36,7 +36,7 @@ function titleCase(str) {
 
 const initialRows = [createData("loading...", "loading...")];
 
-export const ViewStudents = ({ courseName, course_id }) => {
+export const ViewStudents = ({ groupName, simulation_group_id }) => {
   const [rows, setRows] = useState(initialRows);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -52,8 +52,8 @@ export const ViewStudents = ({ courseName, course_id }) => {
         const session = await fetchAuthSession();
         const token = session.tokens.idToken;
         const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_access_code?course_id=${encodeURIComponent(
-            course_id
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_access_code?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
           )}`,
           {
             method: "GET",
@@ -65,14 +65,14 @@ export const ViewStudents = ({ courseName, course_id }) => {
         );
         if (response.ok) {
           const codeData = await response.json();
-          setAccessCode(codeData.course_access_code);
+          setAccessCode(codeData.group_access_code);
         }
       } catch (error) {
         console.error("Error fetching access code:", error);
       }
     };
     fetchCode();
-  }, [course_id]);
+  }, [simulation_group_id]);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -80,8 +80,8 @@ export const ViewStudents = ({ courseName, course_id }) => {
         const session = await fetchAuthSession();
         const token = session.tokens.idToken;
         const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}instructor/view_students?course_id=${encodeURIComponent(
-            course_id
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/view_students?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
           )}`,
           {
             method: "GET",
@@ -108,7 +108,7 @@ export const ViewStudents = ({ courseName, course_id }) => {
       }
     };
     fetchStudents();
-  }, [course_id]);
+  }, [simulation_group_id]);
 
   // Handlers for pagination, searching, and navigation
   const handleSearchChange = (event) => {
@@ -125,8 +125,8 @@ export const ViewStudents = ({ courseName, course_id }) => {
   };
 
   const handleRowClick = (student) => {
-    navigate(`/group/${course_id}/student/${student.name}`, {
-      state: { course_id, student },
+    navigate(`/group/${simulation_group_id}/student/${student.name}`, {
+      state: { simulation_group_id, student },
     });
   };
 
@@ -138,7 +138,7 @@ export const ViewStudents = ({ courseName, course_id }) => {
     <Box component="main" sx={{ flexGrow: 1, p: 2, mt: 1, width: "100%", display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <Toolbar />
       <Typography variant="h6" sx={{ mb: 2 }}>
-        {titleCase(courseName)} Students
+        {titleCase(groupName)} Students
       </Typography>
       <Paper sx={{ width: "100%", maxWidth: "1000px", overflow: "hidden", p: 2, mb: 2 }}>
         <TableContainer sx={{ maxHeight: "50vh", overflowY: "auto" }}>
@@ -167,7 +167,7 @@ export const ViewStudents = ({ courseName, course_id }) => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={2} align="center">
-                    No students enrolled in this course
+                    No students enrolled in this group
                   </TableCell>
                 </TableRow>
               )}

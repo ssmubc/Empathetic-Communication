@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../App";
 
 const CHARACTER_LIMIT = 1000;
-function courseTitleCase(str) {
+function groupTitleCase(str) {
   if (typeof str !== "string") {
     return str;
   }
@@ -35,7 +35,7 @@ function courseTitleCase(str) {
     .join(" ");
 }
 
-const PromptSettings = ({ courseName, course_id }) => {
+const PromptSettings = ({ groupName, simulation_group_id }) => {
   const theme = useTheme();
   const [userPrompt, setUserPrompt] = useState("");
   const [previousPrompts, setPreviousPrompts] = useState([]);
@@ -72,8 +72,8 @@ const PromptSettings = ({ courseName, course_id }) => {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/previous_prompts?course_id=${encodeURIComponent(
-          course_id
+        }instructor/previous_prompts?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
         )}&instructor_email=${encodeURIComponent(email)}`,
         {
           method: "GET",
@@ -102,7 +102,7 @@ const PromptSettings = ({ courseName, course_id }) => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/get_prompt?course_id=${encodeURIComponent(course_id)}`,
+          }instructor/get_prompt?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
           {
             method: "GET",
             headers: {
@@ -124,7 +124,7 @@ const PromptSettings = ({ courseName, course_id }) => {
 
     fetchPrompt();
     fetchPreviousPrompts();
-  }, [course_id]);
+  }, [simulation_group_id]);
 
   const handleSave = async () => {
     try {
@@ -139,8 +139,8 @@ const PromptSettings = ({ courseName, course_id }) => {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
-        }instructor/prompt?course_id=${encodeURIComponent(
-          course_id
+        }instructor/prompt?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
         )}&instructor_email=${encodeURIComponent(email)}`,
         {
           method: "PUT",
@@ -208,7 +208,7 @@ const PromptSettings = ({ courseName, course_id }) => {
             variant="h6"
             gutterBottom
           >
-            {courseTitleCase(courseName)} Prompt Settings
+            {groupTitleCase(groupName)} Prompt Settings
           </Typography>
           <Typography variant="h8">
             Changes to the prompt will be applied to the LLM for this specific

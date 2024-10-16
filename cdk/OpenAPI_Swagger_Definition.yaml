@@ -1248,7 +1248,7 @@ paths:
         httpMethod: "POST"
         type: "aws_proxy"
  
-  /instructor/student_course:
+  /instructor/student_group:
     options:
       summary: CORS support
       description: |
@@ -1276,8 +1276,8 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Generate a presigned URL for uploading files
-      operationId: instructor_generate_presigned_url_GET
+      summary: Get student groups
+      operationId: instructor_student_group_GET
       parameters:
         - in: query
           name: email
@@ -1287,7 +1287,7 @@ paths:
             type: string
       responses:
         "200":
-          description: Presigned URL generated successfully
+          description: Groups student is a part of are returned successfully
           content:
             application/json:
               schema:
@@ -2181,15 +2181,15 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Retrieve all previous prompts for a specific course and instructor
+      summary: Retrieve all previous prompts for a specific group and instructor
       operationId: instructor_get_previous_prompts
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
           schema:
             type: string
-          description: ID of the course
+          description: ID of the group
         - in: query
           name: instructor_email
           required: true
@@ -2253,13 +2253,13 @@ paths:
     put:
       tags:
         - Instructor
-      summary: Update system prompt for a course
+      summary: Update system prompt for a group
       operationId: instructor_update_prompt_PUT
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course to update the prompt
+          description: ID of the group to update the prompt
           schema:
             type: string
         - in: query
@@ -2326,13 +2326,13 @@ paths:
     get:
       tags:
         - Instructor
-      summary: View students enrolled in a course
+      summary: View students enrolled in a group
       operationId: instructor_view_students_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course to view enrolled students
+          description: ID of the group to view enrolled students
           schema:
             type: string
       responses:
@@ -2382,13 +2382,13 @@ paths:
     delete:
       tags:
         - Instructor
-      summary: Delete a student from a course
+      summary: Delete a student from a group
       operationId: instructor_delete_student_DELETE
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course from which the student will be deleted
+          description: ID of the group from which the student will be deleted
           schema:
             type: string
         - in: query
@@ -2508,13 +2508,13 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Get the system prompt for a course
+      summary: Get the system prompt for a group
       operationId: instructor_get_prompt_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: The ID of the course
+          description: The ID of the group
           schema:
             type: string
       responses:
@@ -2527,7 +2527,7 @@ paths:
                 properties:
                   system_prompt:
                     type: string
-                    description: The system prompt set for the course
+                    description: The system prompt set for the group
         "400":
           description: Bad Request
         "404":
@@ -2630,13 +2630,13 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Get the access code for a course
+      summary: Get the access code for a group
       operationId: instructor_get_access_code_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: The ID of the course
+          description: The ID of the group
           schema:
             type: string
       responses:
@@ -2686,13 +2686,13 @@ paths:
     get:
       tags:
         - Instructor
-      summary: Get all messages for a specific student in a specific course
+      summary: Get all messages for a specific student in a specific group
       operationId: instructor_view_student_messages_GET
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: The ID of the course
+          description: The ID of the group
           schema:
             type: string
         - in: query
