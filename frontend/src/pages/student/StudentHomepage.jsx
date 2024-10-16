@@ -56,26 +56,26 @@ function titleCase(str) {
     .join(" ");
 }
 
-export const StudentHomepage = ({ setCourse }) => {
+export const StudentHomepage = ({ setGroup }) => {
   const navigate = useNavigate();
 
-  const [courses, setCourses] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { isInstructorAsStudent, setIsInstructorAsStudent } =
     useContext(UserContext);
 
   useEffect(() => {
-    if (!loading && courses.length === 0) {
+    if (!loading && groups.length === 0) {
       handleClickOpen();
     }
-  }, [loading, courses]);
+  }, [loading, groups]);
 
-  const enterCourse = (course) => {
-    setCourse(course);
+  const enterGroup = (group) => {
+    setGroup(group);
     sessionStorage.clear();
-    sessionStorage.setItem("course", JSON.stringify(course));
-    navigate(`/student_course`);
+    sessionStorage.setItem("group", JSON.stringify(group));
+    navigate(`/student_group`);
   };
 
   const handleJoin = async (code) => {
@@ -89,7 +89,7 @@ export const StudentHomepage = ({ setCourse }) => {
           import.meta.env.VITE_API_ENDPOINT
         }student/enroll_student?student_email=${encodeURIComponent(
           email
-        )}&course_access_code=${encodeURIComponent(code)}`,
+        )}&group_access_code=${encodeURIComponent(code)}`,
         {
           method: "POST",
           headers: {
@@ -100,7 +100,7 @@ export const StudentHomepage = ({ setCourse }) => {
       );
       if (response.ok) {
         const data = await response.json();
-        toast.success("🦄 Successfully Joined Course!", {
+        toast.success("🦄 Successfully Joined Group!", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -110,11 +110,11 @@ export const StudentHomepage = ({ setCourse }) => {
           progress: undefined,
           theme: "colored",
         });
-        fetchCourses();
+        fetchGroups();
         handleClose();
       } else {
-        console.error("Failed to fetch courses:", response.statusText);
-        toast.error("Failed to Join Course", {
+        console.error("Failed to fetch groups:", response.statusText);
+        toast.error("Failed to Join Group", {
           position: "top-center",
           autoClose: 1000,
           hideProgressBar: false,
@@ -126,8 +126,8 @@ export const StudentHomepage = ({ setCourse }) => {
         });
       }
     } catch (error) {
-      console.error("Error fetching courses:", error);
-      toast.error("Failed to Join Course", {
+      console.error("Error fetching groups:", error);
+      toast.error("Failed to Join Group", {
         position: "top-center",
         autoClose: 1000,
         hideProgressBar: false,
@@ -148,7 +148,7 @@ export const StudentHomepage = ({ setCourse }) => {
     setOpen(false);
   };
 
-  const fetchCourses = async () => {
+  const fetchGroups = async () => {
     try {
       const session = await fetchAuthSession();
       const { email } = await fetchUserAttributes();
@@ -172,7 +172,7 @@ export const StudentHomepage = ({ setCourse }) => {
         response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }student/course?email=${encodeURIComponent(email)}`,
+          }student/simulation_group?email=${encodeURIComponent(email)}`,
           {
             method: "GET",
             headers: {
@@ -184,21 +184,21 @@ export const StudentHomepage = ({ setCourse }) => {
       }
       if (response.ok) {
         const data = await response.json();
-        setCourses(data);
+        setGroups(data);
         setLoading(false);
       } else {
-        console.error("Failed to fetch course:", response.statusText);
+        console.error("Failed to fetch group:", response.statusText);
       }
     } catch (error) {
-      console.error("Error fetching course:", error);
+      console.error("Error fetching group:", error);
     }
   };
 
   useEffect(() => {
-    sessionStorage.removeItem("course");
-    sessionStorage.removeItem("module");
+    sessionStorage.removeItem("group");
+    sessionStorage.removeItem("patient");
 
-    fetchCourses();
+    fetchGroups();
   }, []);
 
   return (
@@ -245,7 +245,7 @@ export const StudentHomepage = ({ setCourse }) => {
               }}
               textAlign="left"
             >
-              Courses
+              Groups
             </Typography>
             <Button
               variant="outlined"
@@ -264,7 +264,7 @@ export const StudentHomepage = ({ setCourse }) => {
               }}
               onClick={handleClickOpen}
             >
-              Join Course
+              Join Group
             </Button>
           </Box>
           {loading ? (
@@ -290,15 +290,15 @@ export const StudentHomepage = ({ setCourse }) => {
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                alignItems: courses.length === 0 ? "center" : "flex-start",
-                justifyContent: courses.length === 0 ? "center" : "flex-start",
+                alignItems: groups.length === 0 ? "center" : "flex-start",
+                justifyContent: groups.length === 0 ? "center" : "flex-start",
                 width: "100%",
                 height: "calc(90vh - 100px)",
                 overflowY: "auto",
                 overflowX: "hidden",
               }}
             >
-              {courses.length === 0 ? (
+              {groups.length === 0 ? (
                 <Typography
                   variant="body1"
                   sx={{
@@ -308,10 +308,10 @@ export const StudentHomepage = ({ setCourse }) => {
                     fontSize: "1.5rem",
                   }}
                 >
-                  No courses added yet, click "JOIN COURSE" to add a course
+                  No groups added yet, click "JOIN GROUP" to add a group
                 </Typography>
               ) : (
-                courses.map((course, index) => (
+                groups.map((group, index) => (
                   <Card
                     key={index}
                     sx={{
@@ -336,14 +336,12 @@ export const StudentHomepage = ({ setCourse }) => {
                               fontSize: "1.25rem",
                             }}
                           >
-                            {course.course_department.toUpperCase()}{" "}
-                            {course.course_number}
                           </Typography>
                           <Typography
                             variant="body2"
                             sx={{ textAlign: "left", mt: 1, fontSize: "1rem" }}
                           >
-                            {titleCase(course.course_name)}
+                            {titleCase(group.group_name)}
                           </Typography>
                         </Grid>
                         <Grid
@@ -377,7 +375,7 @@ export const StudentHomepage = ({ setCourse }) => {
                           fontWeight: "light",
                           ":hover": { bgcolor: "purple" },
                         }}
-                        onClick={() => enterCourse(course)}
+                        onClick={() => enterGroup(group)}
                       >
                         Continue
                       </Button>
@@ -403,7 +401,7 @@ export const StudentHomepage = ({ setCourse }) => {
           },
         }}
       >
-        <DialogTitle>Join Course</DialogTitle>
+        <DialogTitle>Join Group</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Please enter the access code provided by an instructor.

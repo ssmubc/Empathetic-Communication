@@ -181,7 +181,7 @@ exports.handler = async (event) => {
           response.body = JSON.stringify({ error: "User email is required" });
         }
         break;
-      case "GET /student/course":
+      case "GET /student/simulation_group":
         if (
           event.queryStringParameters != null &&
           event.queryStringParameters.email
@@ -191,7 +191,7 @@ exports.handler = async (event) => {
           try {
             // Retrieve the user ID using the user_email
             const userResult = await sqlConnection`
-                SELECT user_id FROM "Users" WHERE user_email = ${user_email};
+                SELECT user_id FROM "users" WHERE user_email = ${user_email};
               `;
 
             if (userResult.length === 0) {
@@ -204,12 +204,12 @@ exports.handler = async (event) => {
 
             // Query to get courses for the user
             const data = await sqlConnection`
-                SELECT "Courses".*
-                FROM "Enrolments"
-                JOIN "Courses" ON "Courses".course_id = "Enrolments".course_id
-                WHERE "Enrolments".user_id = ${user_id}
-                AND "Courses".course_student_access = TRUE
-                ORDER BY "Courses".course_name, "Courses".course_id;
+                SELECT "simulation_groups".*
+                FROM "enrolments"
+                JOIN "simulation_groups" ON "simulation_groups".simulation_group_id = "enrolments".simulation_group_id
+                WHERE "enrolments".user_id = ${user_id}
+                AND "simulation_groups".group_student_access = TRUE
+                ORDER BY "simulation_groups".group_name, "simulation_groups".simulation_group_id;
               `;
             response.body = JSON.stringify(data);
           } catch (err) {
@@ -222,73 +222,75 @@ exports.handler = async (event) => {
           response.body = "Invalid value";
         }
         break;
-      case "GET /student/course_page":
+      case "GET /student/simulation_group_page":
         if (
           event.queryStringParameters != null &&
           event.queryStringParameters.email &&
-          event.queryStringParameters.course_id
+          event.queryStringParameters.simulation_group_id
         ) {
           const studentEmail = event.queryStringParameters.email;
-          const courseId = event.queryStringParameters.course_id;
-
+          const simulationGroupId = event.queryStringParameters.simulation_group_id;
+    
           try {
             // Retrieve the user ID using the user_email
             const userResult = await sqlConnection`
-                SELECT user_id FROM "Users" WHERE user_email = ${studentEmail};
+                SELECT user_id FROM "users" WHERE user_email = ${studentEmail};
               `;
-
+    
             if (userResult.length === 0) {
               response.statusCode = 404;
               response.body = JSON.stringify({ error: "User not found" });
               break;
             }
-
+    
             const userId = userResult[0].user_id;
-
-            data = await sqlConnection`
+    
+            // Fetch patient data associated with the simulation group
+            const data = await sqlConnection`
                 WITH StudentEnrollment AS (
                   SELECT 
-                    "Enrolments".enrolment_id
+                    enrolment_id
                   FROM 
-                    "Enrolments"
+                    "enrolments"
                   WHERE 
-                    "Enrolments".user_id = ${userId}
-                    AND "Enrolments".course_id = ${courseId}
+                    user_id = ${userId}
+                    AND simulation_group_id = ${simulationGroupId}
                   LIMIT 1
                 )
                 SELECT
-                  "Course_Concepts".concept_id,
-                  "Course_Concepts".concept_name,
-                  "Course_Modules".module_id,
-                  "Course_Modules".module_name,
-                  "Course_Modules".module_number,
-                  "Student_Modules".student_module_id,
-                  "Student_Modules".module_score,
-                  "Student_Modules".last_accessed,
-                  "Student_Modules".module_context_embedding
+                  p.patient_id,
+                  p.patient_name,
+                  p.patient_age,
+                  p.patient_gender,
+                  p.patient_number,
+                  sp.student_patient_id,
+                  sp.patient_score,
+                  sp.last_accessed,
+                  sp.patient_context_embedding
                 FROM
-                  "Course_Concepts"
-                JOIN
-                  "Course_Modules" ON "Course_Modules".concept_id = "Course_Concepts".concept_id
+                  "patients" p
                 LEFT JOIN
-                  "Student_Modules" ON "Student_Modules".course_module_id = "Course_Modules".module_id
+                  "student_patients" sp ON sp.patient_id = p.patient_id
                 JOIN
-                  StudentEnrollment ON "Student_Modules".enrolment_id = StudentEnrollment.enrolment_id
+                  StudentEnrollment se ON sp.enrolment_id = se.enrolment_id
                 WHERE
-                  "Course_Concepts".course_id = ${courseId}
+                  p.simulation_group_id = ${simulationGroupId}
                 ORDER BY
-                  "Course_Modules".module_number;
+                  p.patient_number;
               `;
-
+    
             const enrolmentId = data[0]?.enrolment_id;
-
+    
             if (enrolmentId) {
               await sqlConnection`
-                  INSERT INTO "User_Engagement_Log" (log_id, user_email, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                  VALUES (uuid_generate_v4(), ${studentEmail}, ${courseId}, null, ${enrolmentId}, CURRENT_TIMESTAMP, 'course access');
+                  INSERT INTO "user_engagement_log" (
+                    log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                  ) VALUES (
+                    uuid_generate_v4(), ${userId}, ${simulationGroupId}, null, ${enrolmentId}, CURRENT_TIMESTAMP, 'group access'
+                  );
                 `;
             }
-
+    
             response.body = JSON.stringify(data);
           } catch (err) {
             response.statusCode = 500;
@@ -785,20 +787,20 @@ exports.handler = async (event) => {
         if (
           event.queryStringParameters != null &&
           event.queryStringParameters.student_email &&
-          event.queryStringParameters.course_access_code
+          event.queryStringParameters.group_access_code
         ) {
-          const { student_email, course_access_code } =
+          const { student_email, group_access_code } =
             event.queryStringParameters;
-
+    
           try {
             // Step 1: Retrieve the user ID using the student_email
             const userResult = await sqlConnection`
                   SELECT user_id
-                  FROM "Users"
+                  FROM "users"
                   WHERE user_email = ${student_email}
                   LIMIT 1;
               `;
-
+    
             if (userResult.length === 0) {
               response.statusCode = 404;
               response.body = JSON.stringify({
@@ -806,65 +808,61 @@ exports.handler = async (event) => {
               });
               break;
             }
-
+    
             const user_id = userResult[0].user_id;
-
-            // Step 2: Retrieve the course_id using the access code
-            const courseResult = await sqlConnection`
-                  SELECT course_id
-                  FROM "Courses"
-                  WHERE course_access_code = ${course_access_code}
-                  AND course_student_access = TRUE
+    
+            // Step 2: Retrieve the simulation_group_id using the access code
+            const groupResult = await sqlConnection`
+                  SELECT simulation_group_id
+                  FROM "simulation_groups"
+                  WHERE group_access_code = ${group_access_code}
+                  AND group_student_access = TRUE
                   LIMIT 1;
               `;
-
-            if (courseResult.length === 0) {
+    
+            if (groupResult.length === 0) {
               response.statusCode = 404;
               response.body = JSON.stringify({
-                error: "Invalid course access code or course not available.",
+                error: "Invalid group access code or group not available.",
               });
               break;
             }
-
-            const course_id = courseResult[0].course_id;
-
-            // Step 3: Insert enrollment into Enrolments table
+    
+            const simulation_group_id = groupResult[0].simulation_group_id;
+    
+            // Step 3: Insert enrollment into enrolments table
             const enrollmentResult = await sqlConnection`
-                  INSERT INTO "Enrolments" (enrolment_id, user_id, course_id, enrolment_type, time_enroled)
-                  VALUES (uuid_generate_v4(), ${user_id}, ${course_id}, 'student', CURRENT_TIMESTAMP)
-                  ON CONFLICT (course_id, user_id) DO NOTHING
+                  INSERT INTO "enrolments" (enrolment_id, user_id, simulation_group_id, enrolment_type, time_enroled)
+                  VALUES (uuid_generate_v4(), ${user_id}, ${simulation_group_id}, 'student', CURRENT_TIMESTAMP)
+                  ON CONFLICT (simulation_group_id, user_id) DO NOTHING
                   RETURNING enrolment_id;
               `;
-
+    
             const enrolment_id = enrollmentResult[0]?.enrolment_id;
-
+    
             if (enrolment_id) {
-              // Step 4: Retrieve all module IDs for the course
-              const modulesResult = await sqlConnection`
-                    SELECT module_id
-                    FROM "Course_Modules"
-                    WHERE concept_id IN (
-                        SELECT concept_id
-                        FROM "Course_Concepts"
-                        WHERE course_id = ${course_id}
-                    );
+              // Step 4: Retrieve all patient IDs for the simulation group
+              const patientsResult = await sqlConnection`
+                    SELECT patient_id
+                    FROM "patients"
+                    WHERE simulation_group_id = ${simulation_group_id};
                 `;
-
-              // Step 5: Insert a record into Student_Modules for each module
-              const studentModuleInsertions = modulesResult.map((module) => {
+    
+              // Step 5: Insert a record into Student_Patients for each patient
+              const studentPatientInsertions = patientsResult.map((patient) => {
                 return sqlConnection`
-                      INSERT INTO "Student_Modules" (student_module_id, course_module_id, enrolment_id, module_score, last_accessed, module_context_embedding)
-                      VALUES (uuid_generate_v4(), ${module.module_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL);
+                      INSERT INTO "student_patients" (student_patient_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
+                      VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL);
                   `;
               });
-
+    
               // Execute all insertions
-              await Promise.all(studentModuleInsertions);
+              await Promise.all(studentPatientInsertions);
             }
-
+    
             response.statusCode = 201; // Set status to 201 on successful enrollment
             response.body = JSON.stringify({
-              message: "Student enrolled and modules created successfully.",
+              message: "Student enrolled and patient records created successfully.",
             });
           } catch (err) {
             response.statusCode = 500;
@@ -875,7 +873,7 @@ exports.handler = async (event) => {
           response.statusCode = 400;
           response.body = JSON.stringify({
             error:
-              "student_email and course_access_code query parameters are required",
+              "student_email and group_access_code query parameters are required",
           });
         }
         break;

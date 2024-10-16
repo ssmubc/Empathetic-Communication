@@ -19,7 +19,7 @@ import StudentHomepage from "./pages/student/StudentHomepage";
 import StudentChat from "./pages/student/StudentChat";
 import AdminHomepage from "./pages/admin/AdminHomepage";
 import InstructorHomepage from "./pages/instructor/InstructorHomepage";
-import CourseView from "./pages/student/CourseView";
+import GroupView from "./pages/student/GroupView";
 
 export const UserContext = createContext();
 
@@ -44,8 +44,8 @@ Amplify.configure({
 function App() {
   const [user, setUser] = useState(null);
   const [userGroup, setUserGroup] = useState(null);
-  const [course, setCourse] = useState(null);
-  const [module, setModule] = useState(null);
+  const [group, setGroup] = useState(null);
+  const [patient, setPatient] = useState(null);
   const [isInstructorAsStudent, setIsInstructorAsStudent] = useState(false);
 
   useEffect(() => {
@@ -74,12 +74,12 @@ function App() {
       return <AdminHomepage />;
     } else if (userGroup && userGroup.includes("instructor")) {
       if (isInstructorAsStudent) {
-        return <StudentHomepage setCourse={setCourse} />;
+        return <StudentHomepage setGroup={setGroup} />;
       } else {
         return <InstructorHomepage />;
       }
     } else if (userGroup && userGroup.includes("student")) {
-      return <StudentHomepage setCourse={setCourse} />;
+      return <StudentHomepage setGroup={setGroup} />;
     } else {
       return <Login />;
     }
@@ -99,20 +99,20 @@ function App() {
             path="/student_chat/*"
             element={
               <StudentChat
-                course={course}
-                module={module}
-                setModule={setModule}
-                setCourse={setCourse}
+                group={group}
+                patient={patient}
+                setPatient={setPatient}
+                setGroup={setGroup}
               />
             }
           />
           <Route
-            path="/student_course/*"
+            path="/student_group/*"
             element={
-              <CourseView
-                course={course}
-                setModule={setModule}
-                setCourse={setCourse}
+              <GroupView
+                group={group}
+                setPatient={setPatient}
+                setGroup={setGroup}
               />
             }
           />
