@@ -245,7 +245,7 @@ const InstructorEditPatients = () => {
         body: JSON.stringify({
           patient_name: patientName,
           patient_age: patientAge, // Include age in request
-          patient_gender: patientGender, // Include gender in request
+          patient_gender: patientGender, // new
         }),
       }
     );
