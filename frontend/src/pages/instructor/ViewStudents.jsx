@@ -110,6 +110,35 @@ export const ViewStudents = ({ groupName, simulation_group_id }) => {
     fetchStudents();
   }, [simulation_group_id]);
 
+  const handleGenerateAccessCode = async () => {
+    try {
+      const session = await fetchAuthSession();
+      var token = session.tokens.idToken;
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_access_code?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.ok) {
+        const codeData = await response.json();
+        setAccessCode(codeData.access_code);
+      } else {
+        console.error("Failed to fetch groups:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+    }
+  };
+
   // Handlers for pagination, searching, and navigation
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
@@ -190,7 +219,7 @@ export const ViewStudents = ({ groupName, simulation_group_id }) => {
       </Paper>
       <Paper sx={{ p: 2, width: "100%", maxWidth: "1000px" }}>
         <Typography variant="subtitle1">Access Code: {accessCode}</Typography>
-        <Button variant="contained" color="primary" onClick={() => handleGenerateAccessCode()}>
+        <Button variant="contained" color="primary" onClick={handleGenerateAccessCode}>
           Generate New Access Code
         </Button>
       </Paper>
