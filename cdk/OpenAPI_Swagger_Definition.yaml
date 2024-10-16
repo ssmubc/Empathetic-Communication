@@ -2047,6 +2047,18 @@ paths:
           schema:
             type: string
         - in: query
+          name: patient_age
+          required: true
+          description: Age of the new patient
+          schema:
+            type: integer
+        - in: query
+          name: patient_gender
+          required: true
+          description: Gender of the new patient
+          schema:
+            type: string
+        - in: query
           name: patient_number
           required: true
           description: Number of the new patient
@@ -2134,6 +2146,14 @@ paths:
                   type: string
               required:
                 - patient_name
+              patient_age:
+                  type: integer
+              required:
+                - patient_age
+              patient_gender:
+                  type: string
+              required:
+                - patient_gender
       responses:
         "200":
           description: Patient updated successfully

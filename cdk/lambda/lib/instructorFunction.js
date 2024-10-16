@@ -329,157 +329,124 @@ exports.handler = async (event) => {
           });
         }
         break;
-        // Update the "POST /instructor/create_patient" case
-case "POST /instructor/create_patient":
-  if (
-    event.queryStringParameters != null &&
-    event.queryStringParameters.simulation_group_id &&
-    event.queryStringParameters.patient_name &&
-    event.queryStringParameters.patient_number &&
-    event.queryStringParameters.instructor_email
-  ) {
-    const {
-      simulation_group_id,
-      patient_name,
-      patient_number,
-      instructor_email,
-      patient_age,        // Added age
-      patient_gender,     // Added gender
-    } = event.queryStringParameters;
-
-    try {
-      const existingPatient = await sqlConnection`
-        SELECT * FROM "patients"
-        WHERE simulation_group_id = ${simulation_group_id}
-        AND patient_name = ${patient_name};
-      `;
-
-      if (existingPatient.length > 0) {
-        response.statusCode = 400;
-        response.body = JSON.stringify({
-          error: "A patient with this name already exists in the given simulation group.",
-        });
-        break;
-      }
-
-      const newPatient = await sqlConnection`
-        INSERT INTO "patients" (patient_id, simulation_group_id, patient_name, patient_number, patient_age, patient_gender)  // Included age and gender
-        VALUES (uuid_generate_v4(), ${simulation_group_id}, ${patient_name}, ${patient_number}, ${patient_age}, ${patient_gender})  // Pass age and gender values
-        RETURNING *;
-      `;
-
-      await sqlConnection`
-        INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
-        VALUES (
-          uuid_generate_v4(),
-          (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
-          ${simulation_group_id},
-          ${newPatient[0].patient_id},
-          null,
-          CURRENT_TIMESTAMP,
-          'instructor_created_patient'
-        );
-      `;
-
-      const enrolments = await sqlConnection`
-        SELECT enrolment_id FROM "enrolments"
-        WHERE simulation_group_id = ${simulation_group_id};
-      `;
-
-      await Promise.all(
-        enrolments.map(async (enrolment) => {
-          await sqlConnection`
-            INSERT INTO "student_patients" (student_patient_id, patient_id, enrolment_id, patient_score)
-            VALUES (uuid_generate_v4(), ${newPatient[0].patient_id}, ${enrolment.enrolment_id}, 0);
-          `;
-        })
-      );
-
-      response.statusCode = 201;
-      response.body = JSON.stringify(newPatient[0]);
-    } catch (err) {
-      response.statusCode = 500;
-      console.error(err);
-      response.body = JSON.stringify({ error: "Internal server error" });
-    }
-  } else {
-    response.statusCode = 400;
-    response.body = JSON.stringify({
-      error: "simulation_group_id, patient_name, patient_number, or instructor_email is missing",
-    });
-  }
-  break;
-
-// Update the "PUT /instructor/edit_patient" case
-      case "PUT /instructor/edit_patient":
+      case "POST /instructor/create_patient":
         if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.patient_id &&
-          event.queryStringParameters.instructor_email
+            event.queryStringParameters != null &&
+            event.queryStringParameters.simulation_group_id &&
+            event.queryStringParameters.patient_name &&
+            event.queryStringParameters.patient_number &&
+            event.queryStringParameters.patient_age &&
+            event.queryStringParameters.patient_gender &&
+            event.queryStringParameters.instructor_email
         ) {
-          const { patient_id, instructor_email } = event.queryStringParameters;
-          const { patient_name, patient_age, patient_gender } = JSON.parse(event.body || "{}");  // Include age and gender
+            const {
+                simulation_group_id,
+                patient_name,
+                patient_number,
+                patient_age,
+                patient_gender,
+                instructor_email,
+            } = event.queryStringParameters;
 
-          if (patient_name) {
             try {
-              const existingPatient = await sqlConnection`
-                SELECT * FROM "patients"
-                WHERE patient_name = ${patient_name}
-                AND patient_id != ${patient_id};
-              `;
+                // Check if a patient with the same name already exists in the simulation group
+                const existingPatient = await sqlConnection`
+                    SELECT * FROM "patients"
+                    WHERE simulation_group_id = ${simulation_group_id}
+                    AND patient_name = ${patient_name};
+                `;
 
-              if (existingPatient.length > 0) {
-                response.statusCode = 400;
-                response.body = JSON.stringify({
-                  error: "A patient with this name already exists.",
-                });
-                break;
-              }
+                if (existingPatient.length > 0) {
+                    response.statusCode = 400;
+                    response.body = JSON.stringify({
+                        error: "A patient with this name already exists in the given simulation group.",
+                    });
+                    break;
+                }
 
-              await sqlConnection`
-                UPDATE "patients"
-                SET patient_name = ${patient_name}, patient_age = ${patient_age}, patient_gender = ${patient_gender}  // Update age and gender
-                WHERE patient_id = ${patient_id};
-              `;
+                // Insert new patient into the "patients" table with age and gender
+                const newPatient = await sqlConnection`
+                    INSERT INTO "patients" (
+                        patient_id, 
+                        simulation_group_id, 
+                        patient_name, 
+                        patient_number, 
+                        patient_age, 
+                        patient_gender
+                    )
+                    VALUES (
+                        uuid_generate_v4(), 
+                        ${simulation_group_id}, 
+                        ${patient_name}, 
+                        ${patient_number}, 
+                        ${patient_age}, 
+                        ${patient_gender}
+                    )
+                    RETURNING *;
+                `;
 
-              await sqlConnection`
-                INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
-                VALUES (
-                  uuid_generate_v4(), 
-                  (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
-                  (SELECT simulation_group_id FROM "patients" WHERE patient_id = ${patient_id}),
-                  ${patient_id}, 
-                  NULL, 
-                  CURRENT_TIMESTAMP, 
-                  'instructor_edited_patient'
+                // Log the patient creation in the User Engagement Log
+                await sqlConnection`
+                    INSERT INTO "user_engagement_log" (
+                        log_id, 
+                        user_id, 
+                        simulation_group_id, 
+                        patient_id, 
+                        enrolment_id, 
+                        timestamp, 
+                        engagement_type
+                    )
+                    VALUES (
+                        uuid_generate_v4(),
+                        (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
+                        ${simulation_group_id},
+                        ${newPatient[0].patient_id},
+                        null,
+                        CURRENT_TIMESTAMP,
+                        'instructor_created_patient'
+                    );
+                `;
+
+                // Find all student enrolments for the given simulation group
+                const enrolments = await sqlConnection`
+                    SELECT enrolment_id FROM "enrolments"
+                    WHERE simulation_group_id = ${simulation_group_id};
+                `;
+
+                // Create entries for each enrolment in the "student_patients" table
+                await Promise.all(
+                    enrolments.map(async (enrolment) => {
+                        await sqlConnection`
+                            INSERT INTO "student_patients" (
+                                student_patient_id, 
+                                patient_id, 
+                                enrolment_id, 
+                                patient_score
+                            )
+                            VALUES (
+                                uuid_generate_v4(), 
+                                ${newPatient[0].patient_id}, 
+                                ${enrolment.enrolment_id}, 
+                                0
+                            );
+                        `;
+                    })
                 );
-              `;
 
-              response.statusCode = 200;
-              response.body = JSON.stringify({
-                message: "Patient updated successfully",
-              });
+                response.statusCode = 201;
+                response.body = JSON.stringify(newPatient[0]);
             } catch (err) {
-              response.statusCode = 500;
-              console.error(err);
-              response.body = JSON.stringify({
-                error: "Internal server error",
-              });
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
             }
-          } else {
+        } else {
             response.statusCode = 400;
             response.body = JSON.stringify({
-              error: "patient_name is required in the body",
+                error: "simulation_group_id, patient_name, patient_number, patient_age, patient_gender, or instructor_email is missing",
             });
-          }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error: "patient_id or instructor_email is missing in query string parameters",
-          });
         }
         break;
-
       case "PUT /instructor/reorder_patient":
         if (
           event.queryStringParameters != null &&
@@ -538,11 +505,11 @@ case "POST /instructor/create_patient":
             event.queryStringParameters.instructor_email
         ) {
             const { patient_id, instructor_email } = event.queryStringParameters;
-            const { patient_name } = JSON.parse(event.body || "{}");
+            const { patient_name, patient_age, patient_gender } = JSON.parse(event.body || "{}");
     
-            if (patient_name) {
+            if (patient_name && patient_age != null && patient_gender) {
                 try {
-                    // Check if another patient with the same name already exists under the same simulation group
+                    // Check if another patient with the same name exists under the same simulation group
                     const existingPatient = await sqlConnection`
                         SELECT * FROM "patients"
                         WHERE patient_name = ${patient_name}
@@ -557,17 +524,27 @@ case "POST /instructor/create_patient":
                         break;
                     }
     
-                    // Update the patient in the patients table
+                    // Update the patient details in the patients table
                     await sqlConnection`
                         UPDATE "patients"
-                        SET patient_name = ${patient_name}
+                        SET 
+                            patient_name = ${patient_name}, 
+                            patient_age = ${patient_age}, 
+                            patient_gender = ${patient_gender}
                         WHERE patient_id = ${patient_id};
                     `;
     
                     // Insert into User Engagement Log
                     await sqlConnection`
-                        INSERT INTO "user_engagement_log" (log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type)
-                        VALUES (
+                        INSERT INTO "user_engagement_log" (
+                            log_id, 
+                            user_id, 
+                            simulation_group_id, 
+                            patient_id, 
+                            enrolment_id, 
+                            timestamp, 
+                            engagement_type
+                        ) VALUES (
                             uuid_generate_v4(), 
                             (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
                             (SELECT simulation_group_id FROM "patients" WHERE patient_id = ${patient_id}),
@@ -592,7 +569,7 @@ case "POST /instructor/create_patient":
             } else {
                 response.statusCode = 400;
                 response.body = JSON.stringify({
-                    error: "patient_name is required in the body",
+                    error: "patient_name, patient_age, and patient_gender are required in the body",
                 });
             }
         } else {
@@ -987,7 +964,7 @@ case "POST /instructor/create_patient":
             // Query to get all previous prompts for the given simulation group and instructor
             const previousPrompts = await sqlConnection`
               SELECT timestamp, engagement_details AS previous_prompt
-              FROM "User_Engagement_Log"
+              FROM "user_Engagement_Log"
               WHERE simulation_group_id = ${simulation_group_id}
                 AND engagement_type = 'instructor_updated_prompt'
               ORDER BY timestamp DESC;

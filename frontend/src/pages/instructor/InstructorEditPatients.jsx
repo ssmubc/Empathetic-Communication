@@ -129,8 +129,8 @@ const InstructorEditPatients = () => {
     if (patientData) {
       setPatient(patientData);
       setPatientName(patientData.patient_name);
-      setPatientAge(patientData.patient_age); // Set initial age
-      setPatientGender(patientData.patient_gender); // Set initial gender
+      setPatientAge(patientData.patient_age);
+      setPatientGender(patientData.patient_gender);
     }
   }, [patientData]);
 
@@ -244,8 +244,8 @@ const InstructorEditPatients = () => {
         },
         body: JSON.stringify({
           patient_name: patientName,
-          patient_age: patientAge, // Include age in request
-          patient_gender: patientGender, // new
+          patient_age: patientAge,
+          patient_gender: patientGender,
         }),
       }
     );
