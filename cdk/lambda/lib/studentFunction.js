@@ -406,198 +406,205 @@ exports.handler = async (event) => {
         break;
       case "POST /student/create_session":
         if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.module_id &&
-          event.queryStringParameters.email &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.session_name
+            event.queryStringParameters != null &&
+            event.queryStringParameters.patient_id &&
+            event.queryStringParameters.email &&
+            event.queryStringParameters.simulation_group_id &&
+            event.queryStringParameters.session_name
         ) {
-          const moduleId = event.queryStringParameters.module_id;
-          const studentEmail = event.queryStringParameters.email;
-          const courseId = event.queryStringParameters.course_id;
-          const sessionName = event.queryStringParameters.session_name;
-
-          try {
-            // Step 1: Get the user ID using the student_email
-            const userResult = await sqlConnection`
-                  SELECT user_id
-                  FROM "Users"
-                  WHERE user_email = ${studentEmail}
-                  LIMIT 1;
-              `;
-
-            if (userResult.length === 0) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({
-                error: "Student not found.",
-              });
-              break;
-            }
-
-            const userId = userResult[0].user_id;
-
-            // Step 2: Get the student_module_id for the specific student and module
-            const studentModuleData = await sqlConnection`
-                  SELECT student_module_id
-                  FROM "Student_Modules"
-                  WHERE course_module_id = ${moduleId}
-                    AND enrolment_id = (
-                      SELECT enrolment_id
-                      FROM "Enrolments"
-                      WHERE user_id = ${userId} AND course_id = ${courseId}
-                    )
-              `;
-
-            const studentModuleId = studentModuleData[0]?.student_module_id;
-
-            if (!studentModuleId) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({
-                error: "Student module not found",
-              });
-              break;
-            }
-
-            // Step 3: Update last_accessed for the Student_Module entry
-            await sqlConnection`
-                  UPDATE "Student_Modules"
-                  SET last_accessed = CURRENT_TIMESTAMP
-                  WHERE student_module_id = ${studentModuleId}
-              `;
-
-            // Step 4: Insert a new session with the session_name
-            const sessionData = await sqlConnection`
-                  INSERT INTO "Sessions" (session_id, student_module_id, session_name, session_context_embeddings, last_accessed)
-                  VALUES (
-                    uuid_generate_v4(),
-                    ${studentModuleId},
-                    ${sessionName},
-                    ARRAY[]::float[],
-                    CURRENT_TIMESTAMP
-                  )
-                  RETURNING *;
-              `;
-
-            // Step 5: Insert an entry into the User_Engagement_Log using user_id
-            const enrolmentData = await sqlConnection`
-                  SELECT enrolment_id
-                  FROM "Enrolments"
-                  WHERE user_id = ${userId} AND course_id = ${courseId}
+            const patientId = event.queryStringParameters.patient_id;
+            const studentEmail = event.queryStringParameters.email;
+            const simulationGroupId = event.queryStringParameters.simulation_group_id;
+            const sessionName = event.queryStringParameters.session_name;
+    
+            try {
+                // Step 1: Get the user ID using the student_email
+                const userResult = await sqlConnection`
+                    SELECT user_id
+                    FROM "users"
+                    WHERE user_email = ${studentEmail}
+                    LIMIT 1;
                 `;
-
-            const enrolmentId = enrolmentData[0]?.enrolment_id;
-
-            if (enrolmentId) {
-              await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
+    
+                if (userResult.length === 0) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Student not found." });
+                    break;
+                }
+    
+                const userId = userResult[0].user_id;
+    
+                // Step 2: Get the student_patient_id for the specific student and patient
+                const studentPatientData = await sqlConnection`
+                    SELECT student_patient_id
+                    FROM "student_patients"
+                    WHERE patient_id = ${patientId}
+                      AND enrolment_id = (
+                        SELECT enrolment_id
+                        FROM "enrolments"
+                        WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId}
+                    );
+                `;
+    
+                const studentPatientId = studentPatientData[0]?.student_patient_id;
+    
+                if (!studentPatientId) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Student patient not found." });
+                    break;
+                }
+    
+                // Step 3: Update the last_accessed timestamp for the Student_Patient entry
+                await sqlConnection`
+                    UPDATE "student_patients"
+                    SET last_accessed = CURRENT_TIMESTAMP
+                    WHERE student_patient_id = ${studentPatientId};
+                `;
+    
+                // Step 4: Insert a new session with the session_name
+                const sessionData = await sqlConnection`
+                    INSERT INTO "sessions" (session_id, student_patient_id, session_name, session_context_embeddings, last_accessed)
                     VALUES (
-                      uuid_generate_v4(),
-                      ${userId},
-                      ${courseId},
-                      ${moduleId},
-                      ${enrolmentId},
-                      CURRENT_TIMESTAMP,
-                      'session creation'
+                        uuid_generate_v4(),
+                        ${studentPatientId},
+                        ${sessionName},
+                        ARRAY[]::float[],
+                        CURRENT_TIMESTAMP
                     )
-                  `;
+                    RETURNING *;
+                `;
+    
+                // Step 5: Log the session creation in the User Engagement Log
+                const enrolmentData = await sqlConnection`
+                    SELECT enrolment_id
+                    FROM "enrolments"
+                    WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId};
+                `;
+    
+                const enrolmentId = enrolmentData[0]?.enrolment_id;
+    
+                if (enrolmentId) {
+                    await sqlConnection`
+                        INSERT INTO "user_engagement_log" (
+                            log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                        ) VALUES (
+                            uuid_generate_v4(),
+                            ${userId},
+                            ${simulationGroupId},
+                            ${patientId},
+                            ${enrolmentId},
+                            CURRENT_TIMESTAMP,
+                            'session creation'
+                        );
+                    `;
+                }
+    
+                response.body = JSON.stringify(sessionData);
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
             }
-
-            response.body = JSON.stringify(sessionData);
-          } catch (err) {
-            response.statusCode = 500;
-            console.error(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
-          }
         } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error: "Invalid value",
-          });
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "Invalid value" });
         }
         break;
       case "DELETE /student/delete_session":
         if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.session_id &&
-          event.queryStringParameters.email &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.module_id
+            event.queryStringParameters != null &&
+            event.queryStringParameters.session_id &&
+            event.queryStringParameters.email &&
+            event.queryStringParameters.simulation_group_id &&
+            event.queryStringParameters.patient_id
         ) {
-          const sessionId = event.queryStringParameters.session_id;
-          const studentEmail = event.queryStringParameters.email;
-          const courseId = event.queryStringParameters.course_id;
-          const moduleId = event.queryStringParameters.module_id;
-
-          try {
-            // Step 1: Get the user ID using the student_email
-            const userResult = await sqlConnection`
-                  SELECT user_id
-                  FROM "Users"
-                  WHERE user_email = ${studentEmail}
-                  LIMIT 1;
-              `;
-
-            if (userResult.length === 0) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({ error: "Student not found." });
-              break;
-            }
-
-            const userId = userResult[0].user_id;
-
-            // Step 2: Update last_accessed for the corresponding Student_Module entry
-            await sqlConnection`
-                  UPDATE "Student_Modules"
-                  SET last_accessed = CURRENT_TIMESTAMP
-                  WHERE student_module_id = (
-                    SELECT student_module_id
-                    FROM "Sessions"
-                    WHERE session_id = ${sessionId}
-                  );
-              `;
-
-            // Step 3: Delete the session and get the result
-            const deleteResult = await sqlConnection`
-                  DELETE FROM "Sessions"
-                  WHERE session_id = ${sessionId}
-                  RETURNING *;
-              `;
-
-            // Step 4: Get the enrolment ID using user_id
-            const enrolmentData = await sqlConnection`
-                  SELECT "Enrolments".enrolment_id
-                  FROM "Enrolments"
-                  WHERE user_id = ${userId} AND course_id = ${courseId};
-              `;
-
-            // Check if enrolmentData is defined and has rows
-            if (!enrolmentData || !enrolmentData.length) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({ error: "Enrolment not found" });
-              break;
-            }
-
-            const enrolmentId = enrolmentData[0]?.enrolment_id;
-
-            // Step 5: Insert an entry into the User_Engagement_Log if enrolment exists
-            if (enrolmentId) {
-              await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), ${userId}, ${courseId}, ${moduleId}, ${enrolmentId}, CURRENT_TIMESTAMP, 'session deletion');
+            const sessionId = event.queryStringParameters.session_id;
+            const studentEmail = event.queryStringParameters.email;
+            const simulationGroupId = event.queryStringParameters.simulation_group_id;
+            const patientId = event.queryStringParameters.patient_id;
+    
+            try {
+                // Step 1: Get the user ID using the student_email
+                const userResult = await sqlConnection`
+                    SELECT user_id
+                    FROM "users"
+                    WHERE user_email = ${studentEmail}
+                    LIMIT 1;
                 `;
+    
+                if (userResult.length === 0) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Student not found." });
+                    break;
+                }
+    
+                const userId = userResult[0].user_id;
+    
+                // Step 2: Update last_accessed for the corresponding Student_Patient entry
+                await sqlConnection`
+                    UPDATE "student_patients"
+                    SET last_accessed = CURRENT_TIMESTAMP
+                    WHERE student_patient_id = (
+                        SELECT student_patient_id
+                        FROM "sessions"
+                        WHERE session_id = ${sessionId}
+                    );
+                `;
+    
+                // Step 3: Delete the session and get the result
+                const deleteResult = await sqlConnection`
+                    DELETE FROM "sessions"
+                    WHERE session_id = ${sessionId}
+                    RETURNING *;
+                `;
+    
+                if (!deleteResult.length) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Session not found." });
+                    break;
+                }
+    
+                // Step 4: Get the enrolment ID using user_id and simulation_group_id
+                const enrolmentData = await sqlConnection`
+                    SELECT enrolment_id
+                    FROM "enrolments"
+                    WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId};
+                `;
+    
+                if (!enrolmentData.length) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Enrolment not found." });
+                    break;
+                }
+    
+                const enrolmentId = enrolmentData[0].enrolment_id;
+    
+                // Step 5: Insert an entry into the User_Engagement_Log
+                await sqlConnection`
+                    INSERT INTO "user_engagement_log" (
+                        log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                    ) VALUES (
+                        uuid_generate_v4(),
+                        ${userId},
+                        ${simulationGroupId},
+                        ${patientId},
+                        ${enrolmentId},
+                        CURRENT_TIMESTAMP,
+                        'session deletion'
+                    );
+                `;
+    
+                response.body = JSON.stringify({ success: "Session deleted" });
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
             }
-
-            response.body = JSON.stringify({ success: "Session deleted" });
-          } catch (err) {
-            response.statusCode = 500;
-            console.error(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
-          }
         } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error: "session_id, email, course_id, and module_id are required",
-          });
+            response.statusCode = 400;
+            response.body = JSON.stringify({
+                error: "session_id, email, simulation_group_id, and patient_id are required",
+            });
         }
         break;
       case "GET /student/get_messages":
@@ -635,156 +642,178 @@ exports.handler = async (event) => {
           response.body = JSON.stringify({ error: "session_id is required" });
         }
         break;
-      case "POST /student/create_message":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.session_id &&
-          event.queryStringParameters.email &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.module_id &&
-          event.body
-        ) {
-          const sessionId = event.queryStringParameters.session_id;
-          const { message_content } = JSON.parse(event.body);
-          const studentEmail = event.queryStringParameters.email;
-          const courseId = event.queryStringParameters.course_id;
-          const moduleId = event.queryStringParameters.module_id;
-          console.log("message", message_content);
-          console.log("session", sessionId);
-          console.log("email", studentEmail);
-          console.log("course", courseId);
-          console.log("module", moduleId);
-
-          try {
-            // Insert the new message into the Messages table with a generated UUID for message_id
-            const messageData = await sqlConnection`
-                INSERT INTO "Messages" (message_id, session_id, student_sent, message_content, time_sent)
-                VALUES (uuid_generate_v4(), ${sessionId}, true, ${message_content}, CURRENT_TIMESTAMP)
-                RETURNING *;
-              `;
-
-            // Update the last_accessed field in the Sessions table
-            await sqlConnection`
-                UPDATE "Sessions"
-                SET last_accessed = CURRENT_TIMESTAMP
-                WHERE session_id = ${sessionId};
-              `;
-
-            // Retrieve user_id based on studentEmail
-            const userData = await sqlConnection`
-                SELECT user_id
-                FROM "Users"
-                WHERE user_email = ${studentEmail};
-              `;
-
-            const userId = userData[0]?.user_id;
-
-            if (userId) {
-              // Retrieve the enrolment ID using user_id
-              const enrolmentData = await sqlConnection`
-                  SELECT enrolment_id
-                  FROM "Enrolments"
-                  WHERE user_id = ${userId} AND course_id = ${courseId};
-                `;
-
-              const enrolmentId = enrolmentData[0]?.enrolment_id;
-
-              if (enrolmentId) {
-                await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), ${userId}, ${courseId}, ${moduleId}, ${enrolmentId}, CURRENT_TIMESTAMP, 'message creation');
+        case "POST /student/create_message":
+          if (
+              event.queryStringParameters != null &&
+              event.queryStringParameters.session_id &&
+              event.queryStringParameters.email &&
+              event.queryStringParameters.simulation_group_id &&
+              event.queryStringParameters.patient_id &&
+              event.body
+          ) {
+              const sessionId = event.queryStringParameters.session_id;
+              const { message_content } = JSON.parse(event.body);
+              const studentEmail = event.queryStringParameters.email;
+              const simulationGroupId = event.queryStringParameters.simulation_group_id;
+              const patientId = event.queryStringParameters.patient_id;
+      
+              console.log("message", message_content);
+              console.log("session", sessionId);
+              console.log("email", studentEmail);
+              console.log("simulation group", simulationGroupId);
+              console.log("patient", patientId);
+      
+              try {
+                  // Insert the new message into the Messages table with a generated UUID for message_id
+                  const messageData = await sqlConnection`
+                      INSERT INTO "messages" (message_id, session_id, student_sent, message_content, time_sent)
+                      VALUES (uuid_generate_v4(), ${sessionId}, true, ${message_content}, CURRENT_TIMESTAMP)
+                      RETURNING *;
                   `;
-              }
-            }
-
-            response.body = JSON.stringify(messageData);
-          } catch (err) {
-            response.statusCode = 500;
-            console.log(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
-          }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error: "session_id and message_content are required",
-          });
-        }
-        break;
-      case "POST /student/create_ai_message":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.session_id &&
-          event.queryStringParameters.email &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.module_id &&
-          event.body
-        ) {
-          const sessionId = event.queryStringParameters.session_id;
-          const { message_content } = JSON.parse(event.body);
-          const studentEmail = event.queryStringParameters.email;
-          const courseId = event.queryStringParameters.course_id;
-          const moduleId = event.queryStringParameters.module_id;
-          console.log("AI message", message_content);
-          console.log("session", sessionId);
-          console.log("email", studentEmail);
-          console.log("course", courseId);
-          console.log("module", moduleId);
-
-          try {
-            // Insert the new AI message into the Messages table with a generated UUID for message_id
-            const messageData = await sqlConnection`
-                INSERT INTO "Messages" (message_id, session_id, student_sent, message_content, time_sent)
-                VALUES (uuid_generate_v4(), ${sessionId}, false, ${message_content}, CURRENT_TIMESTAMP)
-                RETURNING *;
-              `;
-
-            // Update the last_accessed field in the Sessions table
-            await sqlConnection`
-                UPDATE "Sessions"
-                SET last_accessed = CURRENT_TIMESTAMP
-                WHERE session_id = ${sessionId};
-              `;
-
-            // Retrieve user_id based on studentEmail
-            const userData = await sqlConnection`
-                SELECT user_id
-                FROM "Users"
-                WHERE user_email = ${studentEmail};
-              `;
-
-            const userId = userData[0]?.user_id;
-
-            if (userId) {
-              // Retrieve the enrolment ID using user_id
-              const enrolmentData = await sqlConnection`
-                  SELECT enrolment_id
-                  FROM "Enrolments"
-                  WHERE user_id = ${userId} AND course_id = ${courseId};
-                `;
-
-              const enrolmentId = enrolmentData[0]?.enrolment_id;
-
-              if (enrolmentId) {
-                await sqlConnection`
-                    INSERT INTO "User_Engagement_Log" (log_id, user_id, course_id, module_id, enrolment_id, timestamp, engagement_type)
-                    VALUES (uuid_generate_v4(), ${userId}, ${courseId}, ${moduleId}, ${enrolmentId}, CURRENT_TIMESTAMP, 'AI message creation');
+      
+                  // Update the last_accessed field in the Sessions table
+                  await sqlConnection`
+                      UPDATE "sessions"
+                      SET last_accessed = CURRENT_TIMESTAMP
+                      WHERE session_id = ${sessionId};
                   `;
+      
+                  // Retrieve user_id based on studentEmail
+                  const userData = await sqlConnection`
+                      SELECT user_id
+                      FROM "users"
+                      WHERE user_email = ${studentEmail};
+                  `;
+      
+                  const userId = userData[0]?.user_id;
+      
+                  if (userId) {
+                      // Retrieve the enrolment ID using user_id
+                      const enrolmentData = await sqlConnection`
+                          SELECT enrolment_id
+                          FROM "enrolments"
+                          WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId};
+                      `;
+      
+                      const enrolmentId = enrolmentData[0]?.enrolment_id;
+      
+                      if (enrolmentId) {
+                          await sqlConnection`
+                              INSERT INTO "user_engagement_log" (
+                                  log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                              )
+                              VALUES (
+                                  uuid_generate_v4(), 
+                                  ${userId}, 
+                                  ${simulationGroupId}, 
+                                  ${patientId}, 
+                                  ${enrolmentId}, 
+                                  CURRENT_TIMESTAMP, 
+                                  'message creation'
+                              );
+                          `;
+                      }
+                  }
+      
+                  response.body = JSON.stringify(messageData);
+              } catch (err) {
+                  response.statusCode = 500;
+                  console.error(err);
+                  response.body = JSON.stringify({ error: "Internal server error" });
               }
-            }
-
-            response.body = JSON.stringify(messageData);
-          } catch (err) {
-            response.statusCode = 500;
-            console.log(err);
-            response.body = JSON.stringify({ error: "Internal server error" });
+          } else {
+              response.statusCode = 400;
+              response.body = JSON.stringify({
+                  error: "session_id and message_content are required",
+              });
           }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error: "session_id and message_content are required",
-          });
-        }
-        break;
+          break;
+        case "POST /student/create_ai_message":
+          if (
+              event.queryStringParameters != null &&
+              event.queryStringParameters.session_id &&
+              event.queryStringParameters.email &&
+              event.queryStringParameters.simulation_group_id &&
+              event.queryStringParameters.patient_id &&
+              event.body
+          ) {
+              const sessionId = event.queryStringParameters.session_id;
+              const { message_content } = JSON.parse(event.body);
+              const studentEmail = event.queryStringParameters.email;
+              const simulationGroupId = event.queryStringParameters.simulation_group_id;
+              const patientId = event.queryStringParameters.patient_id;
+      
+              console.log("AI message", message_content);
+              console.log("session", sessionId);
+              console.log("email", studentEmail);
+              console.log("simulation group", simulationGroupId);
+              console.log("patient", patientId);
+      
+              try {
+                  // Insert the new AI message into the Messages table with a generated UUID for message_id
+                  const messageData = await sqlConnection`
+                      INSERT INTO "messages" (message_id, session_id, student_sent, message_content, time_sent)
+                      VALUES (uuid_generate_v4(), ${sessionId}, false, ${message_content}, CURRENT_TIMESTAMP)
+                      RETURNING *;
+                  `;
+      
+                  // Update the last_accessed field in the Sessions table
+                  await sqlConnection`
+                      UPDATE "sessions"
+                      SET last_accessed = CURRENT_TIMESTAMP
+                      WHERE session_id = ${sessionId};
+                  `;
+      
+                  // Retrieve user_id based on studentEmail
+                  const userData = await sqlConnection`
+                      SELECT user_id
+                      FROM "users"
+                      WHERE user_email = ${studentEmail};
+                  `;
+      
+                  const userId = userData[0]?.user_id;
+      
+                  if (userId) {
+                      // Retrieve the enrolment ID using user_id
+                      const enrolmentData = await sqlConnection`
+                          SELECT enrolment_id
+                          FROM "enrolments"
+                          WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId};
+                      `;
+      
+                      const enrolmentId = enrolmentData[0]?.enrolment_id;
+      
+                      if (enrolmentId) {
+                          await sqlConnection`
+                              INSERT INTO "user_engagement_log" (
+                                  log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
+                              )
+                              VALUES (
+                                  uuid_generate_v4(), 
+                                  ${userId}, 
+                                  ${simulationGroupId}, 
+                                  ${patientId}, 
+                                  ${enrolmentId}, 
+                                  CURRENT_TIMESTAMP, 
+                                  'AI message creation'
+                              );
+                          `;
+                      }
+                  }
+      
+                  response.body = JSON.stringify(messageData);
+              } catch (err) {
+                  response.statusCode = 500;
+                  console.error(err);
+                  response.body = JSON.stringify({ error: "Internal server error" });
+              }
+          } else {
+              response.statusCode = 400;
+              response.body = JSON.stringify({
+                  error: "session_id and message_content are required",
+              });
+          }
+          break;
       case "POST /student/enroll_student":
         if (
           event.queryStringParameters != null &&
@@ -920,7 +949,7 @@ exports.handler = async (event) => {
 
             // Update the session name
             const updateResult = await sqlConnection`
-                UPDATE "Sessions"
+                UPDATE "sessions"
                 SET session_name = ${session_name}
                 WHERE session_id = ${session_id}
                 RETURNING *;
@@ -944,96 +973,96 @@ exports.handler = async (event) => {
           response.body = JSON.stringify({ error: "Invalid value" });
         }
         break;
-      case "POST /student/update_module_score":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.module_id &&
-          event.queryStringParameters.student_email &&
-          event.queryStringParameters.course_id &&
-          event.queryStringParameters.llm_verdict
-        ) {
-          try {
-            const moduleId = event.queryStringParameters.module_id;
-            const studentEmail = event.queryStringParameters.student_email;
-            const courseId = event.queryStringParameters.course_id;
-            const llmVerdict =
-              event.queryStringParameters.llm_verdict === "true"; // Convert to boolean
-
-            // Retrieve user_id from the Users table
-            const userData = await sqlConnection`
-                SELECT user_id
-                FROM "Users"
-                WHERE user_email = ${studentEmail}
-              `;
-
-            const userId = userData[0]?.user_id;
-
-            if (!userId) {
-              response.statusCode = 404;
+        case "POST /student/update_patient_score":
+          if (
+              event.queryStringParameters != null &&
+              event.queryStringParameters.patient_id &&
+              event.queryStringParameters.student_email &&
+              event.queryStringParameters.simulation_group_id &&
+              event.queryStringParameters.llm_verdict
+          ) {
+              try {
+                  const patientId = event.queryStringParameters.patient_id;
+                  const studentEmail = event.queryStringParameters.student_email;
+                  const simulationGroupId = event.queryStringParameters.simulation_group_id;
+                  const llmVerdict =
+                      event.queryStringParameters.llm_verdict === "true"; // Convert to boolean
+      
+                  // Retrieve user_id from the Users table
+                  const userData = await sqlConnection`
+                      SELECT user_id
+                      FROM "users"
+                      WHERE user_email = ${studentEmail};
+                  `;
+      
+                  const userId = userData[0]?.user_id;
+      
+                  if (!userId) {
+                      response.statusCode = 404;
+                      response.body = JSON.stringify({
+                          error: "User not found",
+                      });
+                      break;
+                  }
+      
+                  // Get the student_patient_id and current score for the student and patient
+                  const studentPatientData = await sqlConnection`
+                      SELECT student_patient_id, patient_score
+                      FROM "student_patients"
+                      WHERE patient_id = ${patientId}
+                        AND enrolment_id = (
+                          SELECT enrolment_id
+                          FROM "enrolments"
+                          WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId}
+                      );
+                  `;
+      
+                  const studentPatientId = studentPatientData[0]?.student_patient_id;
+                  const currentScore = studentPatientData[0]?.patient_score;
+      
+                  if (!studentPatientId) {
+                      response.statusCode = 404;
+                      response.body = JSON.stringify({
+                          error: "Student patient entry not found.",
+                      });
+                      break;
+                  }
+      
+                  // If llm_verdict is false and the current score is 100, no update is needed
+                  if (!llmVerdict && currentScore === 100) {
+                      response.statusCode = 200;
+                      response.body = JSON.stringify({
+                          message: "No changes made. Patient score is already 100.",
+                      });
+                      break;
+                  }
+      
+                  // Determine the new score based on llm_verdict
+                  const newScore = llmVerdict ? 100 : 0;
+      
+                  // Update the patient score for the student
+                  await sqlConnection`
+                      UPDATE "student_patients"
+                      SET patient_score = ${newScore}
+                      WHERE student_patient_id = ${studentPatientId};
+                  `;
+      
+                  response.statusCode = 200;
+                  response.body = JSON.stringify({
+                      message: "Patient score updated successfully.",
+                  });
+              } catch (err) {
+                  console.error(err);
+                  response.statusCode = 500;
+                  response.body = JSON.stringify({ error: "Internal server error" });
+              }
+          } else {
+              response.statusCode = 400;
               response.body = JSON.stringify({
-                error: "User not found",
+                  error: "Invalid query parameters.",
               });
-              break;
-            }
-
-            // Get the student_module_id for the specific student and module using user_id
-            const studentModuleData = await sqlConnection`
-                SELECT student_module_id, module_score
-                FROM "Student_Modules"
-                WHERE course_module_id = ${moduleId}
-                  AND enrolment_id = (
-                    SELECT enrolment_id
-                    FROM "Enrolments"
-                    WHERE user_id = ${userId} AND course_id = ${courseId}
-                  )
-              `;
-
-            const studentModuleId = studentModuleData[0]?.student_module_id;
-            const currentScore = studentModuleData[0]?.module_score;
-
-            if (!studentModuleId) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({
-                error: "Student module not found",
-              });
-              break;
-            }
-
-            // If llm_verdict is false and the current score is 100, just pass without updating
-            if (!llmVerdict && currentScore === 100) {
-              response.statusCode = 200;
-              response.body = JSON.stringify({
-                message: "No changes made. Module score is already 100.",
-              });
-              break;
-            }
-
-            // Determine the new score based on llm_verdict
-            const newScore = llmVerdict ? 100 : 0;
-
-            // Update the module score for the student
-            await sqlConnection`
-                UPDATE "Student_Modules"
-                SET module_score = ${newScore}
-                WHERE student_module_id = ${studentModuleId}
-              `;
-
-            response.statusCode = 200;
-            response.body = JSON.stringify({
-              message: "Module score updated successfully.",
-            });
-          } catch (err) {
-            console.log(err);
-            response.statusCode = 500;
-            response.body = JSON.stringify({ error: "Internal server error" });
           }
-        } else {
-          response.statusCode = 400;
-          response.body = JSON.stringify({
-            error: "Invalid query parameters.",
-          });
-        }
-        break;
+          break;
       default:
         throw new Error(`Unsupported route: "${pathData}"`);
     }
