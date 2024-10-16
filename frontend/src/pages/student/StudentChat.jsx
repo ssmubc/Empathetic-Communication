@@ -616,7 +616,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
   return (
     <div className="flex flex-row h-screen">
-      <div className="flex flex-col w-1/4 bg-gradient-to-tr from-purple-300 to-cyan-100">
+    <div className="flex flex-col w-1/4 bg-[#99DFB2]"> {/* Updated to solid color */}
         <div className="flex flex-row mt-3 mb-3 ml-4">
           <img
             onClick={() => handleBack()}

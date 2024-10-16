@@ -222,85 +222,58 @@ exports.handler = async (event) => {
           response.body = "Invalid value";
         }
         break;
-      case "GET /student/simulation_group_page":
-        if (
-          event.queryStringParameters != null &&
-          event.queryStringParameters.email &&
-          event.queryStringParameters.simulation_group_id
-        ) {
-          const studentEmail = event.queryStringParameters.email;
-          const simulationGroupId = event.queryStringParameters.simulation_group_id;
-    
-          try {
-            // Retrieve the user ID using the user_email
-            const userResult = await sqlConnection`
-                SELECT user_id FROM "users" WHERE user_email = ${studentEmail};
-              `;
-    
-            if (userResult.length === 0) {
-              response.statusCode = 404;
-              response.body = JSON.stringify({ error: "User not found" });
-              break;
-            }
-    
-            const userId = userResult[0].user_id;
-    
-            // Fetch patient data associated with the simulation group
-            const data = await sqlConnection`
-                WITH StudentEnrollment AS (
-                  SELECT 
-                    enrolment_id
-                  FROM 
-                    "enrolments"
-                  WHERE 
-                    user_id = ${userId}
-                    AND simulation_group_id = ${simulationGroupId}
-                  LIMIT 1
-                )
-                SELECT
-                  p.patient_id,
-                  p.patient_name,
-                  p.patient_age,
-                  p.patient_gender,
-                  p.patient_number,
-                  sp.student_patient_id,
-                  sp.patient_score,
-                  sp.last_accessed,
-                  sp.patient_context_embedding
-                FROM
-                  "patients" p
-                LEFT JOIN
-                  "student_patients" sp ON sp.patient_id = p.patient_id
-                JOIN
-                  StudentEnrollment se ON sp.enrolment_id = se.enrolment_id
-                WHERE
-                  p.simulation_group_id = ${simulationGroupId}
-                ORDER BY
-                  p.patient_number;
-              `;
-    
-            const enrolmentId = data[0]?.enrolment_id;
-    
-            if (enrolmentId) {
-              await sqlConnection`
-                  INSERT INTO "user_engagement_log" (
-                    log_id, user_id, simulation_group_id, patient_id, enrolment_id, timestamp, engagement_type
-                  ) VALUES (
-                    uuid_generate_v4(), ${userId}, ${simulationGroupId}, null, ${enrolmentId}, CURRENT_TIMESTAMP, 'group access'
-                  );
-                `;
-            }
-    
-            response.body = JSON.stringify(data);
-          } catch (err) {
-            response.statusCode = 500;
-            response.body = JSON.stringify({ error: "Internal server error" });
-          }
-        } else {
-          response.statusCode = 400;
-          response.body = "Invalid value";
-        }
+case "GET /student/simulation_group":
+  if (
+    event.queryStringParameters != null &&
+    event.queryStringParameters.email
+  ) {
+    const user_email = event.queryStringParameters.email;
+
+    try {
+      // Retrieve the user ID using the user_email
+      const userResult = await sqlConnection`
+        SELECT user_id FROM "users" WHERE user_email = ${user_email};
+      `;
+
+      if (userResult.length === 0) {
+        response.statusCode = 404;
+        response.body = JSON.stringify({ error: "User not found" });
         break;
+      }
+
+      const user_id = userResult[0].user_id;
+
+      // Query to get courses for the user, including the instructor's name
+      const data = await sqlConnection`
+        SELECT sg.*, u.first_name AS instructor_first_name, u.last_name AS instructor_last_name
+        FROM "enrolments" e
+        JOIN "simulation_groups" sg ON sg.simulation_group_id = e.simulation_group_id
+        LEFT JOIN "enrolments" ie ON ie.simulation_group_id = sg.simulation_group_id AND ie.enrolment_type = 'instructor'
+        LEFT JOIN "users" u ON u.user_id = ie.user_id
+        WHERE e.user_id = ${user_id} 
+        AND sg.group_student_access = TRUE
+        ORDER BY sg.group_name, sg.simulation_group_id;
+      `;
+
+      // Add instructor's full name to each group entry
+      const groupsWithInstructor = data.map(group => ({
+        ...group,
+        instructor_name: `${group.instructor_first_name} ${group.instructor_last_name}`.trim()
+      }));
+
+      response.body = JSON.stringify(groupsWithInstructor);
+    } catch (err) {
+      response.statusCode = 500;
+      console.error(err);
+      response.body = JSON.stringify({ error: "Internal server error" });
+    }
+  } else {
+    response.statusCode = 400;
+    response.body = "Invalid value";
+  }
+  break;
+
+
       case "GET /student/patient":
         if (
             event.queryStringParameters != null &&
