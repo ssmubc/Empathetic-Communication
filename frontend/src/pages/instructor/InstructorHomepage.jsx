@@ -198,7 +198,7 @@ const InstructorHomepage = () => {
             >
               <InstructorHeader />
             </AppBar>
-            <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: 1 }}>
+            <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: 1, overflowY: "auto", maxHeight: "calc(100vh - 64px)" }}>
               <Toolbar />
               <Typography
                 color="black"
@@ -211,7 +211,6 @@ const InstructorHomepage = () => {
               <Paper
                 sx={{
                   width: "80%",
-                  overflow: "hidden",
                   margin: "0 auto",
                   padding: 2,
                 }}
@@ -223,8 +222,7 @@ const InstructorHomepage = () => {
                   onChange={handleSearchChange}
                   sx={{ width: "100%", marginBottom: 2 }}
                 />
-                <TableContainer sx={{ width: "100%", maxHeight: "70vh",
-              overflowY: "auto",}}>
+                <TableContainer>
                   <Table aria-label="group table">
                     <TableHead>
                       <TableRow>
@@ -300,4 +298,4 @@ const InstructorHomepage = () => {
   );
 };
 
-export default InstructorHomepage;
+export default InstructorHomepage; 

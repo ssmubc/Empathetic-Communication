@@ -74,7 +74,7 @@ const StudentHeader = () => {
   };
 
   return (
-    <header className="bg-[#F8F9FD] p-4 flex justify-between items-center max-h-20">
+    <header className="bg-[#F8F9FD] p-4 flex justify-between items-center max-h-20" style={{ paddingLeft: "15px", paddingRight: "40px" }}>
       <div className="text-black text-3xl font-roboto font-semibold p-4">
         {showDashboard && name && `${name}'s Dashboard`} {/* Display the text after the delay */}
       </div>
@@ -87,6 +87,7 @@ const StudentHeader = () => {
           >
             Instructor view
           </button>
+
         )}
         <button
           className="bg-gray-800 text-white hover:bg-gray-700 px-4 py-2 rounded"

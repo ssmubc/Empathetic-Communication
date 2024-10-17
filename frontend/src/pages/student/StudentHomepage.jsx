@@ -227,9 +227,10 @@ export const StudentHomepage = ({ setGroup }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              width: "calc(100% - 240px)",
+              width: "100%", // Full width for consistent alignment
               paddingLeft: 4,
               paddingRight: 5,
+              mb: 2,
             }}
           >
             <Typography
@@ -238,7 +239,6 @@ export const StudentHomepage = ({ setGroup }) => {
               color="black"
               sx={{
                 fontWeight: "500",
-                mb: 2,
                 display: "flex",
                 alignItems: "center",
                 fontSize: "1.5rem",
@@ -250,13 +250,10 @@ export const StudentHomepage = ({ setGroup }) => {
             <Button
               variant="outlined"
               sx={{
-                alignSelf: "flex-end",
                 borderColor: "black",
                 color: "black",
                 borderWidth: "1px",
-                marginLeft: "auto",
-                marginRight: 1,
-                marginBottom: "15px",
+                alignSelf: "flex-end",
                 "&:hover": {
                   bgcolor: "white",
                   borderColor: "black",
@@ -287,6 +284,7 @@ export const StudentHomepage = ({ setGroup }) => {
           ) : (
             <Box
               paddingLeft={3}
+              paddingRight={3} // Added paddingRight
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -311,77 +309,50 @@ export const StudentHomepage = ({ setGroup }) => {
                   No groups added yet, click "JOIN GROUP" to add a group
                 </Typography>
               ) : (
-                groups.map((group, index) => (
-                  <Card
-                    key={index}
-                    sx={{
-                      mb: 1,
-                      width: "calc(100% - 285px)",
-                      maxWidth: "calc(100% - 255px)",
-                      minWidth: "calc(100% - 285px)",
-                      minHeight: "120px",
-                      bgcolor: "transparent",
-                      background: "#99DFB2", 
-                    }}
-                  >
-                    <CardContent sx={{ height: "50%" }}>
-                      <Grid container alignItems="center">
-                        <Grid item xs={8}>
+                <Grid container spacing={2} sx={{ width: "100%" }}>
+                  {groups.map((group, index) => (
+                    <Grid item xs={4} key={index}>
+                      <Card
+                        sx={{
+                          mb: 1,
+                          bgcolor: "transparent",
+                          background: "#99DFB2",
+                          transition: "transform 0.3s ease",
+                          "&:hover": {
+                            transform: "scale(1.05)",
+                          },
+                        }}
+                      >
+                        <CardContent>
                           <Typography
                             variant="h6"
-                            component="div"
                             sx={{
                               textAlign: "left",
                               fontWeight: "600",
                               fontSize: "1.25rem",
                             }}
                           >
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ textAlign: "left", mt: 1, fontSize: "1rem" }}
-                          >
                             {titleCase(group.group_name)}
                           </Typography>
-                        </Grid>
-                        <Grid
-                          item
-                          xs={4}
-                          sx={{
-                            display: "flex",
-                            alignItems: "flex-end",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          {/* Empty grid item to push the button to the bottom right */}
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <CardActions
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        p: 1,
-                        pr: 2,
-                        height: "50%",
-                      }}
-                    >
-                      <Button
-                        size="small"
-                        sx={{
-                          bgcolor: "#A8A3A3",
-                          p: 1,
-                          color: "black",
-                          fontWeight: "dark",
-                          ":hover": { bgcolor: "grey" },
-                        }}
-                        onClick={() => enterGroup(group)}
-                      >
-                        Continue
-                      </Button>
-                    </CardActions>
-                  </Card>
-                ))
+                        </CardContent>
+                        <CardActions sx={{ justifyContent: "flex-end" }}>
+                          <Button
+                            size="small"
+                            sx={{
+                              bgcolor: "#e3f7f1",
+                              color: "black",
+                              fontWeight: "dark",
+                              ":hover": { bgcolor: "grey" },
+                            }}
+                            onClick={() => enterGroup(group)}
+                          >
+                            Continue
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
               )}
             </Box>
           )}
