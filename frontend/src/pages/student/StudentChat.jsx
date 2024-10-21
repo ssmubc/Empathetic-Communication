@@ -5,6 +5,9 @@ import StudentMessage from "../../components/StudentMessage";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useNavigate } from "react-router-dom";
 import { fetchUserAttributes } from "aws-amplify/auth";
+import StudentNotes from "./StudentNotes"; // Importing the StudentNotes component
+import PatientInfo from "./PatientInfo";   // Importing the PatientInfo component
+
 const TypingIndicator = () => (
   <div className="flex items-center ml-28 mb-4">
     <div className="flex space-x-1">
@@ -49,7 +52,14 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   const [newMessage, setNewMessage] = useState(null);
   const [isAItyping, setIsAItyping] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [isNotesOpen, setIsNotesOpen] = useState(false); // NEW ADDITIOPN Dialog control for Notes
+  const [isPatientInfoOpen, setIsPatientInfoOpen] = useState(false); // NEW ADDITION Dialog control for Patient Info
+
   const navigate = useNavigate();
+
+
+
 
   useEffect(() => {
     if (
@@ -616,7 +626,8 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
   return (
     <div className="flex flex-row h-screen">
-    <div className="flex flex-col w-1/4 bg-[#99DFB2]"> {/* Updated to solid color */}
+      {/* Sidebar */}
+      <div className="flex flex-col w-1/4 bg-[#99DFB2] h-full">
         <div className="flex flex-row mt-3 mb-3 ml-4">
           <img
             onClick={() => handleBack()}
@@ -628,6 +639,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             {titleCase(patient.patient_name)}
           </div>
         </div>
+
         <button
           onClick={() => {
             if (!creatingSession) {
@@ -650,7 +662,9 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
         <div className="font-roboto font-bold ml-8 text-start text-[#212427]">
           History
         </div>
-        <div className=" overflow-y-auto mt-2 mb-6">
+
+        {/* Scrollable chat history section */}
+        <div className="flex-grow overflow-y-auto mt-2 mb-6">
           {sessions
             .slice()
             .reverse()
@@ -668,7 +682,29 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
               />
             ))}
         </div>
+
+        {/* Add new buttons at the bottom of the sidebar */}
+        <div className="mt-auto px-8 mb-8">
+          <button
+            onClick={() => setIsNotesOpen(true)} // Open Notes Dialog
+            className="border border-black bg-transparent pt-2 pb-2 w-full"
+          >
+            <div className="flex justify-center text-md font-roboto font-bold text-[#212427]">
+              Notes
+            </div>
+          </button>
+          <button
+            onClick={() => setIsPatientInfoOpen(true)} // Open Patient Info Dialog
+            className="border border-black bg-transparent pt-2 pb-2 w-full mt-4"
+          >
+            <div className="flex justify-center text-md font-roboto font-bold text-[#212427]">
+              Patient Info
+            </div>
+          </button>
+        </div>
       </div>
+
+      {/* Chat Area */}
       <div className="flex flex-col-reverse w-3/4 bg-[#F8F9FD]">
         <div className="flex items-center justify-between border bg-[#f2f0f0] border-[#8C8C8C] py-2 mb-12 mx-20">
           <textarea
@@ -714,6 +750,15 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
           AI Assistant 🌟
         </div>
       </div>
+
+      {/* Notes Popout */}
+      <StudentNotes open={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
+
+      {/* Patient Info Popout */}
+      <PatientInfo
+        open={isPatientInfoOpen}
+        onClose={() => setIsPatientInfoOpen(false)}
+      />
     </div>
   );
 };
