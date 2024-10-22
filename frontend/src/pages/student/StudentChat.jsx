@@ -5,33 +5,30 @@ import StudentMessage from "../../components/StudentMessage";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useNavigate } from "react-router-dom";
 import { fetchUserAttributes } from "aws-amplify/auth";
-import StudentNotes from "./StudentNotes"; // Importing the StudentNotes component
+import DraggableNotes from "./DraggableNotes"; // Correctly import DraggableNotes component
 import PatientInfo from "./PatientInfo";   // Importing the PatientInfo component
 
 // Importing icons for Notes and Patient Info
 import DescriptionIcon from "@mui/icons-material/Description";
 import InfoIcon from "@mui/icons-material/Info";
 
+// Importing l-mirage animation
+import { mirage } from 'ldrs';
+mirage.register();
 
-const TypingIndicator = () => (
-  <div className="flex items-center ml-28 mb-4">
-    <div className="flex space-x-1">
-      <div
-        className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-        style={{ animationDelay: "0s" }}
-      ></div>
-      <div
-        className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-        style={{ animationDelay: "0.2s" }}
-      ></div>
-      <div
-        className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-        style={{ animationDelay: "0.4s" }}
-      ></div>
-    </div>
-    <span className="ml-2 text-gray-500">AI is typing...</span>
+// TypingIndicator using l-mirage
+const TypingIndicator = ({ patientName }) => (
+  <div className="flex items-center mx-20 mb-4">
+    <l-mirage size="60" speed="2.5" color="black"></l-mirage>
+    <span className="ml-2 text-black font-roboto">
+      {patientName ? `${titleCase(patientName)} is typing...` : "Typing..."}
+    </span>
   </div>
 );
+
+
+
+
 
 function titleCase(str) {
   if (typeof str !== "string") {
@@ -69,7 +66,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
   const handleMouseMove = (e) => {
     const newWidth = e.clientX; // Get the new width based on the mouse position
-    if (newWidth >= 100 && newWidth <= 400) {
+    if (newWidth >= 115 && newWidth <= 400) {
       // Limit resizing between 100px and 400px
       setSidebarWidth(newWidth);
     }
@@ -652,6 +649,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
     return (
       <div className="flex flex-row h-screen">
+        {/* Sidebar */}
         <div
           className="flex flex-col bg-[#99DFB2] h-full"
           style={{ width: sidebarWidth }}
@@ -660,7 +658,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
           <div
             className="flex flex-row mt-3 mb-3 ml-4"
             style={{
-              justifyContent: sidebarWidth <= 160 ? "" : "flex-start", 
+              justifyContent: sidebarWidth <= 160 ? "" : "flex-start",
             }}
           >
             <img
@@ -675,7 +673,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
               </div>
             )}
           </div>
-    
+
           {/* New Chat Button */}
           <button
             onClick={() => {
@@ -684,12 +682,12 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 handleNewChat();
               }
             }}
-            className="border border-black ml-8 mr-8 mt-0 mb-0 bg-transparent pt-1.5 pb-1.5"
+            className="border border-black ml-8 mr-8 mt-0 mb-0 bg-transparent pt-1.5 pb-1.5 hover:scale-105 transition-transform duration-300"
           >
             <div
               className="flex items-center gap-2"
               style={{
-                justifyContent: sidebarWidth <= 160 ? "center" : "flex-start", // Center icon when text is hidden
+                justifyContent: sidebarWidth <= 160 ? "center" : "flex-start",
               }}
             >
               <div className="text-md font-roboto text-[#212427]">+</div>
@@ -700,18 +698,11 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
               )}
             </div>
           </button>
-    
+
           <div className="my-4">
             <hr className="border-t border-black" />
           </div>
-    
-          {/* History Text (Hidden when small) */}
-          {sidebarWidth > 160 && (
-            <div className="font-roboto font-bold ml-8 text-start text-[#212427]">
-              History
-            </div>
-          )}
-    
+
           {/* Session List */}
           <div className="flex-grow overflow-y-auto mt-2 mb-6">
             {sessions
@@ -720,7 +711,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
               .map((iSession) => (
                 <Session
                   key={iSession.session_id}
-                  text={sidebarWidth > 160 ? iSession.session_name : ""} // Hide chat name when small
+                  text={sidebarWidth > 160 ? iSession.session_name : ""}
                   session={iSession}
                   setSession={setSession}
                   deleteSession={handleDeleteSession}
@@ -731,50 +722,49 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 />
               ))}
           </div>
-    
+
           {/* Notes and Patient Info Buttons */}
           <div className="mt-auto px-8 mb-8">
             <button
               onClick={() => setIsNotesOpen(true)}
-              className="border border-black bg-transparent pt-2 pb-2 w-full"
+              className="border border-black bg-transparent pt-2 pb-2 w-full hover:scale-105 transition-transform duration-300"
             >
               <div
                 className="flex items-center justify-center"
                 style={{
-                  justifyContent: sidebarWidth <= 160 ? "center" : "flex-start", // Center icon when sidebar is small
+                  justifyContent: sidebarWidth <= 160 ? "center" : "flex-start",
                 }}
               >
                 <DescriptionIcon
-                  className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"} // 
-                  style={{ color: "black" }} // 
+                  className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"}
+                  style={{ color: "black" }}
                 />
-                {sidebarWidth > 160 && (
-                  <span className="text-black">Notes</span> // 
-                )}
+                {sidebarWidth > 160 && <span className="text-black">Notes</span>}
               </div>
             </button>
+
             <button
               onClick={() => setIsPatientInfoOpen(true)}
-              className="border border-black bg-transparent pt-2 pb-2 w-full mt-4"
+              className="border border-black bg-transparent pt-2 pb-2 w-full mt-4 hover:scale-105 transition-transform duration-300"
             >
               <div
                 className="flex items-center justify-center"
                 style={{
-                  justifyContent: sidebarWidth <= 160 ? "center" : "flex-start", // Center icon when sidebar is small
+                  justifyContent: sidebarWidth <= 160 ? "center" : "flex-start",
                 }}
               >
                 <InfoIcon
-                  className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"} // Center icon if sidebar is small
-                  style={{ color: "black" }} 
+                  className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"}
+                  style={{ color: "black" }}
                 />
                 {sidebarWidth > 160 && (
-                  <span className="text-black">Patient Info</span> // Ensure text is black
+                  <span className="text-black">Patient Info</span>
                 )}
               </div>
             </button>
           </div>
         </div>
-    
+
         {/* Sidebar Resize Handle */}
         <div
           onMouseDown={startResizing}
@@ -786,7 +776,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             position: "relative",
           }}
         />
-    
+
         {/* Chat Area */}
         <div className="flex flex-col-reverse flex-grow bg-[#F8F9FD]">
           <div className="flex items-center justify-between border bg-[#f2f0f0] border-[#8C8C8C] py-2 mb-12 mx-20">
@@ -817,25 +807,32 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 <AIMessage key={message.message_id} message={message.message_content} />
               )
             )}
-            {isAItyping && <TypingIndicator />}
+
+            {/* TypingIndicator: Pass patient's name */}
+            {isAItyping && <TypingIndicator patientName={patient?.patient_name} />}
+
             <div ref={messagesEndRef} />
           </div>
           <div className="font-roboto font-bold text-2xl text-center mt-6 mb-6 text-black">
             AI Patient
           </div>
         </div>
-    
-        <StudentNotes open={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
+
+        {/* Draggable Notes */}
+        {isNotesOpen && (
+          <DraggableNotes
+            isOpen={isNotesOpen}
+            onClose={() => setIsNotesOpen(false)}
+          />
+        )}
+
+        {/* Patient Info Modal */}
         <PatientInfo
           open={isPatientInfoOpen}
           onClose={() => setIsPatientInfoOpen(false)}
         />
       </div>
     );
-    
-    
-  
-  
   };
   
 export default StudentChat;
