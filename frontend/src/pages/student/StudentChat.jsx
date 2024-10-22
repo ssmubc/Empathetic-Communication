@@ -8,6 +8,11 @@ import { fetchUserAttributes } from "aws-amplify/auth";
 import StudentNotes from "./StudentNotes"; // Importing the StudentNotes component
 import PatientInfo from "./PatientInfo";   // Importing the PatientInfo component
 
+// Importing icons for Notes and Patient Info
+import DescriptionIcon from "@mui/icons-material/Description";
+import InfoIcon from "@mui/icons-material/Info";
+
+
 const TypingIndicator = () => (
   <div className="flex items-center ml-28 mb-4">
     <div className="flex space-x-1">
@@ -59,6 +64,27 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   const navigate = useNavigate();
 
 
+  // Sidebar resizing logic
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+
+  const handleMouseMove = (e) => {
+    const newWidth = e.clientX; // Get the new width based on the mouse position
+    if (newWidth >= 100 && newWidth <= 400) {
+      // Limit resizing between 100px and 400px
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const stopResizing = () => {
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", stopResizing);
+  };
+
+  const startResizing = (e) => {
+    e.preventDefault(); // Prevent default behavior
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", stopResizing);
+  };
 
 
   useEffect(() => {
@@ -624,143 +650,192 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
     return <div>Loading...</div>;
   }
 
-  return (
-    <div className="flex flex-row h-screen">
-      {/* Sidebar */}
-      <div className="flex flex-col w-1/4 bg-[#99DFB2] h-full">
-        <div className="flex flex-row mt-3 mb-3 ml-4">
-          <img
-            onClick={() => handleBack()}
-            className="w-8 h-8 cursor-pointer"
-            src="./ArrowCircleDownRounded.png"
-            alt="back"
-          />
-          <div className="ml-3 pt-0.5 text-black font-roboto font-bold text-lg">
-            {titleCase(patient.patient_name)}
-          </div>
-        </div>
-
-        <button
-          onClick={() => {
-            if (!creatingSession) {
-              setCreatingSession(true);
-              handleNewChat();
-            }
-          }}
-          className="border border-black ml-8 mr-8 mt-0 mb-0 bg-transparent pt-1.5 pb-1.5"
+    return (
+      <div className="flex flex-row h-screen">
+        <div
+          className="flex flex-col bg-[#99DFB2] h-full"
+          style={{ width: sidebarWidth }}
         >
-          <div className="flex flex-row gap-6">
-            <div className="text-md font-roboto text-[#212427]">+</div>
-            <div className="text-md font-roboto font-bold text-[#212427]">
-              New Chat
-            </div>
+          {/* Back Button and Patient Name */}
+          <div
+            className="flex flex-row mt-3 mb-3 ml-4"
+            style={{
+              justifyContent: sidebarWidth <= 160 ? "" : "flex-start", 
+            }}
+          >
+            <img
+              onClick={() => handleBack()}
+              className="w-8 h-8 cursor-pointer"
+              src="./ArrowCircleDownRounded.png"
+              alt="back"
+            />
+            {sidebarWidth > 160 && (
+              <div className="ml-3 pt-0.5 text-black font-roboto font-bold text-lg">
+                {titleCase(patient.patient_name)}
+              </div>
+            )}
           </div>
-        </button>
-        <div className="my-4">
-          <hr className="border-t border-black" />
-        </div>
-        <div className="font-roboto font-bold ml-8 text-start text-[#212427]">
-          History
-        </div>
-
-        {/* Scrollable chat history section */}
-        <div className="flex-grow overflow-y-auto mt-2 mb-6">
-          {sessions
-            .slice()
-            .reverse()
-            .map((iSession, index) => (
-              <Session
-                key={iSession.session_id}
-                text={iSession.session_name}
-                session={iSession}
-                setSession={setSession}
-                deleteSession={handleDeleteSession}
-                selectedSession={session}
-                setMessages={setMessages}
-                setSessions={setSessions}
-                sessions={sessions}
-              />
-            ))}
-        </div>
-
-        {/* Add new buttons at the bottom of the sidebar */}
-        <div className="mt-auto px-8 mb-8">
+    
+          {/* New Chat Button */}
           <button
-            onClick={() => setIsNotesOpen(true)} // Open Notes Dialog
-            className="border border-black bg-transparent pt-2 pb-2 w-full"
+            onClick={() => {
+              if (!creatingSession) {
+                setCreatingSession(true);
+                handleNewChat();
+              }
+            }}
+            className="border border-black ml-8 mr-8 mt-0 mb-0 bg-transparent pt-1.5 pb-1.5"
           >
-            <div className="flex justify-center text-md font-roboto font-bold text-[#212427]">
-              Notes
+            <div
+              className="flex items-center gap-2"
+              style={{
+                justifyContent: sidebarWidth <= 160 ? "center" : "flex-start", // Center icon when text is hidden
+              }}
+            >
+              <div className="text-md font-roboto text-[#212427]">+</div>
+              {sidebarWidth > 160 && (
+                <div className="text-md font-roboto font-bold text-[#212427]">
+                  New Chat
+                </div>
+              )}
             </div>
           </button>
-          <button
-            onClick={() => setIsPatientInfoOpen(true)} // Open Patient Info Dialog
-            className="border border-black bg-transparent pt-2 pb-2 w-full mt-4"
-          >
-            <div className="flex justify-center text-md font-roboto font-bold text-[#212427]">
-              Patient Info
+    
+          <div className="my-4">
+            <hr className="border-t border-black" />
+          </div>
+    
+          {/* History Text (Hidden when small) */}
+          {sidebarWidth > 160 && (
+            <div className="font-roboto font-bold ml-8 text-start text-[#212427]">
+              History
             </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Chat Area */}
-      <div className="flex flex-col-reverse w-3/4 bg-[#F8F9FD]">
-        <div className="flex items-center justify-between border bg-[#f2f0f0] border-[#8C8C8C] py-2 mb-12 mx-20">
-          <textarea
-            ref={textareaRef}
-            className="text-sm w-full outline-none bg-[#f2f0f0] text-black resize-none max-h-32 ml-2 mr-2"
-            style={{ maxHeight: "8rem" }}
-            maxLength={2096}
-          />
-          <img
-            onClick={handleSubmit}
-            className="cursor-pointer w-3 h-3 mr-4"
-            src="./send.png"
-            alt="send"
-          />
-        </div>
-        <div className="flex-grow overflow-y-auto p-4 h-full">
-          {messages.map((message, index) =>
-            message.student_sent ? (
-              <StudentMessage
-                key={message.message_id}
-                message={message.message_content}
-                isMostRecent={getMostRecentStudentMessageIndex() === index}
-                onDelete={() => handleDeleteMessage(message)}
-                hasAiMessageAfter={hasAiMessageAfter(
-                  messages,
-                  getMostRecentStudentMessageIndex()
-                )}
-              />
-            ) : (
-              <AIMessage
-                key={message.message_id}
-                message={message.message_content}
-              />
-            )
           )}
-          {isAItyping &&
-            currentSessionId &&
-            session?.session_id &&
-            currentSessionId === session.session_id && <TypingIndicator />}
-          <div ref={messagesEndRef} />
+    
+          {/* Session List */}
+          <div className="flex-grow overflow-y-auto mt-2 mb-6">
+            {sessions
+              .slice()
+              .reverse()
+              .map((iSession) => (
+                <Session
+                  key={iSession.session_id}
+                  text={sidebarWidth > 160 ? iSession.session_name : ""} // Hide chat name when small
+                  session={iSession}
+                  setSession={setSession}
+                  deleteSession={handleDeleteSession}
+                  selectedSession={session}
+                  setMessages={setMessages}
+                  setSessions={setSessions}
+                  sessions={sessions}
+                />
+              ))}
+          </div>
+    
+          {/* Notes and Patient Info Buttons */}
+          <div className="mt-auto px-8 mb-8">
+            <button
+              onClick={() => setIsNotesOpen(true)}
+              className="border border-black bg-transparent pt-2 pb-2 w-full"
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  justifyContent: sidebarWidth <= 160 ? "center" : "flex-start", // Center icon when sidebar is small
+                }}
+              >
+                <DescriptionIcon
+                  className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"} // 
+                  style={{ color: "black" }} // 
+                />
+                {sidebarWidth > 160 && (
+                  <span className="text-black">Notes</span> // 
+                )}
+              </div>
+            </button>
+            <button
+              onClick={() => setIsPatientInfoOpen(true)}
+              className="border border-black bg-transparent pt-2 pb-2 w-full mt-4"
+            >
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  justifyContent: sidebarWidth <= 160 ? "center" : "flex-start", // Center icon when sidebar is small
+                }}
+              >
+                <InfoIcon
+                  className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"} // Center icon if sidebar is small
+                  style={{ color: "black" }} 
+                />
+                {sidebarWidth > 160 && (
+                  <span className="text-black">Patient Info</span> // Ensure text is black
+                )}
+              </div>
+            </button>
+          </div>
         </div>
-        <div className="font-roboto font-bold text-2xl text-left mt-6 ml-12 mb-6 text-black">
-          AI Assistant 🌟
+    
+        {/* Sidebar Resize Handle */}
+        <div
+          onMouseDown={startResizing}
+          style={{
+            width: "5px",
+            cursor: "col-resize",
+            height: "100vh",
+            backgroundColor: "#F8F9FD",
+            position: "relative",
+          }}
+        />
+    
+        {/* Chat Area */}
+        <div className="flex flex-col-reverse flex-grow bg-[#F8F9FD]">
+          <div className="flex items-center justify-between border bg-[#f2f0f0] border-[#8C8C8C] py-2 mb-12 mx-20">
+            <textarea
+              ref={textareaRef}
+              className="text-sm w-full outline-none bg-[#f2f0f0] text-black resize-none max-h-32 ml-2 mr-2"
+              style={{ maxHeight: "8rem" }}
+              maxLength={2096}
+            />
+            <img
+              onClick={handleSubmit}
+              className="cursor-pointer w-3 h-3 mr-4"
+              src="./send.png"
+              alt="send"
+            />
+          </div>
+          <div className="flex-grow overflow-y-auto p-4 h-full">
+            {messages.map((message, index) =>
+              message.student_sent ? (
+                <StudentMessage
+                  key={message.message_id}
+                  message={message.message_content}
+                  isMostRecent={index === 0}
+                  onDelete={() => handleDeleteMessage(message)}
+                  hasAiMessageAfter={() => false}
+                />
+              ) : (
+                <AIMessage key={message.message_id} message={message.message_content} />
+              )
+            )}
+            {isAItyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="font-roboto font-bold text-2xl text-center mt-6 mb-6 text-black">
+            AI Patient
+          </div>
         </div>
+    
+        <StudentNotes open={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
+        <PatientInfo
+          open={isPatientInfoOpen}
+          onClose={() => setIsPatientInfoOpen(false)}
+        />
       </div>
-
-      {/* Notes Popout */}
-      <StudentNotes open={isNotesOpen} onClose={() => setIsNotesOpen(false)} />
-
-      {/* Patient Info Popout */}
-      <PatientInfo
-        open={isPatientInfoOpen}
-        onClose={() => setIsPatientInfoOpen(false)}
-      />
-    </div>
-  );
-};
-
+    );
+    
+    
+  
+  
+  };
+  
 export default StudentChat;
