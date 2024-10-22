@@ -350,7 +350,7 @@ const InstructorEditPatients = () => {
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
-
+  
     if (!patientName) {
       toast.error("Patient Name is required.", {
         position: "top-center",
@@ -377,7 +377,7 @@ const InstructorEditPatients = () => {
       setFiles((prevFiles) =>
         prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
       );
-
+  
       setDeletedFiles([]);
       setNewFiles([]);
       toast.success("Patient updated successfully", {
@@ -390,6 +390,11 @@ const InstructorEditPatients = () => {
         progress: undefined,
         theme: "colored",
       });
+  
+      // Navigate back to the previous page after saving
+      setTimeout(() => {
+        handleBackClick();
+      }, 1000);
     } catch (error) {
       console.error("Error fetching groups:", error);
       toast.error("Patient failed to update", {
@@ -406,6 +411,7 @@ const InstructorEditPatients = () => {
       setIsSaving(false);
     }
   };
+  
 
   const updateMetaData = (files, token) => {
     files.forEach((file) => {
