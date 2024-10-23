@@ -16,19 +16,19 @@ function DraggableNotes({ onClose }) {
     }
   }, []);
 
-  // Save the note content to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("studentNotes", noteContent);
-  }, [noteContent]);
-
   const handleNoteChange = (e) => {
     setNoteContent(e.target.value);
   };
 
+  // Function to save notes manually
+  const handleSave = () => {
+    localStorage.setItem("studentNotes", noteContent);
+    alert("Notes saved successfully!");
+  };
+
   const handleMouseDown = (e) => {
     // Prevent dragging if the target is the textarea or resize handle
-    if (e.target.tagName.toLowerCase() === "textarea" || isResizing.current)
-      return;
+    if (e.target.tagName.toLowerCase() === "textarea" || isResizing.current) return;
 
     isDragging.current = true;
     noteRef.current.style.cursor = "grabbing";
@@ -93,13 +93,13 @@ function DraggableNotes({ onClose }) {
         position: "absolute",
         top: `${position.y}px`,
         left: `${position.x}px`,
-        width: `${dimensions.width}px`, // Bound width to state
-        height: `${dimensions.height}px`, // Bound height to state
+        width: `${dimensions.width}px`,
+        height: `${dimensions.height}px`,
         backgroundColor: "#fff",
         border: "1px solid #ccc",
         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        resize: "none", // Disable native resizing for the outer container
-        overflow: "hidden", // Prevent overflow issues
+        resize: "none",
+        overflow: "hidden",
         cursor: "grab",
         zIndex: 1000,
       }}
@@ -113,50 +113,68 @@ function DraggableNotes({ onClose }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          position: "relative", // Ensures the 'x' button stays in the right corner
+          position: "relative",
         }}
       >
-        {/* Small "x" button inside the textarea */}
         <button
           onClick={onClose}
           style={{
             position: "absolute",
-            right: "0",  // Adjusted to perfectly align in the top-right corner
-            top: "0",    // Adjusted to perfectly align in the top-right corner
+            right: "0",
+            top: "0",
             background: "transparent",
             border: "none",
             color: "red",
             fontSize: "12px",
-            padding: "5px",  // Added some padding for better clickable area
+            padding: "5px",
             cursor: "pointer",
             zIndex: 10,
           }}
         >
           x
         </button>
-        <span style={{ fontWeight: "bold", color: "black" }}>Notes</span> {/* Notes text is centered and black */}
+        <span style={{ fontWeight: "bold", color: "black" }}>Notes</span>
       </div>
 
       {/* Textarea with draggable functionality */}
-      <div style={{ height: "calc(100% - 35px)", width: "100%" }}>
+      <div style={{ height: "calc(100% - 80px)", width: "100%" }}>
         <textarea
           style={{
-            width: "100%", // Matches the outer container's width
-            height: "100%", // Matches the outer container's height
+            width: "100%",
+            height: "100%",
             padding: "10px",
             borderRadius: "4px",
             border: "1px solid #ccc",
-            resize: "none", // Disable resizing inside the textarea
+            resize: "none",
             backgroundColor: "#f9f9f9",
-            color: "#000", // Ensure the text color is black
-            whiteSpace: "pre-wrap", // Preserve line breaks and formatting
-            overflowWrap: "break-word", // Ensure words wrap properly
+            color: "#000",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "break-word",
           }}
           placeholder="Write your notes here..."
           value={noteContent}
           onChange={handleNoteChange}
           rows={10}
         />
+      </div>
+
+      {/* Save button */}
+      <div style={{ padding: "5px 10px", textAlign: "right", marginTop: "5px", marginBottom: "10px" }}>
+        <button
+          onClick={handleSave}
+          style={{
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            padding: "5px 10px",
+            fontSize: "12px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            width: "80px", 
+          }}
+        >
+          Save
+        </button>
       </div>
 
       {/* Resizer Handle */}
