@@ -463,13 +463,14 @@ exports.handler = async (event) => {
     
                 // Step 4: Insert a new session with the session_name
                 const sessionData = await sqlConnection`
-                    INSERT INTO "sessions" (session_id, student_interaction_id, session_name, session_context_embeddings, last_accessed)
+                    INSERT INTO "sessions" (session_id, student_interaction_id, session_name, session_context_embeddings, last_accessed, notes)
                     VALUES (
                         uuid_generate_v4(),
                         ${studentPatientId},
                         ${sessionName},
                         ARRAY[]::float[],
-                        CURRENT_TIMESTAMP
+                        CURRENT_TIMESTAMP,
+                        ""
                     )
                     RETURNING *;
                 `;
