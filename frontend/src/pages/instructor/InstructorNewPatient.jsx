@@ -36,6 +36,7 @@ export const InstructorNewPatient = () => {
   const [deletedFiles, setDeletedFiles] = useState([]);
   const [metadata, setMetadata] = useState({});
 
+  const [profilePicture, setProfilePicture] = useState(null); // New state for profile picture
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [patientName, setPatientName] = useState("");
@@ -53,10 +54,6 @@ export const InstructorNewPatient = () => {
     window.history.back();
   };
 
-  function removeFileExtension(fileName) {
-    return fileName.replace(/\.[^/.]+$/, "");
-  }
-
   const getFileType = (filename) => {
     const parts = filename.split(".");
     if (parts.length > 1) {
@@ -70,49 +67,43 @@ export const InstructorNewPatient = () => {
     setPatientName(e.target.value);
   };
 
-  const uploadFiles = async (newFiles, token, patientId) => {
-    const newFilePromises = newFiles.map((file) => {
-      const fileType = getFileType(file.name);
-      const fileName = cleanFileName(removeFileExtension(file.name));
-      return fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-          simulation_group_id
-        )}&patient_id=${encodeURIComponent(
-          patientId
-        )}&patient_name=${encodeURIComponent(
-          patientName
-        )}&file_type=${encodeURIComponent(
-          fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-        }
-      )
-        .then((response) => response.json())
-        .then((presignedUrl) => {
-          return fetch(presignedUrl.presignedurl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": file.type,
-            },
-            body: file,
-          });
-        });
+  const uploadProfilePicture = async (profilePicture, token, patientId) => {
+    if (!profilePicture) return;
+    const fileType = getFileType(profilePicture.name);
+    const fileName = cleanFileName(profilePicture.name);
+    
+    const response = await fetch(
+      `${
+        import.meta.env.VITE_API_ENDPOINT
+      }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+        simulation_group_id
+      )}&patient_id=${encodeURIComponent(
+        patientId
+      )}&file_type=${encodeURIComponent(
+        fileType
+      )}&file_name=${encodeURIComponent(fileName)}&is_profile_picture=true`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    
+    const presignedUrl = await response.json();
+    await fetch(presignedUrl.presignedurl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": profilePicture.type,
+      },
+      body: profilePicture,
     });
-
-    return await Promise.all(newFilePromises);
   };
 
   const handleSave = async () => {
     if (isSaving) return;
 
-    // Validation check
     if (!patientName) {
       toast.error("Patient Name is required.", {
         position: "top-center",
@@ -158,6 +149,7 @@ export const InstructorNewPatient = () => {
           }),
         }
       );
+
       if (!response.ok) {
         console.error(`Failed to create patient`, response.statusText);
         toast.error("Patient Creation Failed", {
@@ -172,6 +164,7 @@ export const InstructorNewPatient = () => {
         });
       } else {
         const updatedPatient = await response.json();
+        await uploadProfilePicture(profilePicture, token, updatedPatient.patient_id); // Upload profile picture
         await uploadFiles(newFiles, token, updatedPatient.patient_id);
 
         setFiles((prevFiles) =>
@@ -237,6 +230,17 @@ export const InstructorNewPatient = () => {
             <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
+
+        {/* Profile Picture Upload */}
+        <Typography variant="body1" style={{ marginTop: 16 }}>
+          Upload Profile Picture
+        </Typography>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setProfilePicture(e.target.files[0])}
+          style={{ marginTop: 8 }}
+        />
 
         <TextField
           label="Patient Prompt"

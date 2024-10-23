@@ -87,14 +87,16 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
       try {
         const session = await fetchAuthSession();
         const { email } = await fetchUserAttributes();
-  
-        const token = session.tokens.idToken
+
+        const token = session.tokens.idToken;
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
           }student/simulation_group_page?email=${encodeURIComponent(
             email
-          )}&simulation_group_id=${encodeURIComponent(group.simulation_group_id)}`,
+          )}&simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
+          )}`,
           {
             method: "GET",
             headers: {
@@ -102,7 +104,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
               "Content-Type": "application/json",
             },
           }
-        );  
+        );
         if (response.ok) {
           const data = await response.json();
           setData(data);
@@ -114,7 +116,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
       } catch (error) {
         console.error("Error fetching name:", error);
       }
-    };  
+    };
     fetchGroupPage();
   }, [group]);
 
@@ -130,10 +132,10 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
     return (
       <div className="bg-[#F8F9FD] w-screen flex justify-center items-center h-screen">
         <l-cardio
-          size="50" // pulse for loading animation  
+          size="50" // pulse for loading animation
           stroke="4"
-          speed="2" 
-          color="black" 
+          speed="2"
+          color="black"
         ></l-cardio>
       </div>
     );
@@ -186,11 +188,28 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                   {data.map((entry, index) => (
                     <TableRow key={entry.patient_id + index}>
                       <TableCell sx={{ fontSize: "1rem" }}>
-                        <div className="flex flex-row gap-1 items-center">
-                          <FaInfoCircle className="text-xs" />
-                          <span className="text-base">
-                            {titleCase(entry.patient_name)}
-                          </span>
+                        <div className="flex flex-row gap-3 items-center">
+                          {/* Placeholder for patient profile picture */}
+                          <div
+                            className="w-10 h-10 rounded-full bg-gray-300"
+                            style={{
+                              backgroundColor: "#e0e0e0",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "0.8rem",
+                              color: "#757575",
+                            }}
+                          >
+                            {/* Placeholder text or image */}
+                            <span>IMG</span>
+                          </div>
+                          <div className="flex flex-row items-center gap-1">
+                            <FaInfoCircle className="text-xs" />
+                            <span className="text-base">
+                              {titleCase(entry.patient_name)}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
