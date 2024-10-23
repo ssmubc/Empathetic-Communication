@@ -39,8 +39,9 @@ export const InstructorNewPatient = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [patientName, setPatientName] = useState("");
-  const [patientAge, setPatientAge] = useState(""); // Added state for patient age
-  const [patientGender, setPatientGender] = useState(""); // Added state for patient gender
+  const [patientAge, setPatientAge] = useState("");
+  const [patientGender, setPatientGender] = useState("");
+  const [patientPrompt, setPatientPrompt] = useState("");
   const location = useLocation();
   const { data, simulation_group_id } = location.state || {};
   const [nextPatientNumber, setNextPatientNumber] = useState(data.length + 1);
@@ -152,6 +153,9 @@ export const InstructorNewPatient = () => {
             Authorization: token,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            patient_prompt: patientPrompt
+          }),
         }
       );
       if (!response.ok) {
@@ -233,6 +237,16 @@ export const InstructorNewPatient = () => {
             <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
+
+        <TextField
+          label="Patient Prompt"
+          value={patientPrompt}
+          onChange={(e) => setPatientPrompt(e.target.value)}
+          fullWidth
+          margin="normal"
+          multiline
+          rows={4}
+        />
 
         <FileManagement
           newFiles={newFiles}

@@ -337,7 +337,8 @@ exports.handler = async (event) => {
             event.queryStringParameters.patient_number &&
             event.queryStringParameters.patient_age &&
             event.queryStringParameters.patient_gender &&
-            event.queryStringParameters.instructor_email
+            event.queryStringParameters.instructor_email &&
+            event.body
         ) {
             const {
                 simulation_group_id,
@@ -347,6 +348,8 @@ exports.handler = async (event) => {
                 patient_gender,
                 instructor_email,
             } = event.queryStringParameters;
+
+            const { patient_prompt } = JSON.parse(event.body);
 
             try {
                 // Check if a patient with the same name already exists in the simulation group
@@ -372,7 +375,8 @@ exports.handler = async (event) => {
                         patient_name, 
                         patient_number, 
                         patient_age, 
-                        patient_gender
+                        patient_gender,
+                        patient_prompt
                     )
                     VALUES (
                         uuid_generate_v4(), 
@@ -380,7 +384,8 @@ exports.handler = async (event) => {
                         ${patient_name}, 
                         ${patient_number}, 
                         ${patient_age}, 
-                        ${patient_gender}
+                        ${patient_gender}, 
+                        ${patient_prompt}
                     )
                     RETURNING *;
                 `;
@@ -505,9 +510,9 @@ exports.handler = async (event) => {
             event.queryStringParameters.instructor_email
         ) {
             const { patient_id, instructor_email } = event.queryStringParameters;
-            const { patient_name, patient_age, patient_gender } = JSON.parse(event.body || "{}");
+            const { patient_name, patient_age, patient_gender, patient_prompt } = JSON.parse(event.body || "{}");
     
-            if (patient_name && patient_age != null && patient_gender) {
+            if (patient_name && patient_age != null && patient_gender && patient_prompt) {
                 try {
                     // Check if another patient with the same name exists under the same simulation group
                     const existingPatient = await sqlConnection`
@@ -530,7 +535,8 @@ exports.handler = async (event) => {
                         SET 
                             patient_name = ${patient_name}, 
                             patient_age = ${patient_age}, 
-                            patient_gender = ${patient_gender}
+                            patient_gender = ${patient_gender}, 
+                            patient_prompt = ${patient_prompt}
                         WHERE patient_id = ${patient_id};
                     `;
     
@@ -569,7 +575,7 @@ exports.handler = async (event) => {
             } else {
                 response.statusCode = 400;
                 response.body = JSON.stringify({
-                    error: "patient_name, patient_age, and patient_gender are required in the body",
+                    error: "patient_name, patient_age, patient_gender, and patient_prompt are required in the body",
                 });
             }
         } else {

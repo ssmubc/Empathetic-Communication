@@ -2069,7 +2069,17 @@ paths:
           required: true
           description: Email of the instructor creating the patient
           schema:
-            type: string
+            type: string        
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_prompt:
+                  type: string
+                  description: Patient prompt for the patient    
       responses:
         "200":
           description: Patient created successfully
@@ -2154,6 +2164,10 @@ paths:
                   type: string
               required:
                 - patient_gender
+              patient_prompt:
+                  type: string
+              required:
+                - patient_prompt
       responses:
         "200":
           description: Patient updated successfully

@@ -52,8 +52,9 @@ const InstructorEditPatients = () => {
   const [patient, setPatient] = useState(null);
   const { patientData, simulation_group_id } = location.state || {};
   const [patientName, setPatientName] = useState("");
-  const [patientAge, setPatientAge] = useState(""); // Added state for patient age
-  const [patientGender, setPatientGender] = useState(""); // Added state for patient gender
+  const [patientAge, setPatientAge] = useState("");
+  const [patientGender, setPatientGender] = useState("");
+  const [patientPrompt, setPatientPrompt] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleBackClick = () => {
@@ -131,6 +132,7 @@ const InstructorEditPatients = () => {
       setPatientName(patientData.patient_name);
       setPatientAge(patientData.patient_age);
       setPatientGender(patientData.patient_gender);
+      setPatientPrompt(patientData.patient_prompt);
     }
   }, [patientData]);
 
@@ -246,6 +248,7 @@ const InstructorEditPatients = () => {
           patient_name: patientName,
           patient_age: patientAge,
           patient_gender: patientGender,
+          patient_prompt: patientPrompt,
         }),
       }
     );
@@ -486,6 +489,16 @@ const InstructorEditPatients = () => {
             <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
+
+        <TextField
+          label="Patient Prompt"
+          value={patientPrompt}
+          onChange={(e) => setPatientPrompt(e.target.value)}
+          fullWidth
+          margin="normal"
+          multiline
+          rows={4}
+        />
 
         <FileManagement
           newFiles={newFiles}
