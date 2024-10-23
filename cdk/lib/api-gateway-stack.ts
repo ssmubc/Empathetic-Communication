@@ -113,7 +113,7 @@ export class ApiGatewayStack extends cdk.Stack {
       userVerification: {
         emailSubject: "You need to verify your email",
         emailBody:
-          "Thanks for signing up to AI Learning Assistant. \n Your verification code is {####}",
+          "Thank you for signing up to Virtual Care Interactions. \n Your verification code is {####}",
         emailStyle: cognito.VerificationEmailStyle.CODE,
       },
       passwordPolicy: {
