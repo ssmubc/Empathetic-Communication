@@ -6,7 +6,7 @@ function DraggableNotes({ onClose }) {
   const [dimensions, setDimensions] = useState({ width: 400, height: 300 });
   const noteRef = useRef(null);
   const isDragging = useRef(false);
-  const isResizing = useRef(false); // New ref to track resizing state
+  const isResizing = useRef(false);
 
   // Load the note content from localStorage when the component mounts
   useEffect(() => {
@@ -98,36 +98,51 @@ function DraggableNotes({ onClose }) {
         backgroundColor: "#fff",
         border: "1px solid #ccc",
         boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        padding: "10px",
         resize: "none", // Disable native resizing for the outer container
-        overflow: "auto",
+        overflow: "hidden", // Prevent overflow issues
         cursor: "grab",
         zIndex: 1000,
       }}
     >
-      {/* Textarea with draggable functionality and 'x' to close */}
-      <div style={{ position: "relative" }}>
+      {/* Draggable header area */}
+      <div
+        style={{
+          backgroundColor: "#f0f0f0",
+          padding: "5px 10px",
+          cursor: "grab",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          position: "relative", // Ensures the 'x' button stays in the right corner
+        }}
+      >
         {/* Small "x" button inside the textarea */}
         <button
           onClick={onClose}
           style={{
             position: "absolute",
-            top: "5px",
-            right: "10px",
+            right: "0",  // Adjusted to perfectly align in the top-right corner
+            top: "0",    // Adjusted to perfectly align in the top-right corner
             background: "transparent",
             border: "none",
             color: "red",
             fontSize: "12px",
+            padding: "5px",  // Added some padding for better clickable area
             cursor: "pointer",
             zIndex: 10,
           }}
         >
           x
         </button>
+        <span style={{ fontWeight: "bold", color: "black" }}>Notes</span> {/* Notes text is centered and black */}
+      </div>
+
+      {/* Textarea with draggable functionality */}
+      <div style={{ height: "calc(100% - 35px)", width: "100%" }}>
         <textarea
           style={{
-            width: "100%",
-            height: "100%",
+            width: "100%", // Matches the outer container's width
+            height: "100%", // Matches the outer container's height
             padding: "10px",
             borderRadius: "4px",
             border: "1px solid #ccc",
@@ -140,9 +155,10 @@ function DraggableNotes({ onClose }) {
           placeholder="Write your notes here..."
           value={noteContent}
           onChange={handleNoteChange}
-          rows={10} // Set a default row height for multiline support
+          rows={10}
         />
       </div>
+
       {/* Resizer Handle */}
       <div
         onMouseDown={handleResizeMouseDown}
