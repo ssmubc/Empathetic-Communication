@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function DraggableNotes({ onClose }) {
   const [noteContent, setNoteContent] = useState("");
@@ -23,11 +25,21 @@ function DraggableNotes({ onClose }) {
   // Function to save notes manually
   const handleSave = () => {
     localStorage.setItem("studentNotes", noteContent);
-    alert("Notes saved successfully!");
+    
+    // Display toast notification (consistent with other parts of the app)
+    toast.success("Notes saved successfully!", {
+      position: "top-center",
+      autoClose: 1000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
   };
 
   const handleMouseDown = (e) => {
-    // Prevent dragging if the target is the textarea or resize handle
     if (e.target.tagName.toLowerCase() === "textarea" || isResizing.current) return;
 
     isDragging.current = true;
@@ -56,7 +68,6 @@ function DraggableNotes({ onClose }) {
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // Handle resizing the outer box
   const handleResizeMouseDown = (e) => {
     e.preventDefault();
     isResizing.current = true;
@@ -70,8 +81,8 @@ function DraggableNotes({ onClose }) {
       const newHeight = startHeight + (moveEvent.clientY - startY);
 
       setDimensions({
-        width: newWidth > 200 ? newWidth : 200, // Enforce minimum width
-        height: newHeight > 150 ? newHeight : 150, // Enforce minimum height
+        width: newWidth > 200 ? newWidth : 200,
+        height: newHeight > 150 ? newHeight : 150,
       });
     };
 
@@ -190,6 +201,19 @@ function DraggableNotes({ onClose }) {
           cursor: "nwse-resize",
         }}
       ></div>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={1000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 }
