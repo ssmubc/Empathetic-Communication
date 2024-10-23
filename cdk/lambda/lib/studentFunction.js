@@ -263,14 +263,14 @@ exports.handler = async (event) => {
                   p.patient_age,
                   p.patient_gender,
                   p.patient_number,
-                  sp.student_patient_id,
+                  sp.student_interaction_id,
                   sp.patient_score,
                   sp.last_accessed,
                   sp.patient_context_embedding
                 FROM
                   "patients" p
                 LEFT JOIN
-                  "student_patients" sp ON sp.patient_id = p.patient_id
+                  "student_interactions" sp ON sp.patient_id = p.patient_id
                 JOIN
                   StudentEnrollment se ON sp.enrolment_id = se.enrolment_id
                 WHERE
@@ -331,10 +331,10 @@ exports.handler = async (event) => {
     
                 const userId = userResult[0].user_id;
     
-                // Step 2: Get the student_patient_id for the specific student and patient
+                // Step 2: Get the student_interaction_id for the specific student and patient
                 const studentPatientData = await sqlConnection`
-                    SELECT student_patient_id
-                    FROM "student_patients"
+                    SELECT student_interaction_id
+                    FROM "student_interactions"
                     WHERE patient_id = ${patientId}
                     AND enrolment_id = (
                         SELECT enrolment_id
@@ -343,7 +343,7 @@ exports.handler = async (event) => {
                     )
                 `;
     
-                const studentPatientId = studentPatientData[0]?.student_patient_id;
+                const studentPatientId = studentPatientData[0]?.student_interaction_id;
     
                 if (!studentPatientId) {
                     response.statusCode = 404;
@@ -353,18 +353,18 @@ exports.handler = async (event) => {
                     break;
                 }
     
-                // Step 3: Update the last accessed timestamp for the Student_Patients entry
+                // Step 3: Update the last accessed timestamp for the student_interactions entry
                 await sqlConnection`
-                    UPDATE "student_patients"
+                    UPDATE "student_interactions"
                     SET last_accessed = CURRENT_TIMESTAMP
-                    WHERE student_patient_id = ${studentPatientId};
+                    WHERE student_interaction_id = ${studentPatientId};
                 `;
     
                 // Step 4: Retrieve session data specific to the student's patient
                 const data = await sqlConnection`
                     SELECT "sessions".*
                     FROM "sessions"
-                    WHERE student_patient_id = ${studentPatientId}
+                    WHERE student_interaction_id = ${studentPatientId}
                     ORDER BY "sessions".last_accessed, "sessions".session_id;
                 `;
     
@@ -434,10 +434,10 @@ exports.handler = async (event) => {
     
                 const userId = userResult[0].user_id;
     
-                // Step 2: Get the student_patient_id for the specific student and patient
+                // Step 2: Get the student_interaction_id for the specific student and patient
                 const studentPatientData = await sqlConnection`
-                    SELECT student_patient_id
-                    FROM "student_patients"
+                    SELECT student_interaction_id
+                    FROM "student_interactions"
                     WHERE patient_id = ${patientId}
                       AND enrolment_id = (
                         SELECT enrolment_id
@@ -446,7 +446,7 @@ exports.handler = async (event) => {
                     );
                 `;
     
-                const studentPatientId = studentPatientData[0]?.student_patient_id;
+                const studentPatientId = studentPatientData[0]?.student_interaction_id;
     
                 if (!studentPatientId) {
                     response.statusCode = 404;
@@ -454,16 +454,16 @@ exports.handler = async (event) => {
                     break;
                 }
     
-                // Step 3: Update the last_accessed timestamp for the Student_Patient entry
+                // Step 3: Update the last_accessed timestamp for the student_interaction entry
                 await sqlConnection`
-                    UPDATE "student_patients"
+                    UPDATE "student_interactions"
                     SET last_accessed = CURRENT_TIMESTAMP
-                    WHERE student_patient_id = ${studentPatientId};
+                    WHERE student_interaction_id = ${studentPatientId};
                 `;
     
                 // Step 4: Insert a new session with the session_name
                 const sessionData = await sqlConnection`
-                    INSERT INTO "sessions" (session_id, student_patient_id, session_name, session_context_embeddings, last_accessed)
+                    INSERT INTO "sessions" (session_id, student_interaction_id, session_name, session_context_embeddings, last_accessed)
                     VALUES (
                         uuid_generate_v4(),
                         ${studentPatientId},
@@ -540,12 +540,12 @@ exports.handler = async (event) => {
     
                 const userId = userResult[0].user_id;
     
-                // Step 2: Update last_accessed for the corresponding Student_Patient entry
+                // Step 2: Update last_accessed for the corresponding student_interaction entry
                 await sqlConnection`
-                    UPDATE "student_patients"
+                    UPDATE "student_interactions"
                     SET last_accessed = CURRENT_TIMESTAMP
-                    WHERE student_patient_id = (
-                        SELECT student_patient_id
+                    WHERE student_interaction_id = (
+                        SELECT student_interaction_id
                         FROM "sessions"
                         WHERE session_id = ${sessionId}
                     );
@@ -879,10 +879,10 @@ exports.handler = async (event) => {
                     WHERE simulation_group_id = ${simulation_group_id};
                 `;
     
-              // Step 5: Insert a record into Student_Patients for each patient
+              // Step 5: Insert a record into student_interactions for each patient
               const studentPatientInsertions = patientsResult.map((patient) => {
                 return sqlConnection`
-                      INSERT INTO "student_patients" (student_patient_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
+                      INSERT INTO "student_interactions" (student_interaction_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
                       VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL);
                   `;
               });
@@ -1005,10 +1005,10 @@ exports.handler = async (event) => {
                       break;
                   }
       
-                  // Get the student_patient_id and current score for the student and patient
+                  // Get the student_interaction_id and current score for the student and patient
                   const studentPatientData = await sqlConnection`
-                      SELECT student_patient_id, patient_score
-                      FROM "student_patients"
+                      SELECT student_interaction_id, patient_score
+                      FROM "student_interactions"
                       WHERE patient_id = ${patientId}
                         AND enrolment_id = (
                           SELECT enrolment_id
@@ -1017,7 +1017,7 @@ exports.handler = async (event) => {
                       );
                   `;
       
-                  const studentPatientId = studentPatientData[0]?.student_patient_id;
+                  const studentPatientId = studentPatientData[0]?.student_interaction_id;
                   const currentScore = studentPatientData[0]?.patient_score;
       
                   if (!studentPatientId) {
@@ -1042,9 +1042,9 @@ exports.handler = async (event) => {
       
                   // Update the patient score for the student
                   await sqlConnection`
-                      UPDATE "student_patients"
+                      UPDATE "student_interactions"
                       SET patient_score = ${newScore}
-                      WHERE student_patient_id = ${studentPatientId};
+                      WHERE student_interaction_id = ${studentPatientId};
                   `;
       
                   response.statusCode = 200;

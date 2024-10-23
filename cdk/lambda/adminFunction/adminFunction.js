@@ -117,17 +117,17 @@ exports.handler = async (event) => {
                   `;
                 console.log(patientsResult);
       
-                // Insert a record into student_patients for each patient in the simulation group
-                const studentPatientInsertions = patientsResult.map((patient) => {
+                // Insert a record into student_interactions for each patient in the simulation group
+                const studentInteractionInsertions = patientsResult.map((patient) => {
                   return sqlConnectionTableCreator`
-                      INSERT INTO "student_patients" (student_patient_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
+                      INSERT INTO "student_interactions" (student_interaction_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
                       VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL);
                     `;
                 });
       
                 // Execute all insertions
-                await Promise.all(studentPatientInsertions);
-                console.log(studentPatientInsertions);
+                await Promise.all(studentInteractionInsertions);
+                console.log(studentInteractionInsertions);
               }
       
               response.body = JSON.stringify({

@@ -77,7 +77,8 @@ def handler(event, context):
                 "patient_name" varchar,
                 "patient_age" integer,
                 "patient_gender" varchar,
-                "patient_number" integer
+                "patient_number" integer,
+                "patient_prompt" text
             );
 
             CREATE TABLE IF NOT EXISTS "enrolments" (
@@ -97,25 +98,26 @@ def handler(event, context):
                 "filepath" varchar,
                 "filename" varchar,
                 "time_uploaded" timestamp,
-                "metadata" text
+                "metadata" text,
+                "file_number" integer
             );
 
-            CREATE TABLE IF NOT EXISTS "student_patients" (
-                "student_patient_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+            CREATE TABLE IF NOT EXISTS "student_interactions" (
+                "student_interaction_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
                 "patient_id" uuid,
                 "enrolment_id" uuid,
                 "patient_score" integer,
                 "last_accessed" timestamp,
-                "patient_context_embedding" float[],
-                "notes" text
+                "patient_context_embedding" float[]
             );
 
             CREATE TABLE IF NOT EXISTS "sessions" (
                 "session_id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
-                "student_patient_id" uuid,
+                "student_interaction_id" uuid,
                 "session_name" varchar,
                 "session_context_embeddings" float[],
-                "last_accessed" timestamp
+                "last_accessed" timestamp,
+                "notes" text
             );
 
             CREATE TABLE IF NOT EXISTS "messages" (
@@ -150,10 +152,10 @@ def handler(event, context):
 
             ALTER TABLE "patient_data" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "student_patients" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
-            ALTER TABLE "student_patients" ADD FOREIGN KEY ("enrolment_id") REFERENCES "enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "student_interactions" ADD FOREIGN KEY ("patient_id") REFERENCES "patients" ("patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "student_interactions" ADD FOREIGN KEY ("enrolment_id") REFERENCES "enrolments" ("enrolment_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-            ALTER TABLE "sessions" ADD FOREIGN KEY ("student_patient_id") REFERENCES "student_patients" ("student_patient_id") ON DELETE CASCADE ON UPDATE CASCADE;
+            ALTER TABLE "sessions" ADD FOREIGN KEY ("student_interaction_id") REFERENCES "student_interactions" ("student_interaction_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
             ALTER TABLE "messages" ADD FOREIGN KEY ("session_id") REFERENCES "sessions" ("session_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -268,7 +270,7 @@ def handler(event, context):
             'SELECT * FROM "patients";',
             'SELECT * FROM "enrolments";',
             'SELECT * FROM "patient_data";',
-            'SELECT * FROM "student_patients";',
+            'SELECT * FROM "student_interactions";',
             'SELECT * FROM "sessions";',
             'SELECT * FROM "messages";',
             'SELECT * FROM "user_engagement_log";'

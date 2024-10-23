@@ -181,8 +181,8 @@ exports.handler = async (event) => {
                   const messageCreations = await sqlConnection`
                       SELECT p.patient_id, p.patient_name, p.patient_number, COUNT(m.message_id) AS message_count
                       FROM "patients" p
-                      LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
-                      LEFT JOIN "sessions" s ON sp.student_patient_id = s.student_patient_id
+                      LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
+                      LEFT JOIN "sessions" s ON sp.student_interaction_id = s.student_interaction_id
                       LEFT JOIN "messages" m ON s.session_id = m.session_id
                       LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
                       LEFT JOIN "users" u ON e.user_id = u.user_id
@@ -209,7 +209,7 @@ exports.handler = async (event) => {
                   const averageScores = await sqlConnection`
                       SELECT p.patient_id, AVG(sp.patient_score) AS average_score
                       FROM "patients" p
-                      LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                      LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
                       LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
                       LEFT JOIN "users" u ON e.user_id = u.user_id
                       WHERE p.simulation_group_id = ${simulationGroupId}
@@ -221,11 +221,11 @@ exports.handler = async (event) => {
                   const perfectScores = await sqlConnection`
                       SELECT p.patient_id, 
                           CASE 
-                              WHEN COUNT(sp.student_patient_id) = 0 THEN 0 
-                              ELSE COUNT(CASE WHEN sp.patient_score = 100 THEN 1 END) * 100.0 / COUNT(sp.student_patient_id)
+                              WHEN COUNT(sp.student_interaction_id) = 0 THEN 0 
+                              ELSE COUNT(CASE WHEN sp.patient_score = 100 THEN 1 END) * 100.0 / COUNT(sp.student_interaction_id)
                           END AS perfect_score_percentage
                       FROM "patients" p
-                      LEFT JOIN "student_patients" sp ON p.patient_id = sp.patient_id
+                      LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
                       LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
                       LEFT JOIN "users" u ON e.user_id = u.user_id
                       WHERE p.simulation_group_id = ${simulationGroupId}
@@ -413,12 +413,12 @@ exports.handler = async (event) => {
                     WHERE simulation_group_id = ${simulation_group_id};
                 `;
 
-                // Create entries for each enrolment in the "student_patients" table
+                // Create entries for each enrolment in the "student_interactions" table
                 await Promise.all(
                     enrolments.map(async (enrolment) => {
                         await sqlConnection`
-                            INSERT INTO "student_patients" (
-                                student_patient_id, 
+                            INSERT INTO "student_interactions" (
+                                student_interaction_id, 
                                 patient_id, 
                                 enrolment_id, 
                                 patient_score
@@ -871,7 +871,7 @@ exports.handler = async (event) => {
               SELECT m.message_content, m.time_sent, m.student_sent
               FROM "messages" m
               JOIN "sessions" s ON m.session_id = s.session_id
-              JOIN "student_patients" sp ON s.student_patient_id = sp.student_patient_id
+              JOIN "student_interactions" sp ON s.student_interaction_id = sp.student_interaction_id
               JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
               WHERE e.user_id = ${userId}
               AND e.simulation_group_id = ${simulationGroupId}
