@@ -669,8 +669,13 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             />
             {sidebarWidth > 160 && (
               <div className="ml-3 pt-0.5 text-black font-roboto font-bold text-lg">
-                {titleCase(patient.patient_name)}
+                {titleCase(patient.patient_name)} {/* Patient Name */}
+                <span className="text-sm ml-1">
+                  ({patient.patient_gender}, {patient.patient_age}) {/* Patient Gender and Age */}
+                </span>
               </div>
+            
+            
             )}
           </div>
 
