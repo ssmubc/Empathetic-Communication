@@ -54,6 +54,10 @@ export const InstructorNewPatient = () => {
     window.history.back();
   };
 
+  function removeFileExtension(fileName) {
+    return fileName.replace(/\.[^/.]+$/, "");
+  }
+
   const getFileType = (filename) => {
     const parts = filename.split(".");
     if (parts.length > 1) {
@@ -99,6 +103,45 @@ export const InstructorNewPatient = () => {
       },
       body: profilePicture,
     });
+  };
+
+  const uploadFiles = async (newFiles, token, patientId) => {
+    const newFilePromises = newFiles.map((file) => {
+      const fileType = getFileType(file.name);
+      const fileName = cleanFileName(removeFileExtension(file.name));
+      return fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patientId
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((presignedUrl) => {
+          return fetch(presignedUrl.presignedurl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": file.type,
+            },
+            body: file,
+          });
+        });
+    });
+
+    return await Promise.all(newFilePromises);
   };
 
   const handleSave = async () => {
