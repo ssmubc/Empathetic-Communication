@@ -30,12 +30,11 @@ const handleBackClick = () => {
   window.history.back();
 };
 
+// Helper function to format chat messages
 const formatMessages = (messages) => {
-  // Helper function to format date as YY/MM/DD
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Invalid Date";
-
     return date
       .toLocaleDateString(undefined, {
         year: "2-digit",
@@ -45,7 +44,6 @@ const formatMessages = (messages) => {
       .replace(/\//g, "-");
   };
 
-  // Group messages by date
   const groupedMessages = messages.reduce((acc, message) => {
     const date = formatDate(message.time_sent);
     if (!acc[date]) {
@@ -55,7 +53,6 @@ const formatMessages = (messages) => {
     return acc;
   }, {});
 
-  // Format the grouped messages
   const formattedMessages = Object.keys(groupedMessages)
     .map((date) => {
       const messagesForDate = groupedMessages[date]
@@ -72,6 +69,15 @@ const formatMessages = (messages) => {
   return formattedMessages;
 };
 
+// Mock function for fetching notes (replace with API later)
+const fetchNotes = async (studentEmail, simulationGroupId) => {
+  // Simulate fetching from an API
+  return {
+    "Session 1": "Notes for session 1: Patient was responsive and participated actively.",
+    "Session 2": "Notes for session 2: Patient was quiet and required more prompts.",
+  };
+};
+
 const StudentDetails = () => {
   const { studentId } = useParams();
   const location = useLocation();
@@ -79,8 +85,9 @@ const StudentDetails = () => {
   const [tabs, setTabs] = useState([]);
   const [sessions, setSessions] = useState({});
   const [activeTab, setActiveTab] = useState(0);
-  const [chatHistory, setChatHistory] = useState(`loading...`);
+  const [chatHistory, setChatHistory] = useState("loading...");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [notes, setNotes] = useState({}); // Store patient notes
   const textFieldRef = useRef(null);
 
   useEffect(() => {
@@ -114,7 +121,13 @@ const StudentDetails = () => {
       }
     };
 
+    const fetchStudentNotes = async () => {
+      const fetchedNotes = await fetchNotes(student.email, simulation_group_id);
+      setNotes(fetchedNotes);
+    };
+
     fetchHistory();
+    fetchStudentNotes();
   }, [simulation_group_id, student.email]);
 
   useEffect(() => {
@@ -164,7 +177,7 @@ const StudentDetails = () => {
           theme: "colored",
         });
         setTimeout(() => {
-          handleBackClick();
+          window.history.back();
         }, 1000);
       } else {
         toast.error("Failed to unenroll student", {
@@ -209,7 +222,7 @@ const StudentDetails = () => {
             <Typography variant="body1">Email: {student.email}</Typography>
 
             <Button
-              onClick={handleDialogOpen} // Open dialog on button click
+              onClick={handleDialogOpen}
               sx={{ marginBottom: 6 }}
               variant="contained"
               color="primary"
@@ -238,7 +251,7 @@ const StudentDetails = () => {
                 <Button
                   onClick={() => {
                     handleDialogClose();
-                    handleUnenroll(); // Call unenroll function on confirm
+                    handleUnenroll();
                   }}
                   color="error"
                 >
@@ -290,12 +303,25 @@ const StudentDetails = () => {
                       sx={{ my: 2 }}
                       inputRef={textFieldRef}
                     />
+
+                    {/* Display patient-specific notes */}
+                    <Typography variant="h6">Notes</Typography>
+                    <Paper
+                      sx={{
+                        padding: 2,
+                        backgroundColor: "#f1f1f1",
+                      }}
+                    >
+                      <Typography variant="body1">
+                        {notes[session.sessionName] || "No notes available."}
+                      </Typography>
+                    </Paper>
                   </AccordionDetails>
                 </Accordion>
               ))
             ) : (
               <Typography sx={{ ml: 2, mt: 4 }} variant="body1">
-                Student has not entered the any simulation groups yet.
+                Student has not entered any simulation groups yet.
               </Typography>
             )}
           </Box>
