@@ -45,7 +45,6 @@ bedrock_runtime = boto3.client(
         service_name="bedrock-runtime",
         region_name=REGION,
     )
-
 embeddings = BedrockEmbeddings(
     model_id=EMBEDDING_MODEL_ID, 
     client=bedrock_runtime,
@@ -54,11 +53,11 @@ embeddings = BedrockEmbeddings(
 
 create_dynamodb_history_table(TABLE_NAME)
 
-def get_module_name(module_id):
+def get_patient_name(patient_id):
     connection = None
     cur = None
     try:
-        logger.info(f"Fetching module name for module_id: {module_id}")
+        logger.info(f"Fetching patient name for patient_id: {patient_id}")
         db_secret = get_secret(DB_SECRET_NAME)
 
         connection_params = {
@@ -74,29 +73,28 @@ def get_module_name(module_id):
         connection = psycopg2.connect(connection_string)
         cur = connection.cursor()
         logger.info("Connected to RDS instance!")
-
         cur.execute("""
-            SELECT module_name 
-            FROM "Course_Modules" 
-            WHERE module_id = %s;
-        """, (module_id,))
-        
+            SELECT patient_name
+            FROM "patients"
+            WHERE patient_id = %s;
+        """, (patient_id,))
+
         result = cur.fetchone()
         logger.info(f"Query result: {result}")
-        module_name = result[0] if result else None
-        
+        patient_name = result[0] if result else None
+
         cur.close()
         connection.close()
         
-        if module_name:
-            logger.info(f"Module name for module_id {module_id} found: {module_name}")
+        if patient_name:
+            logger.info(f"Patient name for patient_id {patient_id} found: {patient_name}")
         else:
-            logger.warning(f"No module name found for module_id {module_id}")
+            logger.warning(f"No patient name found for patient_id {patient_id}")
         
-        return module_name
+        return patient_name
 
     except Exception as e:
-        logger.error(f"Error fetching module name: {e}")
+        logger.error(f"Error fetching patient name: {e}")
         if connection:
             connection.rollback()
         return None
@@ -107,11 +105,11 @@ def get_module_name(module_id):
             connection.close()
         logger.info("Connection closed.")
 
-def get_system_prompt(course_id):
+def get_system_prompt(simulation_group_id):
     connection = None
     cur = None
     try:
-        logger.info(f"Fetching system prompt for course_id: {course_id}")
+        logger.info(f"Fetching system prompt for simulation_group_id: {simulation_group_id}")
         db_secret = get_secret(DB_SECRET_NAME)
 
         connection_params = {
@@ -127,24 +125,23 @@ def get_system_prompt(course_id):
         connection = psycopg2.connect(connection_string)
         cur = connection.cursor()
         logger.info("Connected to RDS instance!")
-
         cur.execute("""
-            SELECT system_prompt 
-            FROM "Courses" 
-            WHERE course_id = %s;
-        """, (course_id,))
-        
+            SELECT system_prompt
+            FROM "simulation_groups"
+            WHERE simulation_group_id = %s;
+        """, (simulation_group_id,))
+
         result = cur.fetchone()
         logger.info(f"Query result: {result}")
         system_prompt = result[0] if result else None
-        
+
         cur.close()
         connection.close()
         
         if system_prompt:
-            logger.info(f"System prompt for course_id {course_id} found: {system_prompt}")
+            logger.info(f"System prompt for simulation_group_id {simulation_group_id} found: {system_prompt}")
         else:
-            logger.warning(f"No system prompt found for course_id {course_id}")
+            logger.warning(f"No system prompt found for simulation_group_id {simulation_group_id}")
         
         return system_prompt
 
@@ -164,14 +161,12 @@ def handler(event, context):
     logger.info("Text Generation Lambda function is called!")
 
     query_params = event.get("queryStringParameters", {})
-
-    course_id = query_params.get("course_id", "")
+    simulation_group_id = query_params.get("simulation_group_id", "")
     session_id = query_params.get("session_id", "")
-    module_id = query_params.get("module_id", "")
+    patient_id = query_params.get("patient_id", "")
     session_name = query_params.get("session_name", "New Chat")
 
-    if not course_id:
-        logger.error("Missing required parameter: course_id")
+    if not simulation_group_id or not session_id or not patient_id:
         return {
             'statusCode': 400,
             "headers": {
@@ -180,39 +175,12 @@ def handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "*",
             },
-            'body': json.dumps('Missing required parameter: course_id')
+            'body': json.dumps("Missing required parameters: simulation_group_id, session_id, or patient_id")
         }
 
-    if not session_id:
-        logger.error("Missing required parameter: session_id")
-        return {
-            'statusCode': 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "*",
-            },
-            'body': json.dumps('Missing required parameter: session_id')
-        }
-
-    if not module_id:
-        logger.error("Missing required parameter: module_id")
-        return {
-            'statusCode': 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "*",
-            },
-            'body': json.dumps('Missing required parameter: module_id')
-        }
-    
-    system_prompt = get_system_prompt(course_id)
-
+    system_prompt = get_system_prompt(simulation_group_id)
     if system_prompt is None:
-        logger.error(f"Error fetching system prompt for course_id: {course_id}")
+        logger.error(f"Error fetching system prompt for simulation_group_id: {simulation_group_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -223,26 +191,25 @@ def handler(event, context):
             },
             'body': json.dumps('Error fetching system prompt')
         }
-    
-    topic = get_module_name(module_id)
 
-    if topic is None:
-        logger.error(f"Invalid module_id: {module_id}")
+    patient_name = get_patient_name(patient_id)
+    if patient_name is None:
+        logger.error(f"Invalid patient_id: {patient_id}")
         return {
             'statusCode': 400,
-            'body': json.dumps('Invalid module_id')
+            'body': json.dumps("Invalid patient_id")
         }
-    
+
     body = {} if event.get("body") is None else json.loads(event.get("body"))
     question = body.get("message_content", "")
     
     if not question:
         logger.info(f"Start of conversation. Creating conversation history table in DynamoDB.")
-        student_query = get_initial_student_query(topic)
+        student_query = get_initial_student_query(patient_name)
     else:
         logger.info(f"Processing student question: {question}")
         student_query = get_student_query(question)
-    
+
     try:
         logger.info("Creating Bedrock LLM instance.")
         llm = get_bedrock_llm(BEDROCK_LLM_ID)
@@ -258,12 +225,12 @@ def handler(event, context):
             },
             'body': json.dumps('Error getting LLM from Bedrock')
         }
-    
+
     try:
         logger.info("Retrieving vectorstore config.")
         db_secret = get_secret(DB_SECRET_NAME)
         vectorstore_config_dict = {
-            'collection_name': course_id,
+            'collection_name': simulation_group_id,
             'dbname': db_secret["dbname"],
             'user': db_secret["username"],
             'password': db_secret["password"],
@@ -282,7 +249,7 @@ def handler(event, context):
             },
             'body': json.dumps('Error retrieving vectorstore config')
         }
-    
+
     try:
         logger.info("Creating history-aware retriever.")
 
@@ -303,17 +270,17 @@ def handler(event, context):
             },
             'body': json.dumps('Error creating history-aware retriever')
         }
-    
+
     try:
         logger.info("Generating response from the LLM.")
         response = get_response(
             query=student_query,
-            topic=topic,
+            topic=patient_name,
             llm=llm,
             history_aware_retriever=history_aware_retriever,
             table_name=TABLE_NAME,
             session_id=session_id,
-            course_system_prompt=system_prompt
+            system_prompt=system_prompt
         )
     except Exception as e:
         logger.error(f"Error getting response: {e}")
@@ -327,7 +294,7 @@ def handler(event, context):
             },
             'body': json.dumps('Error getting response')
         }
-    
+
     try:
         logger.info("Updating session name if this is the first exchange between the LLM and student")
         potential_session_name = update_session_name(TABLE_NAME, session_id, BEDROCK_LLM_ID)
