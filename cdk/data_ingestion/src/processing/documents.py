@@ -5,7 +5,7 @@ import boto3, pymupdf
 
 from langchain_postgres import PGVector
 from langchain_core.documents import Document
-from langchain_community.embeddings import BedrockEmbeddings
+from langchain_aws import BedrockEmbeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain.indexes import SQLRecordManager, index
 
@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize the S3 client
 s3 = boto3.client('s3')
+
+EMBEDDING_BUCKET_NAME = os.environ["EMBEDDING_BUCKET_NAME"]
 
 def extract_txt(
     bucket: str, 
@@ -88,7 +90,7 @@ def add_document(
     filename: str, 
     vectorstore: PGVector, 
     embeddings: BedrockEmbeddings,
-    output_bucket: str = 'temp-extracted-data'
+    output_bucket: str = EMBEDDING_BUCKET_NAME
 ) -> List[Document]:
     """
     Add a document to the vectorstore.
@@ -105,6 +107,7 @@ def add_document(
     Returns:
     List[Document]: A list of all document chunks for this document that were added to the vectorstore.
     """
+    
     output_filenames = store_doc_texts(
         bucket=bucket,
         course=course,
@@ -159,13 +162,11 @@ def store_doc_chunks(
             if doc_chunk:
                 doc_chunk.metadata["source"] = f"s3://{bucket}/{true_filename}"
                 doc_chunk.metadata["doc_id"] = this_uuid
-                    
-                vectorstore.add_documents(
-                    documents=[doc_chunk]
-                )
                 
             else:
                 logger.warning(f"Empty chunk for {filename}")
+        
+        s3.delete_object(Bucket=bucket, Key=filename)
         
         this_doc_chunks.extend(doc_chunks)
        
@@ -216,9 +217,16 @@ def process_documents(
             all_doc_chunks, 
             record_manager, 
             vectorstore, 
-            cleanup="incremental",
+            cleanup="full",
             source_id_key="source"
         )
         logger.info(f"Indexing updates: \n {idx}")
     else:
+        idx = index(
+            [],
+            record_manager, 
+            vectorstore, 
+            cleanup="full",
+            source_id_key="source"
+        )
         logger.info("No documents found for indexing.")

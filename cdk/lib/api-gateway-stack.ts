@@ -51,6 +51,30 @@ export class ApiGatewayStack extends cdk.Stack {
 
     this.layerList = {};
 
+    const embeddingStorageBucket = new s3.Bucket(
+      this,
+      "embeddingStorageBucket",
+      {
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        cors: [
+          {
+            allowedHeaders: ["*"],
+            allowedMethods: [
+              s3.HttpMethods.GET,
+              s3.HttpMethods.PUT,
+              s3.HttpMethods.HEAD,
+              s3.HttpMethods.POST,
+              s3.HttpMethods.DELETE,
+            ],
+            allowedOrigins: ["*"],
+          },
+        ],
+        // When deleting the stack, need to empty the Bucket and delete it manually
+        removalPolicy: cdk.RemovalPolicy.RETAIN,
+        enforceSSL: true,
+      }
+    );
+
     /**
      *
      * Create Integration Lambda layer for aws-jwt-verify
@@ -804,22 +828,36 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     // Create secrets for Bedrock LLM ID, Embedding Model ID, and Table Name
-    const bedrockLLMSecret = new secretsmanager.Secret(this, "BedrockLLMSecret", {
-      secretName: "BedrockLLMSecret",
-      description: "Secret containing the Bedrock LLM ID",
-      secretStringValue: cdk.SecretValue.unsafePlainText("meta.llama3-70b-instruct-v1:0"),
-    });
+    const bedrockLLMSecret = new secretsmanager.Secret(
+      this,
+      "BedrockLLMSecret",
+      {
+        secretName: "BedrockLLMSecret",
+        description: "Secret containing the Bedrock LLM ID",
+        secretStringValue: cdk.SecretValue.unsafePlainText(
+          "meta.llama3-70b-instruct-v1:0"
+        ),
+      }
+    );
 
-    const embeddingModelSecret = new secretsmanager.Secret(this, "EmbeddingModelSecret", {
-      secretName: "EmbeddingModelSecret",
-      description: "Secret containing the Embedding Model ID",
-      secretStringValue: cdk.SecretValue.unsafePlainText("amazon.titan-embed-text-v2:0"),
-    });
+    const embeddingModelSecret = new secretsmanager.Secret(
+      this,
+      "EmbeddingModelSecret",
+      {
+        secretName: "EmbeddingModelSecret",
+        description: "Secret containing the Embedding Model ID",
+        secretStringValue: cdk.SecretValue.unsafePlainText(
+          "amazon.titan-embed-text-v2:0"
+        ),
+      }
+    );
 
     const tableNameSecret = new secretsmanager.Secret(this, "TableNameSecret", {
       secretName: "TableNameSecret",
       description: "Secret containing the DynamoDB table name",
-      secretStringValue: cdk.SecretValue.unsafePlainText("DynamoDB-Conversation-Table"),
+      secretStringValue: cdk.SecretValue.unsafePlainText(
+        "DynamoDB-Conversation-Table"
+      ),
     });
 
     /**
@@ -904,9 +942,9 @@ export class ApiGatewayStack extends cdk.Stack {
       })
     );
 
+
     // Create S3 Bucket to handle documents for each course
     const dataIngestionBucket = new s3.Bucket(this, "VCIDataIngestionBucket", {
-      bucketName: "vci-data-ingestion-bucket",
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       cors: [
         {
@@ -988,6 +1026,7 @@ export class ApiGatewayStack extends cdk.Stack {
           RDS_PROXY_ENDPOINT: db.rdsProxyEndpoint,
           BUCKET: dataIngestionBucket.bucketName,
           REGION: this.region,
+          EMBEDDING_BUCKET_NAME: embeddingStorageBucket.bucketName,
         },
       }
     );
@@ -997,6 +1036,35 @@ export class ApiGatewayStack extends cdk.Stack {
       .defaultChild as lambda.CfnFunction;
     cfnDataIngestLambdaDockerFunc.overrideLogicalId(
       "DataIngestLambdaDockerFunc"
+    );
+
+    dataIngestionBucket.grantRead(dataIngestLambdaDockerFunc);
+
+    // Add ListBucket permission explicitly
+    dataIngestLambdaDockerFunc.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["s3:ListBucket"],
+        resources: [dataIngestionBucket.bucketArn], // Access to the specific bucket
+      })
+    );
+
+    dataIngestLambdaDockerFunc.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["s3:ListBucket"],
+        resources: [embeddingStorageBucket.bucketArn], // Access to the specific bucket
+      })
+    );
+
+    dataIngestLambdaDockerFunc.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:HeadObject"],
+        resources: [
+          `arn:aws:s3:::${embeddingStorageBucket.bucketName}/*`,  // Grant access to all objects within this bucket
+        ],
+      })
     );
 
     // Attach the custom Bedrock policy to Lambda function
