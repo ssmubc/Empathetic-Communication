@@ -202,7 +202,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                             }}
                           >
                             {/* Placeholder text or image */}
-                            <span>IMG</span>
+                            <span>PFP</span>
                           </div>
                           <div className="flex flex-row items-center gap-1">
                             <FaInfoCircle className="text-xs" />

@@ -228,7 +228,7 @@ const StudentDetails = () => {
               <DialogContent>
                 <DialogContentText>
                   Are you sure you want to unenroll the student from this
-                  course?
+                  simulation group?
                 </DialogContentText>
               </DialogContent>
               <DialogActions>
@@ -295,7 +295,7 @@ const StudentDetails = () => {
               ))
             ) : (
               <Typography sx={{ ml: 2, mt: 4 }} variant="body1">
-                Student has not entered the module yet.
+                Student has not entered the any simulation groups yet.
               </Typography>
             )}
           </Box>
