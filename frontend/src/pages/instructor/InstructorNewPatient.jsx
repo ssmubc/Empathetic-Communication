@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { fetchUserAttributes } from "aws-amplify/auth";
+import DeleteIcon from '@mui/icons-material/Delete'; // Import trash icon from Material UI
 
 import {
   TextField,
@@ -16,27 +17,38 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  IconButton, // For the trash icon button
 } from "@mui/material";
 import PageContainer from "../Container";
 import FileManagement from "../../components/FileManagement";
 
 function titleCase(str) {
-  if (typeof str !== 'string') {
+  if (typeof str !== "string") {
     return str;
   }
-  return str.toLowerCase().split(' ').map(function(word) {
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }).join(' ');
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map(function (word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
 }
 
 export const InstructorNewPatient = () => {
-  const [files, setFiles] = useState([]);
-  const [newFiles, setNewFiles] = useState([]);
-  const [savedFiles, setSavedFiles] = useState([]);
-  const [deletedFiles, setDeletedFiles] = useState([]);
-  const [metadata, setMetadata] = useState({});
+  const [files, setFiles] = useState([]); // For LLM Upload
+  const [newFiles, setNewFiles] = useState([]); // For LLM Upload
+  const [savedFiles, setSavedFiles] = useState([]); // For LLM Upload
+  const [deletedFiles, setDeletedFiles] = useState([]); // For LLM Upload
+  const [metadata, setMetadata] = useState({}); // For LLM Upload
 
-  const [profilePicture, setProfilePicture] = useState(null); // New state for profile picture
+  const [patientFiles, setPatientFiles] = useState([]); // For Patient Info Upload
+  const [newPatientFiles, setNewPatientFiles] = useState([]); // For Patient Info Upload
+  const [savedPatientFiles, setSavedPatientFiles] = useState([]); // For Patient Info Upload
+  const [deletedPatientFiles, setDeletedPatientFiles] = useState([]); // For Patient Info Upload
+  const [patientMetadata, setPatientMetadata] = useState({}); // For Patient Info Upload
+
+  const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [patientName, setPatientName] = useState("");
@@ -75,7 +87,7 @@ export const InstructorNewPatient = () => {
     if (!profilePicture) return;
     const fileType = getFileType(profilePicture.name);
     const fileName = cleanFileName(profilePicture.name);
-    
+
     const response = await fetch(
       `${
         import.meta.env.VITE_API_ENDPOINT
@@ -94,7 +106,7 @@ export const InstructorNewPatient = () => {
         },
       }
     );
-    
+
     const presignedUrl = await response.json();
     await fetch(presignedUrl.presignedurl, {
       method: "PUT",
@@ -109,6 +121,46 @@ export const InstructorNewPatient = () => {
     const newFilePromises = newFiles.map((file) => {
       const fileType = getFileType(file.name);
       const fileName = cleanFileName(removeFileExtension(file.name));
+      return fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patientId
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(fileType)}&file_name=${encodeURIComponent(
+          fileName
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((presignedUrl) => {
+          return fetch(presignedUrl.presignedurl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": file.type,
+            },
+            body: file,
+          });
+        });
+    });
+
+    return await Promise.all(newFilePromises);
+  };
+
+  const uploadPatientFiles = async (newFiles, token, patientId) => {
+    const newFilePromises = newFiles.map((file) => {
+      const fileType = getFileType(file.name);
+      const fileName = cleanFileName(removeFileExtension(file.name));
+
       return fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
@@ -167,6 +219,7 @@ export const InstructorNewPatient = () => {
       const session = await fetchAuthSession();
       const token = session.tokens.idToken;
       const { email } = await fetchUserAttributes();
+
       const response = await fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
@@ -188,7 +241,7 @@ export const InstructorNewPatient = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            patient_prompt: patientPrompt
+            patient_prompt: patientPrompt,
           }),
         }
       );
@@ -208,15 +261,23 @@ export const InstructorNewPatient = () => {
       } else {
         const updatedPatient = await response.json();
         await uploadProfilePicture(profilePicture, token, updatedPatient.patient_id); // Upload profile picture
-        await uploadFiles(newFiles, token, updatedPatient.patient_id);
+        await uploadFiles(newFiles, token, updatedPatient.patient_id); // LLM Upload
+        await uploadPatientFiles(newPatientFiles, token, updatedPatient.patient_id); // Patient Info Upload
 
         setFiles((prevFiles) =>
           prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
         );
         setSavedFiles((prevFiles) => [...prevFiles, ...newFiles]);
 
+        setPatientFiles((prevFiles) =>
+          prevFiles.filter((file) => !deletedPatientFiles.includes(file.fileName))
+        );
+        setSavedPatientFiles((prevFiles) => [...prevFiles, ...newPatientFiles]);
+
         setDeletedFiles([]);
         setNewFiles([]);
+        setDeletedPatientFiles([]);
+        setNewPatientFiles([]);
         toast.success("Patient Created Successfully", {
           position: "top-center",
           autoClose: 1000,
@@ -233,7 +294,7 @@ export const InstructorNewPatient = () => {
     } finally {
       setIsSaving(false);
       setNextPatientNumber(nextPatientNumber + 1);
-      setTimeout(function () {
+      setTimeout(() => {
         handleBackClick();
       }, 1000);
     }
@@ -244,6 +305,7 @@ export const InstructorNewPatient = () => {
       <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
         <Typography variant="h6">New Patient</Typography>
 
+        {/* Patient Information Fields */}
         <TextField
           label="Patient Name"
           name="name"
@@ -274,17 +336,6 @@ export const InstructorNewPatient = () => {
           </Select>
         </FormControl>
 
-        {/* Profile Picture Upload */}
-        <Typography variant="body1" style={{ marginTop: 16 }}>
-          Upload Profile Picture
-        </Typography>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setProfilePicture(e.target.files[0])}
-          style={{ marginTop: 8 }}
-        />
-
         <TextField
           label="Patient Prompt"
           value={patientPrompt}
@@ -295,6 +346,10 @@ export const InstructorNewPatient = () => {
           rows={4}
         />
 
+        {/* LLM Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          LLM Upload
+        </Typography>
         <FileManagement
           newFiles={newFiles}
           setNewFiles={setNewFiles}
@@ -306,6 +361,23 @@ export const InstructorNewPatient = () => {
           loading={loading}
           metadata={metadata}
           setMetadata={setMetadata}
+        />
+
+        {/* Patient Info Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          Patient Information Upload
+        </Typography>
+        <FileManagement
+          newFiles={newPatientFiles}
+          setNewFiles={setNewPatientFiles}
+          files={patientFiles}
+          setFiles={setPatientFiles}
+          setDeletedFiles={setDeletedPatientFiles}
+          savedFiles={savedPatientFiles}
+          setSavedFiles={setSavedPatientFiles}
+          loading={loading}
+          metadata={patientMetadata}
+          setMetadata={setPatientMetadata}
         />
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>
