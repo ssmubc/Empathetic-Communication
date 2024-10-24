@@ -91,7 +91,7 @@ const StudentDetails = () => {
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_student_messages?simulation_group_id=${encodeURIComponent(
+          }instructor/student_patients_messages?simulation_group_id=${encodeURIComponent(
             simulation_group_id
           )}&student_email=${encodeURIComponent(student.email)}`,
           {
