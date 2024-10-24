@@ -943,7 +943,7 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
 
-    // Create S3 Bucket to handle documents for each course
+    // Create S3 Bucket to handle documents for each simulation group
     const dataIngestionBucket = new s3.Bucket(this, "VCIDataIngestionBucket", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       cors: [
@@ -1097,7 +1097,7 @@ export class ApiGatewayStack extends cdk.Stack {
 
     /**
      *
-     * Create Lambda function that will return all file names for a specified course, concept, and module
+     * Create Lambda function that will return all file names for a specified simulation group and patient
      */
     const getFilesFunction = new lambda.Function(this, "GetFilesFunction", {
       runtime: lambda.Runtime.PYTHON_3_9,

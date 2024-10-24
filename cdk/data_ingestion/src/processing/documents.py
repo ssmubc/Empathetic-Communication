@@ -46,8 +46,8 @@ def extract_txt(
 
 def store_doc_texts(
     bucket: str, 
-    course: str, 
-    module: str,
+    group: str, 
+    patient: str,
     filename: str, 
     output_bucket: str
 ) -> List[str]:
@@ -56,8 +56,8 @@ def store_doc_texts(
     
     Args:
     bucket (str): The name of the S3 bucket containing the document.
-    course (str): The course ID folder in the S3 bucket.
-    module (str): The module name and ID folder within the course.
+    group (str): The group ID folder in the S3 bucket.
+    patient (str): The patient name and ID folder within the group.
     filename (str): The name of the document file.
     output_bucket (str): The name of the S3 bucket for storing the extracted text.
     
@@ -65,7 +65,7 @@ def store_doc_texts(
     List[str]: A list of keys for the stored text files in the output bucket.
     """
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        s3.download_file(bucket, f"{course}/{module}/documents/{filename}", tmp_file.name)
+        s3.download_file(bucket, f"{group}/{patient}/documents/{filename}", tmp_file.name)
         doc = pymupdf.open(tmp_file.name)
         
         with BytesIO() as output_buffer:
@@ -74,19 +74,19 @@ def store_doc_texts(
                 output_buffer.write(text)
                 output_buffer.write(bytes((12,)))
                 
-                page_output_key = f'{course}/{module}/documents/{filename}_page_{page_num}.txt'
+                page_output_key = f'{group}/{patient}/documents/{filename}_page_{page_num}.txt'
                 
                 with BytesIO(text) as page_output_buffer:
                     s3.upload_fileobj(page_output_buffer, output_bucket, page_output_key)
 
         os.remove(tmp_file.name)
 
-    return [f'{course}/{module}/documents/{filename}_page_{page_num}.txt' for page_num in range(1, len(doc) + 1)]
+    return [f'{group}/{patient}/documents/{filename}_page_{page_num}.txt' for page_num in range(1, len(doc) + 1)]
 
 def add_document(
     bucket: str, 
-    course: str, 
-    module: str,
+    group: str, 
+    patient: str,
     filename: str, 
     vectorstore: PGVector, 
     embeddings: BedrockEmbeddings,
@@ -97,8 +97,8 @@ def add_document(
     
     Args:
     bucket (str): The name of the S3 bucket containing the document.
-    course (str): The course ID folder in the S3 bucket.
-    module (str): The module name and ID folder within the course.
+    group (str): The group ID folder in the S3 bucket.
+    patient (str): The patient name and ID folder within the group.
     filename (str): The name of the document file.
     vectorstore (PGVector): The vectorstore instance.
     embeddings (BedrockEmbeddings): The embeddings instance.
@@ -110,8 +110,8 @@ def add_document(
     
     output_filenames = store_doc_texts(
         bucket=bucket,
-        course=course,
-        module=module,
+        group=group,
+        patient=patient,
         filename=filename,
         output_bucket=output_bucket
     )
@@ -154,7 +154,7 @@ def store_doc_chunks(
         doc_chunks = text_splitter.create_documents([doc_texts])
         
         head, _, _ = filename.partition("_page")
-        true_filename = head # Converts 'CourseCode_XXX_-_Course-Name.pdf_page_1.txt' to 'CourseCode_XXX_-_Course-Name.pdf'
+        true_filename = head # Converts 'GroupCode_XXX_-_Group-Name.pdf_page_1.txt' to 'GroupCode_XXX_-_Group-Name.pdf'
         
         doc_chunks = [x for x in doc_chunks if x.page_content]
         
@@ -174,7 +174,7 @@ def store_doc_chunks(
                 
 def process_documents(
     bucket: str, 
-    course: str, 
+    group: str, 
     vectorstore: PGVector, 
     embeddings: BedrockEmbeddings,
     record_manager: SQLRecordManager
@@ -184,13 +184,13 @@ def process_documents(
     
     Args:
     bucket (str): The name of the S3 bucket containing the text documents.
-    course (str): The course ID folder in the S3 bucket.
+    group (str): The group ID folder in the S3 bucket.
     vectorstore (PGVector): The vectorstore instance.
     embeddings (BedrockEmbeddings): The embeddings instance.
     record_manager (SQLRecordManager): Manages list of documents in the vectorstore for indexing.
     """
     paginator = s3.get_paginator('list_objects_v2')
-    page_iterator = paginator.paginate(Bucket=bucket, Prefix=f"{course}/")
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=f"{group}/")
     all_doc_chunks = []
     
     for page in page_iterator:
@@ -200,11 +200,11 @@ def process_documents(
             filename = file['Key']
             if filename.split('/')[-2] == "documents": # Ensures that only files in the 'documents' folder are processed
                 if filename.endswith((".pdf", ".docx", ".pptx", ".txt", ".xlsx", ".xps", ".mobi", ".cbz")):
-                    module = filename.split('/')[1]
+                    patient = filename.split('/')[1]
                     this_doc_chunks = add_document(
                         bucket=bucket,
-                        course=course,
-                        module=module,
+                        group=group,
+                        patient=patient,
                         filename=os.path.basename(filename),
                         vectorstore=vectorstore,
                         embeddings=embeddings
