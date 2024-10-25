@@ -95,6 +95,7 @@ const InstructorEditPatients = () => {
   function removeFileExtension(fileName) {
     return fileName.replace(/\.[^/.]+$/, "");
   }
+
   const fetchFiles = async () => {
     try {
       const { token, email } = await getAuthSessionAndEmail();
@@ -218,15 +219,8 @@ const InstructorEditPatients = () => {
   };
 
   const getFileType = (filename) => {
-    // Get the file extension by splitting the filename on '.' and taking the last part
     const parts = filename.split(".");
-
-    // Check if there's at least one '.' in the filename and return the last part
-    if (parts.length > 1) {
-      return parts.pop();
-    } else {
-      return "";
-    }
+    return parts.length > 1 ? parts.pop() : "";
   };
 
   const updatePatient = async () => {
@@ -261,7 +255,7 @@ const InstructorEditPatients = () => {
   };
 
   const deleteFiles = async (deletedFiles, token) => {
-    const deletedFilePromises = deletedFiles.map((file_name) => {
+    const deletePromises = deletedFiles.map((file_name) => {
       const fileType = getFileType(file_name);
       const fileName = cleanFileName(removeFileExtension(file_name));
       return fetch(
@@ -285,119 +279,73 @@ const InstructorEditPatients = () => {
         }
       );
     });
-  };
-  const cleanFileName = (fileName) => {
-    return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    await Promise.all(deletePromises);
   };
 
+  const cleanFileName = (fileName) => fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+
   const uploadFiles = async (newFiles, token) => {
-    const successfullyUploadedFiles = [];
-    // add meta data to this request
-    const newFilePromises = newFiles.map(async (file) => {
+    const uploadPromises = newFiles.map(async (file) => {
       const fileType = getFileType(file.name);
       const fileName = cleanFileName(removeFileExtension(file.name));
 
-      try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-            simulation_group_id
-          )}&patient_id=${encodeURIComponent(
-            patient.patient_id
-          )}&patient_name=${encodeURIComponent(
-            patientName
-          )}&file_type=${encodeURIComponent(
-            fileType
-          )}&file_name=${encodeURIComponent(fileName)}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch presigned URL");
-        }
-
-        const presignedUrl = await response.json();
-        const uploadResponse = await fetch(presignedUrl.presignedurl, {
-          method: "PUT",
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}`,
+        {
+          method: "GET",
           headers: {
-            "Content-Type": file.type,
+            Authorization: token,
+            "Content-Type": "application/json",
           },
-          body: file,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error("Failed to upload file");
         }
+      );
 
-        // Add file to the successful uploads array
-        successfullyUploadedFiles.push(file);
-      } catch (error) {
-        console.error(error.message);
-      }
+      const presignedUrl = await response.json();
+      await fetch(presignedUrl.presignedurl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+      return file;
     });
 
-    // Wait for all uploads to complete
-    await Promise.all(newFilePromises);
-
-    // Update state with successfully uploaded files
-    setSavedFiles((prevFiles) => [...prevFiles, ...successfullyUploadedFiles]);
+    const uploadedFiles = await Promise.all(uploadPromises);
+    setSavedFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
   };
 
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
-  
+
+    // Validation checks with reset
     if (!patientName) {
-      toast.error("Patient Name is required.", {
-        position: "top-center",
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
-      
+      toast.error("Patient Name is required.", { position: "top-center" });
+      setIsSaving(false);
       return;
     }
-
     if (!patientAge) {
-      toast.error("Patient Age is required.", {
-        position: "top-center",
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
+      toast.error("Patient Age is required.", { position: "top-center" });
+      setIsSaving(false);
       return;
-      
+    }
+    if (!patientPrompt) {
+      toast.error("Patient Prompt is required.", { position: "top-center" });
+      setIsSaving(false);
+      return;
     }
 
-    if (!patientPrompt) {
-      toast.error("Patient Prompt is required.", {
-        position: "top-center",
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
-      return;
-    }
-      
     try {
       await updatePatient();
       const { token } = await getAuthSessionAndEmail();
@@ -408,54 +356,31 @@ const InstructorEditPatients = () => {
         updateMetaData(savedFiles, token),
         updateMetaData(newFiles, token),
       ]);
+
       setFiles((prevFiles) =>
         prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
       );
-  
+
       setDeletedFiles([]);
       setNewFiles([]);
-      toast.success("Patient updated successfully", {
-        position: "top-center",
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
-  
-      // Navigate back to the previous page after saving
-      setTimeout(() => {
-        handleBackClick();
-      }, 1000);
+      toast.success("Patient updated successfully", { position: "top-center" });
+
+      setTimeout(() => handleBackClick(), 1000);
     } catch (error) {
-      console.error("Error fetching groups:", error);
-      toast.error("Patient failed to update", {
-        position: "top-center",
-        autoClose: 1000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
+      console.error("Error saving patient:", error);
+      toast.error("Patient failed to update", { position: "top-center" });
     } finally {
       setIsSaving(false);
     }
   };
-  
 
   const updateMetaData = (files, token) => {
     files.forEach((file) => {
       const fileNameWithExtension = file.fileName || file.name;
       const fileMetadata = metadata[fileNameWithExtension] || "";
-      const fileName = cleanFileName(
-        removeFileExtension(fileNameWithExtension)
-      );
+      const fileName = cleanFileName(removeFileExtension(fileNameWithExtension));
       const fileType = getFileType(fileNameWithExtension);
-      return fetch(
+      fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
         }instructor/update_metadata?patient_id=${encodeURIComponent(
@@ -474,9 +399,10 @@ const InstructorEditPatients = () => {
       );
     });
   };
+
   const getAuthSessionAndEmail = async () => {
     const session = await fetchAuthSession();
-    const token = session.tokens.idToken
+    const token = session.tokens.idToken;
     const { email } = await fetchUserAttributes();
     return { token, email };
   };
@@ -494,7 +420,7 @@ const InstructorEditPatients = () => {
           label="Patient Name"
           name="name"
           value={patientName}
-          onChange={handleInputChange}
+          onChange={(e) => setPatientName(e.target.value)}
           fullWidth
           margin="normal"
           inputProps={{ maxLength: 50 }}
