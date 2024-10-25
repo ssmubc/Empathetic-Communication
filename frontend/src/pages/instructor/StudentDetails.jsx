@@ -69,15 +69,6 @@ const formatMessages = (messages) => {
   return formattedMessages;
 };
 
-// Mock function for fetching notes (replace with API later)
-const fetchNotes = async (studentEmail, simulationGroupId) => {
-  // Simulate fetching from an API
-  return {
-    "Session 1": "Notes for session 1: Patient was responsive and participated actively.",
-    "Session 2": "Notes for session 2: Patient was quiet and required more prompts.",
-  };
-};
-
 const StudentDetails = () => {
   const { studentId } = useParams();
   const location = useLocation();
@@ -85,9 +76,7 @@ const StudentDetails = () => {
   const [tabs, setTabs] = useState([]);
   const [sessions, setSessions] = useState({});
   const [activeTab, setActiveTab] = useState(0);
-  const [chatHistory, setChatHistory] = useState("loading...");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [notes, setNotes] = useState({}); // Store patient notes
   const textFieldRef = useRef(null);
 
   useEffect(() => {
@@ -203,13 +192,13 @@ const StudentDetails = () => {
         </IconButton>
         <Paper
           sx={{
-              width: "100%",
-              overflow: "auto",
-              padding: 2,
-              overflowY: "scroll",
-              marginTop: 4,
-            }}
-          >
+            width: "100%",
+            overflow: "auto",
+            padding: 2,
+            overflowY: "scroll",
+            marginTop: 4,
+          }}
+        >
           <Box mb={2} sx={{ flexGrow: 1, p: 3, textAlign: "left", mt: 6 }}>
             <Typography variant="h5">Student Name: {studentId}</Typography>
             <Divider sx={{ my: 2 }} />
@@ -298,18 +287,20 @@ const StudentDetails = () => {
                       inputRef={textFieldRef}
                     />
 
-                    {/* Display session-specific notes */}
-                    <Typography variant="h6">Notes</Typography>
-                    <Paper
-                      sx={{
-                        padding: 2,
-                        backgroundColor: "#f1f1f1",
+                    {/* Display session-specific notes   */}
+                    <TextField
+                      label="Notes"
+                      variant="outlined"
+                      fullWidth
+                      multiline
+                      rows={10}
+                      value={session.notes || "No notes available."}
+                      InputProps={{
+                        readOnly: true,
                       }}
-                    >
-                      <Typography variant="body1">
-                        {session.notes || "No notes available."}
-                      </Typography>
-                    </Paper>
+                      sx={{ my: 2 }}
+                      inputRef={textFieldRef}
+                    />
                   </AccordionDetails>
                 </Accordion>
               ))
