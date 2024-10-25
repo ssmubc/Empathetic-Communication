@@ -462,7 +462,6 @@ exports.handler = async (event) => {
                 `;
     
                 // Step 4: Insert a new session with the session_name
-                const notes = "hello";
                 const sessionData = await sqlConnection`
                     INSERT INTO "sessions" (session_id, student_interaction_id, session_name, session_context_embeddings, last_accessed, notes)
                     VALUES (
@@ -471,7 +470,7 @@ exports.handler = async (event) => {
                         ${sessionName},
                         ARRAY[]::float[],
                         CURRENT_TIMESTAMP,
-                        ${notes}
+                        NULL
                     )
                     RETURNING *;
                 `;
@@ -620,7 +619,7 @@ exports.handler = async (event) => {
             // Query to get all messages in the given session, sorted by time_sent in ascending order (oldest to newest)
             const data = await sqlConnection`
                       SELECT *
-                      FROM "Messages"
+                      FROM "messages"
                       WHERE session_id = ${sessionId}
                       ORDER BY time_sent ASC;
                   `;
