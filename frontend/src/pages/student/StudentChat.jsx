@@ -827,6 +827,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
         {isNotesOpen && (
           <DraggableNotes
             isOpen={isNotesOpen}
+            sessionId={session.session_id}
             onClose={() => setIsNotesOpen(false)}
           />
         )}

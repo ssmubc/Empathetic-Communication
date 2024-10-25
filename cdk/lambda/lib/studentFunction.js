@@ -975,96 +975,166 @@ exports.handler = async (event) => {
           response.body = JSON.stringify({ error: "Invalid value" });
         }
         break;
-        case "POST /student/update_patient_score":
-          if (
-              event.queryStringParameters != null &&
-              event.queryStringParameters.patient_id &&
-              event.queryStringParameters.student_email &&
-              event.queryStringParameters.simulation_group_id &&
-              event.queryStringParameters.llm_verdict
-          ) {
-              try {
-                  const patientId = event.queryStringParameters.patient_id;
-                  const studentEmail = event.queryStringParameters.student_email;
-                  const simulationGroupId = event.queryStringParameters.simulation_group_id;
-                  const llmVerdict =
-                      event.queryStringParameters.llm_verdict === "true"; // Convert to boolean
-      
-                  // Retrieve user_id from the Users table
-                  const userData = await sqlConnection`
-                      SELECT user_id
-                      FROM "users"
-                      WHERE user_email = ${studentEmail};
-                  `;
-      
-                  const userId = userData[0]?.user_id;
-      
-                  if (!userId) {
-                      response.statusCode = 404;
-                      response.body = JSON.stringify({
-                          error: "User not found",
-                      });
-                      break;
-                  }
-      
-                  // Get the student_interaction_id and current score for the student and patient
-                  const studentPatientData = await sqlConnection`
-                      SELECT student_interaction_id, patient_score
-                      FROM "student_interactions"
-                      WHERE patient_id = ${patientId}
-                        AND enrolment_id = (
-                          SELECT enrolment_id
-                          FROM "enrolments"
-                          WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId}
-                      );
-                  `;
-      
-                  const studentPatientId = studentPatientData[0]?.student_interaction_id;
-                  const currentScore = studentPatientData[0]?.patient_score;
-      
-                  if (!studentPatientId) {
-                      response.statusCode = 404;
-                      response.body = JSON.stringify({
-                          error: "Student patient entry not found.",
-                      });
-                      break;
-                  }
-      
-                  // If llm_verdict is false and the current score is 100, no update is needed
-                  if (!llmVerdict && currentScore === 100) {
-                      response.statusCode = 200;
-                      response.body = JSON.stringify({
-                          message: "No changes made. Patient score is already 100.",
-                      });
-                      break;
-                  }
-      
-                  // Determine the new score based on llm_verdict
-                  const newScore = llmVerdict ? 100 : 0;
-      
-                  // Update the patient score for the student
-                  await sqlConnection`
-                      UPDATE "student_interactions"
-                      SET patient_score = ${newScore}
-                      WHERE student_interaction_id = ${studentPatientId};
-                  `;
-      
-                  response.statusCode = 200;
-                  response.body = JSON.stringify({
-                      message: "Patient score updated successfully.",
-                  });
-              } catch (err) {
-                  console.error(err);
-                  response.statusCode = 500;
-                  response.body = JSON.stringify({ error: "Internal server error" });
-              }
-          } else {
-              response.statusCode = 400;
-              response.body = JSON.stringify({
-                  error: "Invalid query parameters.",
-              });
-          }
-          break;
+      case "POST /student/update_patient_score":
+        if (
+            event.queryStringParameters != null &&
+            event.queryStringParameters.patient_id &&
+            event.queryStringParameters.student_email &&
+            event.queryStringParameters.simulation_group_id &&
+            event.queryStringParameters.llm_verdict
+        ) {
+            try {
+                const patientId = event.queryStringParameters.patient_id;
+                const studentEmail = event.queryStringParameters.student_email;
+                const simulationGroupId = event.queryStringParameters.simulation_group_id;
+                const llmVerdict =
+                    event.queryStringParameters.llm_verdict === "true"; // Convert to boolean
+    
+                // Retrieve user_id from the Users table
+                const userData = await sqlConnection`
+                    SELECT user_id
+                    FROM "users"
+                    WHERE user_email = ${studentEmail};
+                `;
+    
+                const userId = userData[0]?.user_id;
+    
+                if (!userId) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({
+                        error: "User not found",
+                    });
+                    break;
+                }
+    
+                // Get the student_interaction_id and current score for the student and patient
+                const studentPatientData = await sqlConnection`
+                    SELECT student_interaction_id, patient_score
+                    FROM "student_interactions"
+                    WHERE patient_id = ${patientId}
+                      AND enrolment_id = (
+                        SELECT enrolment_id
+                        FROM "enrolments"
+                        WHERE user_id = ${userId} AND simulation_group_id = ${simulationGroupId}
+                    );
+                `;
+    
+                const studentPatientId = studentPatientData[0]?.student_interaction_id;
+                const currentScore = studentPatientData[0]?.patient_score;
+    
+                if (!studentPatientId) {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({
+                        error: "Student patient entry not found.",
+                    });
+                    break;
+                }
+    
+                // If llm_verdict is false and the current score is 100, no update is needed
+                if (!llmVerdict && currentScore === 100) {
+                    response.statusCode = 200;
+                    response.body = JSON.stringify({
+                        message: "No changes made. Patient score is already 100.",
+                    });
+                    break;
+                }
+    
+                // Determine the new score based on llm_verdict
+                const newScore = llmVerdict ? 100 : 0;
+    
+                // Update the patient score for the student
+                await sqlConnection`
+                    UPDATE "student_interactions"
+                    SET patient_score = ${newScore}
+                    WHERE student_interaction_id = ${studentPatientId};
+                `;
+    
+                response.statusCode = 200;
+                response.body = JSON.stringify({
+                    message: "Patient score updated successfully.",
+                });
+            } catch (err) {
+                console.error(err);
+                response.statusCode = 500;
+                response.body = JSON.stringify({ error: "Internal server error" });
+            }
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({
+                error: "Invalid query parameters.",
+            });
+        }
+        break;
+      case "GET /student/get_notes":
+        if (
+            event.queryStringParameters &&
+            event.queryStringParameters.session_id
+        ) {
+            const sessionId = event.queryStringParameters.session_id;
+    
+            try {
+                // Query to get the notes for the session
+                const notesData = await sqlConnection`
+                    SELECT notes 
+                    FROM "sessions" 
+                    WHERE session_id = ${sessionId};
+                `;
+    
+                if (notesData.length > 0) {
+                    response.statusCode = 200;
+                    response.body = JSON.stringify({ notes: notesData[0].notes });
+                } else {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Notes not found." });
+                }
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
+            }
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "session_id is required." });
+        }
+        break;
+      case "PUT /student/update_notes":
+        if (
+            event.queryStringParameters &&
+            event.queryStringParameters.session_id &&
+            event.body
+        ) {
+            const sessionId = event.queryStringParameters.session_id;
+            const { notes } = JSON.parse(event.body);
+    
+            try {
+                // Update the notes for the session
+                const updateResult = await sqlConnection`
+                    UPDATE "sessions" 
+                    SET notes = ${notes}, last_accessed = CURRENT_TIMESTAMP 
+                    WHERE session_id = ${sessionId}
+                    RETURNING *;
+                `;
+    
+                if (updateResult.length > 0) {
+                    response.statusCode = 200;
+                    response.body = JSON.stringify({
+                        message: "Notes updated successfully.",
+                        session: updateResult[0],
+                    });
+                } else {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Session not found." });
+                }
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
+            }
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "Invalid input." });
+        }
+        break;
       default:
         throw new Error(`Unsupported route: "${pathData}"`);
     }

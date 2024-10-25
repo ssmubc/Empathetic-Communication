@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
 
-function DraggableNotes({ onClose }) {
+function DraggableNotes({ onClose, sessionId }) {
   const [noteContent, setNoteContent] = useState("");
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [dimensions, setDimensions] = useState({ width: 400, height: 300 });
@@ -10,33 +11,78 @@ function DraggableNotes({ onClose }) {
   const isDragging = useRef(false);
   const isResizing = useRef(false);
 
-  // Load the note content from localStorage when the component mounts
+  // Load notes from the back-end when the component mounts
   useEffect(() => {
-    const savedNotes = localStorage.getItem("studentNotes");
-    if (savedNotes) {
-      setNoteContent(savedNotes); // Restore saved note content
+    if (sessionId) {
+      fetchNotes(sessionId);
     }
-  }, []);
+  }, [sessionId]);
+
+  const fetchNotes = async (sessionId) => {
+    try {
+      const authSession = await fetchAuthSession();
+      const token = authSession.tokens.idToken;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}student/get_notes?session_id=${encodeURIComponent(sessionId)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setNoteContent(data.notes || "");
+      } else {
+        console.error("Failed to fetch notes:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    }
+  };
 
   const handleNoteChange = (e) => {
     setNoteContent(e.target.value);
   };
 
-  // Function to save notes manually
-  const handleSave = () => {
-    localStorage.setItem("studentNotes", noteContent);
-    
-    // Display toast notification (consistent with other parts of the app)
-    toast.success("Notes saved successfully!", {
-      position: "top-center",
-      autoClose: 1000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "colored",
-    });
+  const handleSave = async () => {
+    try {
+      const authSession = await fetchAuthSession();
+      const token = authSession.tokens.idToken;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}student/update_notes?session_id=${encodeURIComponent(sessionId)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ notes: noteContent }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Notes saved successfully!", {
+          position: "top-center",
+          autoClose: 1000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      } else {
+        console.error("Failed to update notes:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating notes:", error);
+    }
   };
 
   const handleMouseDown = (e) => {
