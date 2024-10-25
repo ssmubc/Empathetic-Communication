@@ -462,6 +462,7 @@ exports.handler = async (event) => {
                 `;
     
                 // Step 4: Insert a new session with the session_name
+                const notes = "hello";
                 const sessionData = await sqlConnection`
                     INSERT INTO "sessions" (session_id, student_interaction_id, session_name, session_context_embeddings, last_accessed, notes)
                     VALUES (
@@ -470,7 +471,7 @@ exports.handler = async (event) => {
                         ${sessionName},
                         ARRAY[]::float[],
                         CURRENT_TIMESTAMP,
-                        ""
+                        ${notes}
                     )
                     RETURNING *;
                 `;
