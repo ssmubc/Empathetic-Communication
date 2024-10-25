@@ -382,6 +382,20 @@ const InstructorEditPatients = () => {
       });
       return;
     }
+
+    if (!patientPrompt) {
+      toast.error("Patient Prompt is required.", {
+        position: "top-center",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+      return;
+    }
       
     try {
       await updatePatient();

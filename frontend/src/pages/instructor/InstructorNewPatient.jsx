@@ -227,6 +227,34 @@ export const InstructorNewPatient = () => {
       return;
     }
 
+    if (!patientGender) {
+      toast.error("Patient Gender is required.", {
+        position: "top-center",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+      return;
+    }
+
+    if (!patientPrompt) {
+      toast.error("Patient Prompt is required.", {
+        position: "top-center",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
