@@ -121,20 +121,14 @@ const StudentDetails = () => {
       }
     };
 
-    const fetchStudentNotes = async () => {
-      const fetchedNotes = await fetchNotes(student.email, simulation_group_id);
-      setNotes(fetchedNotes);
-    };
-
     fetchHistory();
-    fetchStudentNotes();
   }, [simulation_group_id, student.email]);
 
   useEffect(() => {
     if (textFieldRef.current) {
       textFieldRef.current.scrollTop = textFieldRef.current.scrollHeight;
     }
-  }, [chatHistory]);
+  }, [sessions]);
 
   const handleDialogOpen = () => {
     setDialogOpen(true);
@@ -209,13 +203,13 @@ const StudentDetails = () => {
         </IconButton>
         <Paper
           sx={{
-            width: "100%",
-            overflow: "auto",
-            padding: 2,
-            overflowY: "scroll",
-            marginTop: 4,
-          }}
-        >
+              width: "100%",
+              overflow: "auto",
+              padding: 2,
+              overflowY: "scroll",
+              marginTop: 4,
+            }}
+          >
           <Box mb={2} sx={{ flexGrow: 1, p: 3, textAlign: "left", mt: 6 }}>
             <Typography variant="h5">Student Name: {studentId}</Typography>
             <Divider sx={{ my: 2 }} />
@@ -304,7 +298,7 @@ const StudentDetails = () => {
                       inputRef={textFieldRef}
                     />
 
-                    {/* Display patient-specific notes */}
+                    {/* Display session-specific notes */}
                     <Typography variant="h6">Notes</Typography>
                     <Paper
                       sx={{
@@ -313,7 +307,7 @@ const StudentDetails = () => {
                       }}
                     >
                       <Typography variant="body1">
-                        {notes[session.sessionName] || "No notes available."}
+                        {session.notes || "No notes available."}
                       </Typography>
                     </Paper>
                   </AccordionDetails>

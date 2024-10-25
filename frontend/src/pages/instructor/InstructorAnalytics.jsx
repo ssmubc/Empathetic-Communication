@@ -62,9 +62,9 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
         if (response.ok) {
           const analytics_data = await response.json();
           setData(analytics_data);
-          const graphDataFormatted = analytics_data.map((module) => ({
-            module: module.module_name,
-            Messages: module.message_count,
+          const graphDataFormatted = analytics_data.map((patient) => ({
+            patient: patient.patient_name,
+            Messages: patient.message_count,
           }));
           setGraphData(graphDataFormatted);
         } else {
@@ -124,7 +124,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
-                dataKey="module"
+                dataKey="patient"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(tick) => titleCase(tick)}
               />
@@ -158,10 +158,10 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
       {value === 0 ? (
         data.length > 0 ? (
           <Box mt={2}>
-            {data.map((module, index) => (
+            {data.map((patient, index) => (
               <Accordion key={index}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography>{titleCase(module.module_name)}</Typography>
+                  <Typography>{titleCase(patient.patient_name)}</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Box width="100%">
@@ -174,20 +174,20 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                       <Grid item width="80%">
                         <Typography textAlign="right">
                           Completion Percentage:{" "}
-                          {module.perfect_score_percentage.toFixed(2)}%
+                          {patient.perfect_score_percentage.toFixed(2)}%
                         </Typography>
                         <LinearProgress
                           variant="determinate"
-                          value={module.perfect_score_percentage}
+                          value={patient.perfect_score_percentage}
                         />
                       </Grid>
                       <Grid item>
                         <Typography>Message Count</Typography>
-                        <Typography>{module.message_count}</Typography>
+                        <Typography>{patient.message_count}</Typography>
                       </Grid>
                       <Grid item>
                         <Typography>Access Count</Typography>
-                        <Typography>{module.access_count}</Typography>
+                        <Typography>{patient.access_count}</Typography>
                       </Grid>
                     </Grid>
                   </Box>
