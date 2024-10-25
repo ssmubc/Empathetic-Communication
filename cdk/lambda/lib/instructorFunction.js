@@ -512,7 +512,7 @@ exports.handler = async (event) => {
             const { patient_id, instructor_email } = event.queryStringParameters;
             const { patient_name, patient_age, patient_gender, patient_prompt } = JSON.parse(event.body || "{}");
     
-            if (patient_name && patient_age != null && patient_gender && patient_prompt) {
+            if (patient_name != null && patient_age != null && patient_gender != null  && patient_prompt != null) {
                 try {
                     // Check if another patient with the same name exists under the same simulation group
                     const existingPatient = await sqlConnection`

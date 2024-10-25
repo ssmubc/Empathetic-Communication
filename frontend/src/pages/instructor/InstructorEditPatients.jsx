@@ -381,6 +381,7 @@ const InstructorEditPatients = () => {
         theme: "colored",
       });
       return;
+      
     }
 
     if (!patientPrompt) {

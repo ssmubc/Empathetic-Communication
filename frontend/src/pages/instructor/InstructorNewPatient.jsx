@@ -228,6 +228,7 @@ export const InstructorNewPatient = () => {
     }
 
     if (!patientGender) {
+      
       toast.error("Patient Gender is required.", {
         position: "top-center",
         autoClose: 1000,
