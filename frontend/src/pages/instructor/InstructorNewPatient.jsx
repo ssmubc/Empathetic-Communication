@@ -213,6 +213,20 @@ export const InstructorNewPatient = () => {
       return;
     }
 
+    if (!patientAge) {
+      toast.error("Patient Age is required.", {
+        position: "top-center",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
