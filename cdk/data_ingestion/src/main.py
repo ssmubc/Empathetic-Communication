@@ -46,12 +46,25 @@ def connect_to_db():
         return None
 
 def parse_s3_file_path(file_key):
-    # Assuming the file path is of the format: {simulation_group_id}/{patient_id}/{documents}/{file_name}.{file_type}
+    # Assuming the file path is of the format: {simulation_group_id}/{patient_id}/{documents or info}/{file_name}.{file_type}
     try:
-        simulation_group_id, patient_id, file_category, filename_with_ext = file_key.split('/')
-        file_name, file_type = filename_with_ext.split('.')
+        # Split the path into components
+        parts = file_key.split('/')
+        
+        # Validate that the path has the correct number of components
+        if len(parts) != 4:
+            raise ValueError(f"Unexpected file path format: {file_key}")
+
+        simulation_group_id, patient_id, file_category, filename_with_ext = parts
+
+        # Split filename and extension
+        if '.' not in filename_with_ext:
+            raise ValueError(f"Invalid filename format: {filename_with_ext}")
+
+        file_name, file_type = filename_with_ext.rsplit('.', 1)
+
         return simulation_group_id, patient_id, file_category, file_name, file_type
-    except Exception as e:
+    except ValueError as e:
         logger.error(f"Error parsing S3 file path: {e}")
         return {
             "statusCode": 400,
@@ -176,32 +189,38 @@ def handler(event, context):
                 "body": json.dumps("Error parsing S3 file path.")
             }
 
-        try:
-            insert_file_into_db(
-                patient_id=patient_id,
-                file_name=file_name,
-                file_type=file_type,
-                file_path=file_key,
-                bucket_name=bucket_name
-            )
-            logger.info(f"File {file_name}.{file_type} inserted successfully.")
-        except Exception as e:
-            logger.error(f"Error inserting file {file_name}.{file_type} into database: {e}")
-            return {
-                "statusCode": 500,
-                "body": json.dumps(f"Error inserting file {file_name}.{file_type}: {e}")
-            }
+        if event_name.startswith('ObjectCreated:'):
+            try:
+                insert_file_into_db(
+                    patient_id=patient_id,
+                    file_name=file_name,
+                    file_type=file_type,
+                    file_path=file_key,
+                    bucket_name=bucket_name
+                )
+                logger.info(f"File {file_name}.{file_type} inserted successfully.")
+            except Exception as e:
+                logger.error(f"Error inserting file {file_name}.{file_type} into database: {e}")
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps(f"Error inserting file {file_name}.{file_type}: {e}")
+                }
+        else:
+            logger.info(f"File {file_name}.{file_type} is being deleted. Deleting files from database does not occur here.")
         
-        # Update embeddings for group after the file is successfully inserted into the database
-        try:
-            update_vectorstore_from_s3(bucket_name, simulation_group_id)
-            logger.info(f"Vectorstore updated successfully for group {simulation_group_id}.")
-        except Exception as e:
-            logger.error(f"Error updating vectorstore for group {simulation_group_id}: {e}")
-            return {
-                "statusCode": 500,
-                "body": json.dumps(f"File inserted, but error updating vectorstore: {e}")
-            }
+        # Update embeddings for group after the file is successfully inserted into the database. Only if document file
+        if file_category == "documents":
+            try:
+                update_vectorstore_from_s3(bucket_name, simulation_group_id)
+                logger.info(f"Vectorstore updated successfully for group {simulation_group_id}.")
+            except Exception as e:
+                logger.error(f"Error updating vectorstore for group {simulation_group_id}: {e}")
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps(f"File inserted, but error updating vectorstore: {e}")
+                }
+        else:            
+            logger.info(f"{file_name}.{file_type} in {file_category} folder is not ingested")
 
         return {
             "statusCode": 200,

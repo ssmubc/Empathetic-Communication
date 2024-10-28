@@ -1482,21 +1482,21 @@ paths:
       operationId: instructor_generate_presigned_url_GET_2
       parameters:
         - in: query
-          name: course_id
+          name: simulation_group_id
           required: true
-          description: ID of the course
+          description: ID of the group
           schema:
             type: string
         - in: query
-          name: module_id
+          name: patient_id
           required: true
-          description: ID of the module
+          description: ID of the patient
           schema:
             type: string
         - in: query
-          name: module_name
+          name: patient_name
           required: true
-          description: Name of the module
+          description: Name of the patient
           schema:
             type: string
         - in: query
@@ -1511,6 +1511,11 @@ paths:
           description: Name of the file
           schema:
             type: string
+        - in: query
+          name: is_document
+          required: true
+          schema:
+            type: boolean
       responses:
         "200":
           description: Presigned URL generated successfully

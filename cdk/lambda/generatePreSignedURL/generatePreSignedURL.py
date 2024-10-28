@@ -37,6 +37,8 @@ def lambda_handler(event, context):
     patient_id = query_params.get("patient_id", "")
     file_type = query_params.get("file_type", "")
     file_name = query_params.get("file_name", "")
+    is_document_str = query_params.get("is_document", "").lower()
+    is_document = is_document_str == "true"
 
     if not simulation_group_id:
         return {
@@ -68,9 +70,31 @@ def lambda_handler(event, context):
         "cbz": "application/vnd.comicbook+zip"
     }
 
-    if file_type in allowed_document_types:
+    # Allowed file types for information with their corresponding MIME types
+    allowed_info_types = {
+        "pdf": "application/pdf",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "txt": "text/plain",
+        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "xps": "application/oxps",  # or "application/vnd.ms-xpsdocument" for legacy XPS
+        "mobi": "application/x-mobipocket-ebook",
+        "cbz": "application/vnd.comicbook+zip",
+        'bmp': 'image/bmp', 'eps': 'application/postscript', 'gif': 'image/gif',
+        'icns': 'image/icns', 'ico': 'image/vnd.microsoft.icon', 'im': 'application/x-im',
+        'jpeg': 'image/jpeg', 'jpg': 'image/jpeg', 'j2k': 'image/jp2', 'jp2': 'image/jp2',
+        'msp': 'application/vnd.ms-paint', 'pcx': 'image/x-pcx', 'png': 'image/png',
+        'ppm': 'image/x-portable-pixmap', 'pgm': 'image/x-portable-graymap',
+        'pbm': 'image/x-portable-bitmap', 'sgi': 'image/sgi', 'tga': 'image/x-tga',
+        'tiff': 'image/tiff', 'tif': 'image/tiff', 'webp': 'image/webp', 'xbm': 'image/x-xbitmap'
+    }
+
+    if is_document and file_type in allowed_document_types:
         key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
+    elif file_type in allowed_info_types:
+        key = f"{simulation_group_id}/{patient_id}/info/{file_name}.{file_type}"
+        content_type = allowed_info_types[file_type]
     else:
         return {
             'statusCode': 400,
@@ -107,7 +131,7 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"presignedurl": presigned_url}),
         }
-    
+
     except Exception as e:
         logger.error(f"Error generating presigned URL: {e}")
         return {

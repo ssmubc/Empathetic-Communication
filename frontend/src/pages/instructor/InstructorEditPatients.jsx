@@ -154,6 +154,7 @@ const InstructorEditPatients = () => {
 
   useEffect(() => {
     if (patientData) {
+      console.log("Patient Data:", patientData);
       setPatient(patientData);
       setPatientName(patientData.patient_name);
       setPatientAge(patientData.patient_age);
@@ -325,7 +326,7 @@ const InstructorEditPatients = () => {
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}&is_document=true`, // For LLM files
+        )}&file_name=${encodeURIComponent(fileName)}`,
         {
           method: "GET",
           headers: {
