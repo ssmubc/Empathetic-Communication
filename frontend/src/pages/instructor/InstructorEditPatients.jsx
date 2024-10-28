@@ -129,6 +129,7 @@ const InstructorEditPatients = () => {
 
   useEffect(() => {
     if (patientData) {
+      console.log("Patient Data:", patientData);
       setPatient(patientData);
       setPatientName(patientData.patient_name);
       setPatientAge(patientData.patient_age);

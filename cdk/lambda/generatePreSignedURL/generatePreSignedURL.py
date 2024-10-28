@@ -68,9 +68,23 @@ def lambda_handler(event, context):
         "cbz": "application/vnd.comicbook+zip"
     }
 
+    # Allowed file types for images with their corresponding MIME types
+    allowed_image_types = {
+        'bmp': 'image/bmp', 'eps': 'application/postscript', 'gif': 'image/gif',
+        'icns': 'image/icns', 'ico': 'image/vnd.microsoft.icon', 'im': 'application/x-im',
+        'jpeg': 'image/jpeg', 'jpg': 'image/jpeg', 'j2k': 'image/jp2', 'jp2': 'image/jp2',
+        'msp': 'application/vnd.ms-paint', 'pcx': 'image/x-pcx', 'png': 'image/png',
+        'ppm': 'image/x-portable-pixmap', 'pgm': 'image/x-portable-graymap',
+        'pbm': 'image/x-portable-bitmap', 'sgi': 'image/sgi', 'tga': 'image/x-tga',
+        'tiff': 'image/tiff', 'tif': 'image/tiff', 'webp': 'image/webp', 'xbm': 'image/x-xbitmap'
+    }
+
     if file_type in allowed_document_types:
         key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
+    elif file_type in allowed_image_types:
+        key = f"{simulation_group_id}/{patient_id}/images/{file_name}.{file_type}"
+        content_type = allowed_image_types[file_type]
     else:
         return {
             'statusCode': 400,
@@ -107,7 +121,7 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"presignedurl": presigned_url}),
         }
-    
+
     except Exception as e:
         logger.error(f"Error generating presigned URL: {e}")
         return {

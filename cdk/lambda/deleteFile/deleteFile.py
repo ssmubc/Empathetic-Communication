@@ -101,6 +101,12 @@ def lambda_handler(event, context):
     try:
         # Allowed file types for documents
         allowed_document_types = {"pdf", "docx", "pptx", "txt", "xlsx", "xps", "mobi", "cbz"}
+        
+        # Allowed file types for images
+        allowed_images_types = {
+            'bmp', 'eps', 'gif', 'icns', 'ico', 'im', 'jpeg', 'jpg', 'j2k', 'jp2', 'msp',
+            'pcx', 'png', 'ppm', 'pgm', 'pbm', 'sgi', 'tga', 'tiff', 'tif', 'webp', 'xbm'
+        }
 
         folder = None
         objects_to_delete = []
@@ -108,6 +114,9 @@ def lambda_handler(event, context):
         # Determine the folder based on the file type
         if file_type in allowed_document_types:
             folder = "documents"
+            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/{folder}/{file_name}.{file_type}"})
+        elif file_type in allowed_images_types:
+            folder = "images"
             objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/{folder}/{file_name}.{file_type}"})
         else:
             return {
