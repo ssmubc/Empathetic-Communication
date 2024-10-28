@@ -25,6 +25,11 @@ import {
 import PageContainer from "../Container";
 import FileManagement from "../../components/FileManagement";
 
+import Avatar from '@mui/material/Avatar'; // for profile picture preview
+import IconButton from '@mui/material/IconButton'; // for upload button
+import PhotoCamera from '@mui/icons-material/PhotoCamera'; // icon for upload
+
+
 function titleCase(str) {
   if (typeof str !== "string") {
     return str;
@@ -62,6 +67,51 @@ const InstructorEditPatients = () => {
   const [patientGender, setPatientGender] = useState("");
   const [patientPrompt, setPatientPrompt] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null); // For profile picture preview
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        setProfilePicture(file);
+        setProfilePicturePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadProfilePicture = async (profilePicture, token, patientId) => {
+    if (!profilePicture) return;
+    const fileType = profilePicture.name.split('.').pop();
+    const fileName = profilePicture.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+            patientId
+        )}&file_type=${encodeURIComponent(
+            fileType
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    const presignedUrl = await response.json();
+    await fetch(presignedUrl.presignedurl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": profilePicture.type,
+        },
+        body: profilePicture,
+    });
+  };
+
+
 
   const handleBackClick = () => {
     window.history.back();
@@ -419,6 +469,9 @@ const InstructorEditPatients = () => {
       await uploadFiles(newFiles, token); // Upload LLM files
       await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
 
+      await uploadProfilePicture(profilePicture, token, patient.patient_id); // Upload profile picture
+
+
       await Promise.all([
         updateMetaData(files, token),
         updateMetaData(savedFiles, token),
@@ -485,6 +538,28 @@ const InstructorEditPatients = () => {
         <Typography variant="h6">
           Edit Patient {titleCase(patient.patient_name)}{" "}
         </Typography>
+
+         {/* Profile Picture Upload Section */}
+         <Box display="flex" alignItems="center" justifyContent="center" marginBottom={2}>
+          <Avatar
+            src={profilePicturePreview}
+            alt="Profile Picture"
+            sx={{ width: 100, height: 100 }}
+          />
+          <input
+            accept="image/*"
+            id="profile-picture-upload"
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleProfilePictureChange}
+          />
+          <label htmlFor="profile-picture-upload">
+            <IconButton component="span" color="primary" aria-label="upload profile picture">
+              <PhotoCamera />
+            </IconButton>
+          </label>
+        </Box>
+
 
         <TextField
           label="Patient Name"
