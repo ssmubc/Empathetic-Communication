@@ -98,10 +98,10 @@ const InstructorEditPatients = () => {
     return resultArray;
   }
 
-  function convertPatientFilesToArray(files) {
-    const patientDocumentFiles = files.patient_document_files;
+  function convertInfoFilesToArray(files) {
+    const infoFiles = files.info_files;
     const resultArray = Object.entries({
-      ...patientDocumentFiles,
+      ...infoFiles,
     }).map(([fileName, url]) => ({
       fileName,
       url,
@@ -142,7 +142,7 @@ const InstructorEditPatients = () => {
       if (response.ok) {
         const fileData = await response.json();
         setFiles(convertDocumentFilesToArray(fileData));
-        setPatientFiles(convertPatientFilesToArray(fileData));
+        setPatientFiles(convertInfoFilesToArray(fileData));
       } else {
         console.error("Failed to fetch files:", response.statusText);
       }
@@ -326,7 +326,7 @@ const InstructorEditPatients = () => {
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${true}`,
         {
           method: "GET",
           headers: {
@@ -367,7 +367,7 @@ const InstructorEditPatients = () => {
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
         {
           method: "GET",
           headers: {

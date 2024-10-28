@@ -4,7 +4,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { fetchUserAttributes } from "aws-amplify/auth";
-import DeleteIcon from '@mui/icons-material/Delete'; // Import trash icon from Material UI
+import DeleteIcon from '@mui/icons-material/Delete';
+import PhotoCamera from '@mui/icons-material/PhotoCamera'; // Icon for profile picture upload
 
 import {
   TextField,
@@ -17,21 +18,18 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  IconButton, // For the trash icon button
+  IconButton,
+  Avatar, // pfp
 } from "@mui/material";
 import PageContainer from "../Container";
 import FileManagement from "../../components/FileManagement";
 
 function titleCase(str) {
-  if (typeof str !== "string") {
-    return str;
-  }
+  if (typeof str !== "string") return str;
   return str
     .toLowerCase()
     .split(" ")
-    .map(function (word) {
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -49,6 +47,7 @@ export const InstructorNewPatient = () => {
   const [patientMetadata, setPatientMetadata] = useState({}); // For Patient Info Upload
 
   const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null); // For profile picture preview
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [patientName, setPatientName] = useState("");
@@ -66,26 +65,17 @@ export const InstructorNewPatient = () => {
     window.history.back();
   };
 
-  function removeFileExtension(fileName) {
-    return fileName.replace(/\.[^/.]+$/, "");
-  }
-
-  const getFileType = (filename) => {
-    const parts = filename.split(".");
-    if (parts.length > 1) {
-      return parts.pop();
-    } else {
-      return "";
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePicture(file);
+      setProfilePicturePreview(URL.createObjectURL(file));
     }
-  };
-
-  const handleInputChange = (e) => {
-    setPatientName(e.target.value);
   };
 
   const uploadProfilePicture = async (profilePicture, token, patientId) => {
     if (!profilePicture) return;
-    const fileType = getFileType(profilePicture.name);
+    const fileType = profilePicture.name.split('.').pop();
     const fileName = cleanFileName(profilePicture.name);
 
     const response = await fetch(
@@ -119,8 +109,8 @@ export const InstructorNewPatient = () => {
 
   const uploadFiles = async (newFiles, token, patientId) => {
     const newFilePromises = newFiles.map((file) => {
-      const fileType = getFileType(file.name);
-      const fileName = cleanFileName(removeFileExtension(file.name));
+      const fileType = file.name.split('.').pop();
+      const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
       return fetch(
         `${
           import.meta.env.VITE_API_ENDPOINT
@@ -158,8 +148,8 @@ export const InstructorNewPatient = () => {
 
   const uploadPatientFiles = async (newFiles, token, patientId) => {
     const newFilePromises = newFiles.map((file) => {
-      const fileType = getFileType(file.name);
-      const fileName = cleanFileName(removeFileExtension(file.name));
+      const fileType = file.name.split('.').pop();
+      const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
 
       return fetch(
         `${
@@ -348,12 +338,33 @@ export const InstructorNewPatient = () => {
       <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
         <Typography variant="h6">New Patient</Typography>
 
+        {/* Profile Picture Upload Section */}
+        <Box display="flex" alignItems="center" justifyContent="center" marginBottom={2}>
+          <Avatar
+            src={profilePicturePreview}
+            alt="Profile Picture"
+            sx={{ width: 100, height: 100 }}
+          />
+          <input
+            accept="image/*"
+            id="profile-picture-upload"
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleProfilePictureChange}
+          />
+          <label htmlFor="profile-picture-upload">
+            <IconButton component="span" color="primary" aria-label="upload profile picture">
+              <PhotoCamera />
+            </IconButton>
+          </label>
+        </Box>
+
         {/* Patient Information Fields */}
         <TextField
           label="Patient Name"
           name="name"
           value={patientName}
-          onChange={handleInputChange}
+          onChange={e => setPatientName(e.target.value)}
           fullWidth
           margin="normal"
           inputProps={{ maxLength: 50 }}
@@ -362,7 +373,7 @@ export const InstructorNewPatient = () => {
         <TextField
           label="Patient Age"
           value={patientAge}
-          onChange={(e) => setPatientAge(e.target.value)}
+          onChange={e => setPatientAge(e.target.value)}
           fullWidth
           margin="normal"
         />
@@ -371,7 +382,7 @@ export const InstructorNewPatient = () => {
           <InputLabel>Gender</InputLabel>
           <Select
             value={patientGender}
-            onChange={(e) => setPatientGender(e.target.value)}
+            onChange={e => setPatientGender(e.target.value)}
           >
             <MenuItem value="Male">Male</MenuItem>
             <MenuItem value="Female">Female</MenuItem>
@@ -382,7 +393,7 @@ export const InstructorNewPatient = () => {
         <TextField
           label="Patient Prompt"
           value={patientPrompt}
-          onChange={(e) => setPatientPrompt(e.target.value)}
+          onChange={e => setPatientPrompt(e.target.value)}
           fullWidth
           margin="normal"
           multiline
