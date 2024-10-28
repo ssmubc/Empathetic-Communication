@@ -37,6 +37,7 @@ def lambda_handler(event, context):
     patient_id = query_params.get("patient_id", "")
     file_type = query_params.get("file_type", "")
     file_name = query_params.get("file_name", "")
+    is_document = query_params.get("is_document", "")
 
     if not simulation_group_id:
         return {
@@ -54,6 +55,12 @@ def lambda_handler(event, context):
         return {
             'statusCode': 400,
             'body': json.dumps('Missing required parameter: file_name')
+        }
+
+    if not is_document:
+        return {
+            'statusCode': 400,
+            'body': json.dumps('Missing required parameter: is_document')
         }
 
     # Allowed file types for documents with their corresponding MIME types
@@ -87,7 +94,7 @@ def lambda_handler(event, context):
         'tiff': 'image/tiff', 'tif': 'image/tiff', 'webp': 'image/webp', 'xbm': 'image/x-xbitmap'
     }
 
-    if file_type in allowed_document_types:
+    if is_document and file_type in allowed_document_types:
         key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
     elif file_type in allowed_info_types:

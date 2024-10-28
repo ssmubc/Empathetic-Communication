@@ -1511,6 +1511,11 @@ paths:
           description: Name of the file
           schema:
             type: string
+        - in: query
+          name: is_document
+          required: true
+          schema:
+            type: boolean
       responses:
         "200":
           description: Presigned URL generated successfully

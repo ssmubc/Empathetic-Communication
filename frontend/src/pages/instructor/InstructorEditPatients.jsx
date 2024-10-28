@@ -301,7 +301,9 @@ const InstructorEditPatients = () => {
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
+        )}&file_name=${encodeURIComponent(
+          fileName
+        )}&is_document=${true}`,
         {
           method: "GET",
           headers: {
