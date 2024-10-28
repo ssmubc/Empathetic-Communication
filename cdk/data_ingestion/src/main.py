@@ -170,6 +170,10 @@ def handler(event, context):
         file_key = record['s3']['object']['key']
         simulation_group_id, patient_id, file_category, file_name, file_type = parse_s3_file_path(file_key)
 
+        if file_category != "documents":
+            logger.info(f"Ignoring object in {file_category} folder")
+            continue
+
         if not simulation_group_id or not patient_id or not file_name or not file_type:
             return {
                 "statusCode": 400,
