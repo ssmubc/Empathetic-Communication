@@ -37,7 +37,8 @@ def lambda_handler(event, context):
     patient_id = query_params.get("patient_id", "")
     file_type = query_params.get("file_type", "")
     file_name = query_params.get("file_name", "")
-    is_document = query_params.get("is_document", "")
+    is_document_str = query_params.get("is_document", "").lower()
+    is_document = is_document_str == "true"
 
     if not simulation_group_id:
         return {
@@ -55,12 +56,6 @@ def lambda_handler(event, context):
         return {
             'statusCode': 400,
             'body': json.dumps('Missing required parameter: file_name')
-        }
-
-    if not is_document:
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Missing required parameter: is_document')
         }
 
     # Allowed file types for documents with their corresponding MIME types
