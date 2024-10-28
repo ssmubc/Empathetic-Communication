@@ -97,7 +97,7 @@ export const InstructorNewPatient = () => {
         patientId
       )}&file_type=${encodeURIComponent(
         fileType
-      )}&file_name=${encodeURIComponent(fileName)}&is_profile_picture=true`,
+      )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
       {
         method: "GET",
         headers: {
@@ -132,7 +132,7 @@ export const InstructorNewPatient = () => {
           patientName
         )}&file_type=${encodeURIComponent(fileType)}&file_name=${encodeURIComponent(
           fileName
-        )}`,
+        )}&is_document=${true}`,
         {
           method: "GET",
           headers: {
@@ -172,7 +172,7 @@ export const InstructorNewPatient = () => {
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
         {
           method: "GET",
           headers: {

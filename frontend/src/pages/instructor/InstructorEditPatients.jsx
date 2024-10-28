@@ -42,11 +42,17 @@ const InstructorEditPatients = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [metadata, setMetadata] = useState({});
+  const [patientMetadata, setPatientMetadata] = useState({});
 
   const [files, setFiles] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
   const [savedFiles, setSavedFiles] = useState([]);
   const [deletedFiles, setDeletedFiles] = useState([]);
+
+  const [patientFiles, setPatientFiles] = useState([]);
+  const [newPatientFiles, setNewPatientFiles] = useState([]);
+  const [savedPatientFiles, setSavedPatientFiles] = useState([]);
+  const [deletedPatientFiles, setDeletedPatientFiles] = useState([]);
 
   const location = useLocation();
   const [patient, setPatient] = useState(null);
@@ -92,6 +98,24 @@ const InstructorEditPatients = () => {
     return resultArray;
   }
 
+  function convertPatientFilesToArray(files) {
+    const patientDocumentFiles = files.patient_document_files;
+    const resultArray = Object.entries({
+      ...patientDocumentFiles,
+    }).map(([fileName, url]) => ({
+      fileName,
+      url,
+    }));
+
+    const metadata = resultArray.reduce((acc, { fileName, url }) => {
+      acc[fileName] = url.metadata;
+      return acc;
+    }, {});
+
+    setPatientMetadata(metadata);
+    return resultArray;
+  }
+
   function removeFileExtension(fileName) {
     return fileName.replace(/\.[^/.]+$/, "");
   }
@@ -118,6 +142,7 @@ const InstructorEditPatients = () => {
       if (response.ok) {
         const fileData = await response.json();
         setFiles(convertDocumentFilesToArray(fileData));
+        setPatientFiles(convertPatientFilesToArray(fileData));
       } else {
         console.error("Failed to fetch files:", response.statusText);
       }
@@ -300,7 +325,7 @@ const InstructorEditPatients = () => {
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=true`, // For LLM files
         {
           method: "GET",
           headers: {
@@ -325,11 +350,51 @@ const InstructorEditPatients = () => {
     setSavedFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
   };
 
+  const uploadPatientFiles = async (newPatientFiles, token) => {
+    const uploadPromises = newPatientFiles.map(async (file) => {
+      const fileType = getFileType(file.name);
+      const fileName = cleanFileName(removeFileExtension(file.name));
+
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const presignedUrl = await response.json();
+      await fetch(presignedUrl.presignedurl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+      return file;
+    });
+
+    const uploadedPatientFiles = await Promise.all(uploadPromises);
+    setSavedPatientFiles((prevFiles) => [...prevFiles, ...uploadedPatientFiles]);
+  };
+
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
 
-    // Validation checks with reset
     if (!patientName) {
       toast.error("Patient Name is required.", { position: "top-center" });
       setIsSaving(false);
@@ -350,7 +415,9 @@ const InstructorEditPatients = () => {
       await updatePatient();
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
-      await uploadFiles(newFiles, token);
+      await uploadFiles(newFiles, token); // Upload LLM files
+      await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
+
       await Promise.all([
         updateMetaData(files, token),
         updateMetaData(savedFiles, token),
@@ -363,6 +430,8 @@ const InstructorEditPatients = () => {
 
       setDeletedFiles([]);
       setNewFiles([]);
+      setDeletedPatientFiles([]);
+      setNewPatientFiles([]);
       toast.success("Patient updated successfully", { position: "top-center" });
 
       setTimeout(() => handleBackClick(), 1000);
@@ -457,6 +526,10 @@ const InstructorEditPatients = () => {
           rows={4}
         />
 
+        {/* LLM Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          LLM Upload
+        </Typography>
         <FileManagement
           newFiles={newFiles}
           setNewFiles={setNewFiles}
@@ -468,6 +541,23 @@ const InstructorEditPatients = () => {
           loading={loading}
           metadata={metadata}
           setMetadata={setMetadata}
+        />
+
+        {/* Patient Info Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          Patient Information Upload
+        </Typography>
+        <FileManagement
+          newFiles={newPatientFiles}
+          setNewFiles={setNewPatientFiles}
+          files={patientFiles}
+          setFiles={setPatientFiles}
+          setDeletedFiles={setDeletedPatientFiles}
+          savedFiles={savedPatientFiles}
+          setSavedFiles={setSavedPatientFiles}
+          loading={loading}
+          metadata={patientMetadata}
+          setMetadata={setPatientMetadata}
         />
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>
