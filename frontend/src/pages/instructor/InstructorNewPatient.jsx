@@ -7,6 +7,13 @@ import { fetchUserAttributes } from "aws-amplify/auth";
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhotoCamera from '@mui/icons-material/PhotoCamera'; // Icon for profile picture upload
 
+import Cropper from 'react-easy-crop';
+import Dialog from '@mui/material/Dialog';
+import Slider from '@mui/material/Slider';
+import { getCroppedImg } from '../../functions/cropImage.js';
+
+
+
 import {
   TextField,
   Button,
@@ -58,6 +65,12 @@ export const InstructorNewPatient = () => {
   const { data, simulation_group_id } = location.state || {};
   const [nextPatientNumber, setNextPatientNumber] = useState(data.length + 1);
 
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+
+
   const cleanFileName = (fileName) => {
     return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   };
@@ -68,10 +81,25 @@ export const InstructorNewPatient = () => {
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setProfilePicture(file);
-      setProfilePicturePreview(URL.createObjectURL(file));
+        setProfilePicture(URL.createObjectURL(file));
+        setIsCropDialogOpen(true); // Open cropping dialog
     }
   };
+
+  const onCropComplete = (_, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropImage = async () => {
+      try {
+          const croppedImage = await getCroppedImg(profilePicture, croppedAreaPixels);
+          setProfilePicturePreview(croppedImage);
+          setIsCropDialogOpen(false); // Close cropping dialog
+      } catch (error) {
+          console.error("Crop failed:", error);
+      }
+  };
+
 
   const uploadProfilePicture = async (profilePicture, token, patientId) => {
     if (!profilePicture) return;
@@ -358,6 +386,43 @@ export const InstructorNewPatient = () => {
             </IconButton>
           </label>
         </Box>
+
+
+        {/* Cropper Dialog */}
+        <Dialog open={isCropDialogOpen} onClose={() => setIsCropDialogOpen(false)}>
+          <Box p={3} width="100%">
+            <Typography variant="h6">Crop Profile Picture</Typography>
+            <Box position="relative" width="100%" height={300} mt={2}>
+              <Cropper
+                image={profilePicture}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </Box>
+            <Box mt={2}>
+              <Typography gutterBottom>Zoom</Typography>
+              <Slider
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                onChange={(e, zoom) => setZoom(zoom)}
+              />
+            </Box>
+            <Box mt={2} display="flex" justifyContent="flex-end">
+              <Button onClick={() => setIsCropDialogOpen(false)} color="secondary" sx={{ mr: 2 }}>
+                Cancel
+              </Button>
+              <Button onClick={handleCropImage} variant="contained" color="primary">
+                Crop Image
+              </Button>
+            </Box>
+          </Box>
+        </Dialog>
 
         {/* Patient Information Fields */}
         <TextField

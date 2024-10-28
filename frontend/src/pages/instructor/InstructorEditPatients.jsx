@@ -29,6 +29,9 @@ import Avatar from '@mui/material/Avatar'; // for profile picture preview
 import IconButton from '@mui/material/IconButton'; // for upload button
 import PhotoCamera from '@mui/icons-material/PhotoCamera'; // icon for upload
 
+import Cropper from 'react-easy-crop';
+import Slider from '@mui/material/Slider';
+import { getCroppedImg } from '../../functions/cropImage.js';
 
 function titleCase(str) {
   if (typeof str !== "string") {
@@ -71,13 +74,34 @@ const InstructorEditPatients = () => {
   const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
   const [profilePicturePreview, setProfilePicturePreview] = useState(null); // For profile picture preview
 
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        setProfilePicture(file);
-        setProfilePicturePreview(URL.createObjectURL(file));
+        setProfilePicture(URL.createObjectURL(file));
+        setIsCropDialogOpen(true); // Open cropping dialog
     }
   };
+
+  const onCropComplete = (_, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+
+  const handleCropImage = async () => {
+    try {
+        const croppedImage = await getCroppedImg(profilePicture, croppedAreaPixels);
+        setProfilePicturePreview(croppedImage); // Set the cropped image as preview
+        setIsCropDialogOpen(false); // Close the dialog
+    } catch (error) {
+        console.error("Error cropping image:", error);
+    }
+  };
+
 
   const uploadProfilePicture = async (profilePicture, token, patientId) => {
     if (!profilePicture) return;
@@ -539,8 +563,8 @@ const InstructorEditPatients = () => {
           Edit Patient {titleCase(patient.patient_name)}{" "}
         </Typography>
 
-         {/* Profile Picture Upload Section */}
-         <Box display="flex" alignItems="center" justifyContent="center" marginBottom={2}>
+        {/* Profile Picture Upload Section */}
+        <Box display="flex" alignItems="center" justifyContent="center" marginBottom={2}>
           <Avatar
             src={profilePicturePreview}
             alt="Profile Picture"
@@ -559,6 +583,43 @@ const InstructorEditPatients = () => {
             </IconButton>
           </label>
         </Box>
+
+
+        {/* Cropper Dialog */}
+        <Dialog open={isCropDialogOpen} onClose={() => setIsCropDialogOpen(false)}>
+          <Box p={3} width="100%">
+            <Typography variant="h6">Crop Profile Picture</Typography>
+            <Box position="relative" width="100%" height={300} mt={2}>
+              <Cropper
+                image={profilePicture}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </Box>
+            <Box mt={2}>
+              <Typography gutterBottom>Zoom</Typography>
+              <Slider
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                onChange={(e, zoom) => setZoom(zoom)}
+              />
+            </Box>
+            <Box mt={2} display="flex" justifyContent="flex-end">
+              <Button onClick={() => setIsCropDialogOpen(false)} color="secondary" sx={{ mr: 2 }}>
+                Cancel
+              </Button>
+              <Button onClick={handleCropImage} variant="contained" color="primary">
+                Crop Image
+              </Button>
+            </Box>
+          </Box>
+        </Dialog>
 
 
         <TextField
