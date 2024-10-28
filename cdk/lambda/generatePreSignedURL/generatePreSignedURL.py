@@ -68,8 +68,16 @@ def lambda_handler(event, context):
         "cbz": "application/vnd.comicbook+zip"
     }
 
-    # Allowed file types for images with their corresponding MIME types
-    allowed_image_types = {
+    # Allowed file types for information with their corresponding MIME types
+    allowed_info_types = {
+        "pdf": "application/pdf",
+        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "txt": "text/plain",
+        "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "xps": "application/oxps",  # or "application/vnd.ms-xpsdocument" for legacy XPS
+        "mobi": "application/x-mobipocket-ebook",
+        "cbz": "application/vnd.comicbook+zip",
         'bmp': 'image/bmp', 'eps': 'application/postscript', 'gif': 'image/gif',
         'icns': 'image/icns', 'ico': 'image/vnd.microsoft.icon', 'im': 'application/x-im',
         'jpeg': 'image/jpeg', 'jpg': 'image/jpeg', 'j2k': 'image/jp2', 'jp2': 'image/jp2',
@@ -82,9 +90,9 @@ def lambda_handler(event, context):
     if file_type in allowed_document_types:
         key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
-    elif file_type in allowed_image_types:
-        key = f"{simulation_group_id}/{patient_id}/images/{file_name}.{file_type}"
-        content_type = allowed_image_types[file_type]
+    elif file_type in allowed_info_types:
+        key = f"{simulation_group_id}/{patient_id}/info/{file_name}.{file_type}"
+        content_type = allowed_info_types[file_type]
     else:
         return {
             'statusCode': 400,
