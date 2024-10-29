@@ -836,6 +836,9 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
         <PatientInfo
           open={isPatientInfoOpen}
           onClose={() => setIsPatientInfoOpen(false)}
+          patientId={patient.patient_id}
+          patientName={patient.patient_name}
+          simulationGroupId={group.simulation_group_id}
         />
       </div>
     );

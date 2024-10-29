@@ -34,6 +34,7 @@ const FileManagement = ({
   loading,
   metadata,
   setMetadata,
+  isDocument,
 }) => {
   const [duplicateFile, setDuplicateFile] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -170,7 +171,11 @@ const FileManagement = ({
           }}
         >
           <input
-            accept=".pdf,.docx,.pptx,.txt,.xlsx,.xps,.mobi,.cbz"
+            accept={
+              isDocument
+                ? ".pdf,.docx,.pptx,.txt,.xlsx,.xps,.mobi,.cbz"
+                : ".pdf,.docx,.pptx,.txt,.xlsx,.xps,.mobi,.cbz,.bmp,.eps,.gif,.icns,.ico,.im,.jpeg,.jpg,.j2k,.jp2,.msp,.pcx,.png,.ppm,.pgm,.pbm,.sgi,.tga,.tiff,.tif,.webp,.xbm"
+            }
             type="file"
             multiple
             hidden

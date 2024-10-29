@@ -480,6 +480,7 @@ export const InstructorNewPatient = () => {
           loading={loading}
           metadata={metadata}
           setMetadata={setMetadata}
+          isDocument={true}
         />
 
         {/* Patient Info Upload Section */}
@@ -497,6 +498,7 @@ export const InstructorNewPatient = () => {
           loading={loading}
           metadata={patientMetadata}
           setMetadata={setPatientMetadata}
+          isDocument={false}
         />
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>

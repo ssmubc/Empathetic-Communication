@@ -678,6 +678,7 @@ const InstructorEditPatients = () => {
           loading={loading}
           metadata={metadata}
           setMetadata={setMetadata}
+          isDocument={true}
         />
 
         {/* Patient Info Upload Section */}
@@ -695,6 +696,7 @@ const InstructorEditPatients = () => {
           loading={loading}
           metadata={patientMetadata}
           setMetadata={setPatientMetadata}
+          isDocument={false}
         />
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>
