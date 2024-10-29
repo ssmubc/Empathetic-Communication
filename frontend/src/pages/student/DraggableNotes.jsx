@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
+import { fetchAuthSession } from "aws-amplify/auth";
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
 function DraggableNotes({ onClose, sessionId }) {
   const [noteContent, setNoteContent] = useState("");
@@ -153,74 +154,60 @@ function DraggableNotes({ onClose, sessionId }) {
         width: `${dimensions.width}px`,
         height: `${dimensions.height}px`,
         backgroundColor: "#fff",
-        border: "1px solid #ccc",
-        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        resize: "none",
-        overflow: "hidden",
+        border: "1px solid #ddd",
+        borderRadius: "10px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         cursor: "grab",
         zIndex: 1000,
       }}
     >
-      {/* Draggable header area */}
+      {/* Header with Draggable and Close Button */}
       <div
         style={{
-          backgroundColor: "#f0f0f0",
-          padding: "5px 10px",
-          cursor: "grab",
+          backgroundColor: "#989898",
+          padding: "8px 12px",
+          borderRadius: "10px 10px 0 0",
           display: "flex",
-          justifyContent: "center",
+          justifyContent: "space-between",
           alignItems: "center",
-          position: "relative",
+          color: "white",
         }}
       >
-        <button
+        <span style={{ fontWeight: "bold" }}>Notes</span>
+        <HighlightOffIcon
           onClick={onClose}
-          style={{
-            position: "absolute",
-            right: "0",
-            top: "0",
-            background: "transparent",
-            border: "none",
-            color: "red",
-            fontSize: "12px",
-            padding: "5px",
-            cursor: "pointer",
-            zIndex: 10,
-          }}
-        >
-          x
-        </button>
-        <span style={{ fontWeight: "bold", color: "black" }}>Notes</span>
+          style={{ cursor: "pointer", color: "white" }}
+        />
       </div>
 
-      {/* Textarea with draggable functionality */}
-      <div style={{ height: "calc(100% - 80px)", width: "100%" }}>
+      {/* Textarea for Note Content */}
+      <div style={{ height: "calc(100% - 80px)", padding: "10px" }}>
         <textarea
           style={{
             width: "100%",
             height: "100%",
             padding: "10px",
             borderRadius: "4px",
-            border: "1px solid #ccc",
-            resize: "none",
+            border: "1px solid #ddd",
             backgroundColor: "#f9f9f9",
-            color: "#000",
+            color: "#333",
+            fontSize: "14px",
+            resize: "none",
             whiteSpace: "pre-wrap",
             overflowWrap: "break-word",
           }}
           placeholder="Write your notes here..."
           value={noteContent}
           onChange={handleNoteChange}
-          rows={10}
         />
       </div>
 
-      {/* Save button */}
+      {/* Bottom section with Save Button */}
       <div style={{ padding: "5px 10px", textAlign: "right", marginTop: "5px", marginBottom: "10px" }}>
         <button
           onClick={handleSave}
           style={{
-            backgroundColor: "#007bff",
+            backgroundColor: "#36bd78",
             color: "white",
             border: "none",
             padding: "5px 10px",
@@ -245,6 +232,7 @@ function DraggableNotes({ onClose, sessionId }) {
           right: "0",
           bottom: "0",
           cursor: "nwse-resize",
+          borderRadius: "0 0 10px 0",
         }}
       ></div>
 
