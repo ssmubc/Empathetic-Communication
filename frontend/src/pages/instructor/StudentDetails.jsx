@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react"; 
 import { useParams, useLocation } from "react-router-dom";
 import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
 import { toast, ToastContainer } from "react-toastify";
@@ -9,7 +9,6 @@ import {
   Box,
   Typography,
   Divider,
-  TextField,
   Button,
   Paper,
   IconButton,
@@ -30,7 +29,7 @@ const handleBackClick = () => {
   window.history.back();
 };
 
-// Helper function to format chat messages
+// Helper function to format chat messages with distinct styling
 const formatMessages = (messages) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -53,21 +52,51 @@ const formatMessages = (messages) => {
     return acc;
   }, {});
 
-  const formattedMessages = Object.keys(groupedMessages)
-    .map((date) => {
-      const messagesForDate = groupedMessages[date]
-        .map((message) => {
-          const speaker = message.student_sent ? "Student" : "LLM";
-          return `${speaker}: ${message.message_content.trim()}`;
-        })
-        .join("\n");
-
-      return `${date}:\n${messagesForDate}`;
-    })
-    .join("\n\n");
-
-  return formattedMessages;
+  // Return an array of JSX elements for each date and message
+  return Object.keys(groupedMessages).map((date) => (
+    <Box key={date} sx={{ my: 2 }}>
+      <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
+        {date}
+      </Typography>
+      {groupedMessages[date].map((message, idx) => (
+        <Box
+          key={idx}
+          sx={{
+            backgroundColor: message.student_sent ? "lightgreen" : "lightblue",
+            borderRadius: 2,
+            p: 1,
+            mb: 1,
+            maxWidth: "80%",
+            alignSelf: message.student_sent ? "flex-end" : "flex-start",
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+            {message.student_sent ? "Student" : "LLM"}
+          </Typography>
+          <Typography variant="body1">{message.message_content.trim()}</Typography>
+        </Box>
+      ))}
+    </Box>
+  ));
 };
+
+// Helper function to format notes consistently
+const formatNotes = (noteText) => (
+  <Box
+    sx={{
+      backgroundColor: "lightyellow",
+      borderRadius: 2,
+      p: 1,
+      mt: 2,
+      whiteSpace: "pre-line",
+    }}
+  >
+    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+      Notes:
+    </Typography>
+    <Typography variant="body1">{noteText || "No notes available."}</Typography>
+  </Box>
+);
 
 const StudentDetails = () => {
   const { studentId } = useParams();
@@ -273,34 +302,20 @@ const StudentDetails = () => {
                     <Typography>{session.sessionName}</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <TextField
-                      label="Chat History"
-                      variant="outlined"
-                      fullWidth
-                      multiline
-                      rows={10}
-                      value={formatMessages(session.messages)}
-                      InputProps={{
-                        readOnly: true,
+                    {/* Render the formatted messages with distinct colors */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        maxHeight: 400,
+                        overflowY: "auto",
                       }}
-                      sx={{ my: 2 }}
-                      inputRef={textFieldRef}
-                    />
+                    >
+                      {formatMessages(session.messages)}
+                    </Box>
 
-                    {/* Display session-specific notes   */}
-                    <TextField
-                      label="Notes"
-                      variant="outlined"
-                      fullWidth
-                      multiline
-                      rows={10}
-                      value={session.notes || "No notes available."}
-                      InputProps={{
-                        readOnly: true,
-                      }}
-                      sx={{ my: 2 }}
-                      inputRef={textFieldRef}
-                    />
+                    {/* Render session-specific notes with consistent styling */}
+                    {formatNotes(session.notes)}
                   </AccordionDetails>
                 </Accordion>
               ))
