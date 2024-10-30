@@ -222,7 +222,7 @@ const PromptSettings = ({ groupName, simulation_group_id }) => {
             fullWidth
             multiline
             rows={6}
-            value={`Engage with the student by asking questions and conversing with them to identify any gaps in their understanding of the topic. If you identify gaps, address these gaps by providing explanations, answering the student's questions, and referring to the relevant context to help the student gain a comprehensive understanding of the topic.`}
+            value={`Pretend to be a patient with the context you are given. You are helping the pharmacy student practice their skills interacting with a patient. Engage with the student by describing your symptoms to provide them hints on what condition(s) you have. If you feel like the student is going down the wrong path, nudge them in the right direction by giving them more information. This is to help the student identify the proper diagnosis of the patient you are pretending to be.`}
             InputProps={{
               readOnly: true,
             }}

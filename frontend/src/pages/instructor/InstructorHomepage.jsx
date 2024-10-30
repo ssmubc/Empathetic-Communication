@@ -97,6 +97,7 @@ const InstructorHomepage = () => {
   const [rows, setRows] = useState([
     {
       group: "loading...",
+      description: "loading...",
       date: "loading...",
       status: "loading...",
       id: "loading...",
@@ -138,6 +139,7 @@ const InstructorHomepage = () => {
           setGroupData(data);
           const formattedData = data.map((group) => ({
             group: group.group_name,
+            description: group.group_description || "No description available",
             date: new Date().toLocaleDateString(), // REPLACE
             status: group.group_student_access ? "Active" : "Inactive",
             id: group.simulation_group_id,
@@ -229,6 +231,9 @@ const InstructorHomepage = () => {
                         <TableCell sx={{ width: "60%", padding: "16px" }}>
                           Group
                         </TableCell>
+                        <TableCell sx={{ width: "40%", padding: "16px" }}>
+                          Description
+                        </TableCell>
                         <TableCell sx={{ width: "20%", padding: "16px" }}>
                           Status
                         </TableCell>
@@ -248,6 +253,9 @@ const InstructorHomepage = () => {
                           >
                             <TableCell sx={{ padding: "16px" }}>
                               {titleCase(row.group)}
+                            </TableCell>
+                            <TableCell sx={{ padding: "16px" }}>
+                              {row.description}
                             </TableCell>
                             <TableCell sx={{ padding: "16px" }}>
                               <Button

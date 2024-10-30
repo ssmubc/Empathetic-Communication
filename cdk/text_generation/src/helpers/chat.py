@@ -138,20 +138,21 @@ def get_response(
     """
     # Create a system prompt for the question answering
     system_prompt = (
-        ""
-        "system"
-        "You are an instructor for a course. "
-        f"Your job is to help the student master the topic: {topic}. \n"        
-        f"{system_prompt}"
-        "Continue this process until you determine that the student has mastered the topic. \nOnce mastery is achieved, include COMPETENCY ACHIEVED in your response and do not ask any further questions about the topic. "
-        "Use the following pieces of retrieved context to answer "
-        "a question asked by the student. Use three sentences maximum and keep the "
-        "answer concise. End each answer with a question that tests the student's knowledge about the topic."
-        ""
-        "documents"
-        "{context}"
-        ""
-        "assistant"
+        f"""
+        <|begin_of_text|>
+        <|start_header_id|>patient<|end_header_id|>
+        Your name is {topic} and you are going to pretend to be a patient talking to a pharmacy student.      
+        {system_prompt}
+        Continue this process until you determine that the student has properly diagnosed the patient you are pretending to be.
+        Once the proper diagnosis is provided, include COMPETENCY ACHIEVED in your response and do not continue the conversation.
+        Use the following pieces of retrieved context to provide
+        hints as a patient to the student. Use three sentences maximum when describing your symptoms to provide clues to the student.
+        End each clue with a question that pushes the student towards the correct diagnosis. The student might ask you questions or provide their thoughts as statements.
+        <|eot_id|>
+        <|start_header_id|>documents<|end_header_id|>
+        {{context}}
+        <|eot_id|>
+        """
     )
     
     qa_prompt = ChatPromptTemplate.from_messages(

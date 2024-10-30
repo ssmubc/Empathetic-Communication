@@ -46,7 +46,7 @@ function formatInstructors(instructorsArray) {
 export const AdminCreateSimulationGroup = ({ setSelectedComponent }) => {
   const [simulationGroupName, setSimulationGroupName] = useState("");
   const [simulationGroupPrompt, setSimulationGroupPrompt] = useState(
-    `Engage with the student by asking questions and conversing with them to identify any gaps in their understanding of the topic. If you identify gaps, address these gaps by providing explanations, answering the student's questions, and referring to the relevant context to help the student gain a comprehensive understanding of the topic.`
+    `Pretend to be a patient with the context you are given. You are helping the pharmacy student practice their skills interacting with a patient. Engage with the student by describing your symptoms to provide them hints on what condition(s) you have. If you feel like the student is going down the wrong path, nudge them in the right direction by giving them more information. This is to help the student identify the proper diagnosis of the patient you are pretending to be.`
   );
   const [groupDescription, setGroupDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -291,7 +291,7 @@ export const AdminCreateSimulationGroup = ({ setSelectedComponent }) => {
             onChange={(e) => setGroupDescription(e.target.value)}
             margin="normal"
             backgroundColor="default"
-            inputProps={{ maxLength: 20 }}
+            inputProps={{ maxLength: 100 }}
           />
           <FormControl fullWidth sx={{ marginBottom: 2, marginTop: 2 }}>
             <Autocomplete
