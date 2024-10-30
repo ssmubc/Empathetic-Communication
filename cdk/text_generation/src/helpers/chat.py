@@ -120,7 +120,8 @@ def get_response(
     history_aware_retriever,
     table_name: str,
     session_id: str,
-    system_prompt: str
+    system_prompt: str,
+    patient_prompt: str
 ) -> dict:
     """
     Generates a response to a query using the LLM and a history-aware retriever for context.
@@ -141,13 +142,16 @@ def get_response(
         f"""
         <|begin_of_text|>
         <|start_header_id|>patient<|end_header_id|>
-        Your name is {topic} and you are going to pretend to be a patient talking to a pharmacy student.      
-        {system_prompt}
-        Continue this process until you determine that the student has properly diagnosed the patient you are pretending to be.
+        Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
+        You are not the pharmacy student. You are the patient. Look at the document(s) provided to you and act as a patient with those symptoms.
+        Please pay close attention to this: {system_prompt}
+        Here are some additional details about your personality, symptoms, or overall condition: {patient_prompt}
+        Continue this process until you determine that me, the pharmacy student, has properly diagnosed the patient you are pretending to be.
         Once the proper diagnosis is provided, include COMPETENCY ACHIEVED in your response and do not continue the conversation.
-        Use the following pieces of retrieved context to provide
-        hints as a patient to the student. Use three sentences maximum when describing your symptoms to provide clues to the student.
-        End each clue with a question that pushes the student towards the correct diagnosis. The student might ask you questions or provide their thoughts as statements.
+        Use the following document(s) to provide
+        hints as a patient to me, the pharmacy student. Use three sentences maximum when describing your symptoms to provide clues to me, the pharmacy student.
+        End each clue with a question that pushes me to the correct diagnosis. I might ask you questions or provide my thoughts as statements.
+        Again, YOU ARE SUPPOSED TO ACT AS THE PATIENT. I AM THE PHARMACY STUDENT. 
         <|eot_id|>
         <|start_header_id|>documents<|end_header_id|>
         {{context}}

@@ -157,6 +157,58 @@ def get_system_prompt(simulation_group_id):
             connection.close()
         logger.info("Connection closed.")
 
+def get_patient_prompt(patient_id):
+    connection = None
+    cur = None
+    try:
+        logger.info(f"Fetching patient prompt for patient_id: {patient_id}")
+        db_secret = get_secret(DB_SECRET_NAME)
+
+        connection_params = {
+            'dbname': db_secret["dbname"],
+            'user': db_secret["username"],
+            'password': db_secret["password"],
+            'host': db_secret["host"],
+            'port': db_secret["port"]
+        }
+
+        connection_string = " ".join([f"{key}={value}" for key, value in connection_params.items()])
+
+        connection = psycopg2.connect(connection_string)
+        cur = connection.cursor()
+        logger.info("Connected to RDS instance!")
+        cur.execute("""
+            SELECT patient_prompt
+            FROM "patients"
+            WHERE patient_id = %s;
+        """, (patient_id,))
+
+        result = cur.fetchone()
+        logger.info(f"Query result: {result}")
+        patient_prompt = result[0] if result else None
+
+        cur.close()
+        connection.close()
+        
+        if patient_prompt:
+            logger.info(f"Patient prompt for patient_id {patient_id} found: {patient_prompt}")
+        else:
+            logger.warning(f"No patient prompt found for patient_id {patient_id}")
+        
+        return patient_prompt
+
+    except Exception as e:
+        logger.error(f"Error fetching patient prompt: {e}")
+        if connection:
+            connection.rollback()
+        return None
+    finally:
+        if cur:
+            cur.close()
+        if connection:
+            connection.close()
+        logger.info("Connection closed.")
+
 def handler(event, context):
     logger.info("Text Generation Lambda function is called!")
 
@@ -181,6 +233,20 @@ def handler(event, context):
     system_prompt = get_system_prompt(simulation_group_id)
     if system_prompt is None:
         logger.error(f"Error fetching system prompt for simulation_group_id: {simulation_group_id}")
+        return {
+            'statusCode': 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+            },
+            'body': json.dumps('Error fetching system prompt')
+        }
+    
+    patient_prompt = get_patient_prompt(patient_id)
+    if patient_prompt is None:
+        logger.error(f"Error fetching patient prompt for patient_id: {patient_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -280,7 +346,8 @@ def handler(event, context):
             history_aware_retriever=history_aware_retriever,
             table_name=TABLE_NAME,
             session_id=session_id,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            patient_prompt=patient_prompt
         )
     except Exception as e:
         logger.error(f"Error getting response: {e}")
