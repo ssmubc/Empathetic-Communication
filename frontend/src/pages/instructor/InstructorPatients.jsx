@@ -5,7 +5,7 @@ import { MRT_TableContainer, useMaterialReactTable } from "material-react-table"
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InstructorNewPatient from "./InstructorNewPatient"; 
-import InstructorEditPatients from "./InstructorEditPatients"; // Import the edit patient dialog component
+import InstructorEditPatients from "./InstructorEditPatients";
 
 function groupTitleCase(str) {
   if (typeof str !== "string") return str;
@@ -28,6 +28,37 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const [openNewPatientDialog, setOpenNewPatientDialog] = useState(false);
   const [openEditPatientDialog, setOpenEditPatientDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+
+  const fetchPatients = async () => {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken;
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/view_patients?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.ok) {
+        const patientData = await response.json();
+        setData(patientData);
+      } else {
+        console.error("Failed to fetch patients:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPatients();
+  }, [simulation_group_id]);
 
   const columns = useMemo(
     () => [
@@ -83,37 +114,6 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     }),
   });
 
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens.idToken;
-        const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}instructor/view_patients?simulation_group_id=${encodeURIComponent(
-            simulation_group_id
-          )}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.ok) {
-          const patientData = await response.json();
-          setData(patientData);
-        } else {
-          console.error("Failed to fetch patients:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-      }
-    };
-
-    fetchPatients();
-  }, [simulation_group_id]);
-
   const handleEditClick = (patientData) => {
     setSelectedPatient(patientData);
     setOpenEditPatientDialog(true);
@@ -122,7 +122,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const handleCloseEditPatientDialog = () => {
     setOpenEditPatientDialog(false);
     setSelectedPatient(null);
-    // Optionally, refetch data to show updated patient list immediately
+    fetchPatients(); // Refresh patient data after editing
   };
 
   const handleCreatePatientClick = () => {
@@ -131,7 +131,6 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
 
   const handleCloseNewPatientDialog = () => {
     setOpenNewPatientDialog(false);
-    // Optionally, refetch data to show the new patient in the list immediately
   };
 
   const handleSaveChanges = async () => {
@@ -250,6 +249,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
         onClose={handleCloseNewPatientDialog}
         simulationGroupId={simulation_group_id}
         onSave={() => {
+          fetchPatients(); // Refresh patient data after saving new patient
           handleCloseNewPatientDialog();
         }}
       />
@@ -259,6 +259,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
         patientData={selectedPatient}
         simulationGroupId={simulation_group_id}
         onSave={() => {
+          fetchPatients(); // Refresh patient data after editing
           handleCloseEditPatientDialog();
         }}
       />
