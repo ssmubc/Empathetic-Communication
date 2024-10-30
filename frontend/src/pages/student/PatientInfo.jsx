@@ -22,7 +22,7 @@ function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId 
         const token = session.tokens.idToken;
 
         const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_all_files?simulation_group_id=${encodeURIComponent(
+          `${import.meta.env.VITE_API_ENDPOINT}student/get_all_files?simulation_group_id=${encodeURIComponent(
             simulationGroupId
           )}&patient_id=${encodeURIComponent(
             patientId

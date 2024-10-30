@@ -404,8 +404,8 @@ export class ApiGatewayStack extends cdk.Stack {
       ),
     });
 
-    const lambdaRole = new iam.Role(this, "postgresLambdaRole", {
-      roleName: "postgresLambdaRole",
+    const lambdaRole = new iam.Role(this, `postgresLambdaRole-${this.region}`, {
+      roleName: `postgresLambdaRole-${this.region}`,
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
 
@@ -573,8 +573,8 @@ export class ApiGatewayStack extends cdk.Stack {
       .defaultChild as lambda.CfnFunction;
     cfnLambda_Admin.overrideLogicalId("adminFunction");
 
-    const coglambdaRole = new iam.Role(this, "cognitoLambdaRole", {
-      roleName: "cognitoLambdaRole",
+    const coglambdaRole = new iam.Role(this, `cognitoLambdaRole-${this.region}`, {
+      roleName: `cognitoLambdaRole-${this.region}`,
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
 
@@ -1143,6 +1143,56 @@ export class ApiGatewayStack extends cdk.Stack {
       principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
       action: "lambda:InvokeFunction",
       sourceArn: `arn:aws:execute-api:${this.region}:${this.account}:${this.api.restApiId}/*/*/instructor*`,
+    });
+
+    /**
+     *
+     * Create Lambda function that will return all file names for a specified simulation group and patient for a student
+     */
+    const getFilesFunctionStudent = new lambda.Function(this, "GetFilesFunctionStudent", {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromAsset("lambda/getFilesFunction"),
+      handler: "getFilesFunction.lambda_handler",
+      timeout: Duration.seconds(300),
+      memorySize: 128,
+      vpc: vpcStack.vpc,
+      environment: {
+        SM_DB_CREDENTIALS: db.secretPathUser.secretName,
+        RDS_PROXY_ENDPOINT: db.rdsProxyEndpoint,
+        BUCKET: dataIngestionBucket.bucketName,
+        REGION: this.region,
+      },
+      functionName: "GetFilesFunctionStudent",
+      layers: [psycopgLayer, powertoolsLayer],
+    });
+
+    // Override the Logical ID of the Lambda Function to get ARN in OpenAPI
+    const cfnGetFilesFunctionStudent = getFilesFunctionStudent.node
+      .defaultChild as lambda.CfnFunction;
+    cfnGetFilesFunctionStudent.overrideLogicalId("GetFilesFunctionStudent");
+
+    // Grant the Lambda function read-only permissions to the S3 bucket
+    dataIngestionBucket.grantRead(getFilesFunctionStudent);
+
+    // Grant access to Secret Manager
+    getFilesFunctionStudent.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          //Secrets Manager
+          "secretsmanager:GetSecretValue",
+        ],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:*`,
+        ],
+      })
+    );
+
+    // Add the permission to the Lambda function's policy to allow API Gateway access
+    getFilesFunctionStudent.addPermission("AllowApiGatewayInvoke", {
+      principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+      action: "lambda:InvokeFunction",
+      sourceArn: `arn:aws:execute-api:${this.region}:${this.account}:${this.api.restApiId}/*/*/student*`,
     });
 
     /**
