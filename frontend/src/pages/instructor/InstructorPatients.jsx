@@ -1,45 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button, Box, Toolbar, Typography, Paper } from "@mui/material";
 import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
-import {
-  MRT_TableContainer,
-  useMaterialReactTable,
-} from "material-react-table";
+import { MRT_TableContainer, useMaterialReactTable } from "material-react-table";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import InstructorNewPatient from "./InstructorNewPatient"; 
+import InstructorEditPatients from "./InstructorEditPatients"; // Import the edit patient dialog component
 
 function groupTitleCase(str) {
-  if (typeof str !== "string") {
-    return str;
-  }
+  if (typeof str !== "string") return str;
   const words = str.split(" ");
   return words
-    .map((word, index) => {
-      if (index === 0) {
-        return word.toUpperCase(); // First word entirely in uppercase
-      } else {
-        return word.charAt(0).toUpperCase() + word.slice(1); // Only capitalize first letter, keep the rest unchanged
-      }
-    })
+    .map((word, index) => (index === 0 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
     .join(" ");
 }
 
 function titleCase(str) {
-  if (typeof str !== "string") {
-    return str;
-  }
+  if (typeof str !== "string") return str;
   return str
     .split(" ")
-    .map(function (word) {
-      return word.charAt(0).toUpperCase() + word.slice(1); // Capitalize only the first letter, leave the rest of the word unchanged
-    })
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
 const InstructorPatients = ({ groupName, simulation_group_id }) => {
-  const navigate = useNavigate();
   const [data, setData] = useState([]);
+  const [openNewPatientDialog, setOpenNewPatientDialog] = useState(false);
+  const [openEditPatientDialog, setOpenEditPatientDialog] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -99,11 +87,9 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     const fetchPatients = async () => {
       try {
         const session = await fetchAuthSession();
-        var token = session.tokens.idToken;
+        const token = session.tokens.idToken;
         const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_patients?simulation_group_id=${encodeURIComponent(
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/view_patients?simulation_group_id=${encodeURIComponent(
             simulation_group_id
           )}`,
           {
@@ -129,15 +115,23 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   }, [simulation_group_id]);
 
   const handleEditClick = (patientData) => {
-    navigate(`/group/${groupName}/edit-patient/${patientData.patient_id}`, {
-      state: { patientData, simulation_group_id: simulation_group_id },
-    });
+    setSelectedPatient(patientData);
+    setOpenEditPatientDialog(true);
+  };
+
+  const handleCloseEditPatientDialog = () => {
+    setOpenEditPatientDialog(false);
+    setSelectedPatient(null);
+    // Optionally, refetch data to show updated patient list immediately
   };
 
   const handleCreatePatientClick = () => {
-    navigate(`/group/${groupName}/new-patient`, {
-      state: { data, simulation_group_id },
-    });
+    setOpenNewPatientDialog(true);
+  };
+
+  const handleCloseNewPatientDialog = () => {
+    setOpenNewPatientDialog(false);
+    // Optionally, refetch data to show the new patient in the list immediately
   };
 
   const handleSaveChanges = async () => {
@@ -149,13 +143,9 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
       const updatePromises = data.map((patient, index) => {
         const patientNumber = index + 1;
         return fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/reorder_patient?patient_id=${encodeURIComponent(
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/reorder_patient?patient_id=${encodeURIComponent(
             patient.patient_id
-          )}&patient_number=${patientNumber}&instructor_email=${encodeURIComponent(
-            email
-          )}`,
+          )}&patient_number=${patientNumber}&instructor_email=${encodeURIComponent(email)}`,
           {
             method: "PUT",
             headers: {
@@ -168,10 +158,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
           }
         ).then((response) => {
           if (!response.ok) {
-            console.error(
-              `Failed to update patient ${patient.patient_id}:`,
-              response.statusText
-            );
+            console.error(`Failed to update patient ${patient.patient_id}:`, response.statusText);
             toast.error("Patient Order Update Failed", {
               position: "top-center",
               autoClose: 1000,
@@ -184,17 +171,13 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
             });
             return { success: false };
           } else {
-            return response.json().then(() => {
-              return { success: true };
-            });
+            return response.json().then(() => ({ success: true }));
           }
         });
       });
 
       const updateResults = await Promise.all(updatePromises);
-      const allUpdatesSuccessful = updateResults.every(
-        (result) => result.success
-      );
+      const allUpdatesSuccessful = updateResults.every((result) => result.success);
 
       if (allUpdatesSuccessful) {
         toast.success("Patient Order Updated Successfully", {
@@ -235,17 +218,9 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   };
 
   return (
-    <Box
-      component="main"
-      sx={{ flexGrow: 1, p: 3, marginTop: 1, overflow: "auto" }}
-    >
+    <Box component="main" sx={{ flexGrow: 1, p: 3, marginTop: 1, overflow: "auto" }}>
       <Toolbar />
-      <Typography
-        color="black"
-        fontStyle="semibold"
-        textAlign="left"
-        variant="h6"
-      >
+      <Typography color="black" fontStyle="semibold" textAlign="left" variant="h6">
         {groupTitleCase(groupName)}
       </Typography>
       <Paper sx={{ width: "100%", overflow: "hidden", marginTop: 2 }}>
@@ -261,28 +236,31 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
           alignItems: "center",
         }}
       >
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleCreatePatientClick}
-        >
+        <Button variant="contained" color="primary" onClick={handleCreatePatientClick}>
           Create New Patient
         </Button>
         <Button variant="contained" color="primary" onClick={handleSaveChanges}>
           Save Changes
         </Button>
       </Box>
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
+      <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+
+      <InstructorNewPatient
+        open={openNewPatientDialog}
+        onClose={handleCloseNewPatientDialog}
+        simulationGroupId={simulation_group_id}
+        onSave={() => {
+          handleCloseNewPatientDialog();
+        }}
+      />
+      <InstructorEditPatients
+        open={openEditPatientDialog}
+        onClose={handleCloseEditPatientDialog}
+        patientData={selectedPatient}
+        simulationGroupId={simulation_group_id}
+        onSave={() => {
+          handleCloseEditPatientDialog();
+        }}
       />
     </Box>
   );
