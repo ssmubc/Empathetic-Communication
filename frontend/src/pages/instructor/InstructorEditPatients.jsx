@@ -1,197 +1,336 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
-import PhotoCamera from "@mui/icons-material/PhotoCamera";
-import Cropper from "react-easy-crop";
-import { getCroppedImg } from "../../functions/cropImage.js";
+import { fetchAuthSession } from "aws-amplify/auth";
+import { fetchUserAttributes } from "aws-amplify/auth";
+
 import {
   TextField,
   Button,
+  Paper,
   Typography,
+  Grid,
   Box,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
-  Avatar,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
   DialogContentText,
-  Slider,
+  DialogTitle
 } from "@mui/material";
+import PageContainer from "../Container";
 import FileManagement from "../../components/FileManagement";
 
+import Avatar from '@mui/material/Avatar'; // for profile picture preview
+import IconButton from '@mui/material/IconButton'; // for upload button
+import PhotoCamera from '@mui/icons-material/PhotoCamera'; // icon for upload
+
+import Cropper from 'react-easy-crop';
+import Slider from '@mui/material/Slider';
+import { getCroppedImg } from '../../functions/cropImage.js';
+
 function titleCase(str) {
-  if (typeof str !== "string") return str;
+  if (typeof str !== "string") {
+    return str;
+  }
   return str
     .toLowerCase()
     .split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(function (word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
     .join(" ");
 }
 
-const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId, onSave }) => {
+const InstructorEditPatients = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [metadata, setMetadata] = useState({});
   const [patientMetadata, setPatientMetadata] = useState({});
-  const [llmFiles, setLlmFiles] = useState([]);
-  const [newLlmFiles, setNewLlmFiles] = useState([]);
-  const [savedLlmFiles, setSavedLlmFiles] = useState([]);
-  const [deletedLlmFiles, setDeletedLlmFiles] = useState([]);
+
+  const [files, setFiles] = useState([]);
+  const [newFiles, setNewFiles] = useState([]);
+  const [savedFiles, setSavedFiles] = useState([]);
+  const [deletedFiles, setDeletedFiles] = useState([]);
+
   const [patientFiles, setPatientFiles] = useState([]);
   const [newPatientFiles, setNewPatientFiles] = useState([]);
   const [savedPatientFiles, setSavedPatientFiles] = useState([]);
   const [deletedPatientFiles, setDeletedPatientFiles] = useState([]);
-  const [profilePicture, setProfilePicture] = useState(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
-  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const location = useLocation();
+  const [patient, setPatient] = useState(null);
+  const { patientData, simulation_group_id } = location.state || {};
   const [patientName, setPatientName] = useState("");
   const [patientAge, setPatientAge] = useState("");
   const [patientGender, setPatientGender] = useState("");
   const [patientPrompt, setPatientPrompt] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (patientData) {
-      setPatientName(patientData.patient_name);
-      setPatientAge(patientData.patient_age);
-      setPatientGender(patientData.patient_gender);
-      setPatientPrompt(patientData.patient_prompt);
-      if (patientData.profilePicture) {
-        setProfilePicturePreview(patientData.profilePicture);
-      }
-      fetchFiles();
+  const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null); // For profile picture preview
+
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        setProfilePicture(URL.createObjectURL(file));
+        setIsCropDialogOpen(true); // Open cropping dialog
     }
-  }, [patientData]);
+  };
 
-  const cleanFileName = fileName => fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const onCropComplete = (_, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
 
-  const fetchFiles = async () => {
-    setLoading(true);
+
+  const handleCropImage = async () => {
     try {
-      const { token } = await getAuthSessionAndEmail();
-      const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/get_all_files?simulation_group_id=${encodeURIComponent(
-          simulationGroupId
-        )}&patient_id=${encodeURIComponent(patientData.patient_id)}`,
-        {
-          method: "GET",
-          headers: { Authorization: token, "Content-Type": "application/json" },
-        }
-      );
-      if (response.ok) {
-        const fileData = await response.json();
-        setLlmFiles(convertFilesToArray(fileData.document_files));
-        setPatientFiles(convertFilesToArray(fileData.info_files));
-      } else {
-        console.error("Failed to fetch files:", response.statusText);
-      }
+        const croppedImage = await getCroppedImg(profilePicture, croppedAreaPixels);
+        setProfilePicturePreview(croppedImage); // Set the cropped image as preview
+        setIsCropDialogOpen(false); // Close the dialog
     } catch (error) {
-      console.error("Error fetching files:", error);
+        console.error("Error cropping image:", error);
     }
-    setLoading(false);
   };
 
-  const convertFilesToArray = (files) => {
-    return Object.entries(files || {}).map(([fileName, url]) => ({
-      fileName,
-      url,
-    }));
+
+  const uploadProfilePicture = async (profilePicture, token, patientId) => {
+    if (!profilePicture) return;
+    const fileType = profilePicture.name.split('.').pop();
+    const fileName = profilePicture.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+            patientId
+        )}&file_type=${encodeURIComponent(
+            fileType
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    const presignedUrl = await response.json();
+    await fetch(presignedUrl.presignedurl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": profilePicture.type,
+        },
+        body: profilePicture,
+    });
   };
 
-  const handleDeleteConfirmation = () => setDialogOpen(true);
-  const handleDialogClose = () => setDialogOpen(false);
+
+
+  const handleBackClick = () => {
+    window.history.back();
+  };
+
+  const handleDeleteConfirmation = () => {
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+  };
 
   const handleConfirmDelete = async () => {
     setDialogOpen(false);
     handleDelete();
   };
 
+  function convertDocumentFilesToArray(files) {
+    const documentFiles = files.document_files;
+    const resultArray = Object.entries({
+      ...documentFiles,
+    }).map(([fileName, url]) => ({
+      fileName,
+      url,
+    }));
+
+    const metadata = resultArray.reduce((acc, { fileName, url }) => {
+      acc[fileName] = url.metadata;
+      return acc;
+    }, {});
+
+    setMetadata(metadata);
+    return resultArray;
+  }
+
+  function convertInfoFilesToArray(files) {
+    const infoFiles = files.info_files;
+    const resultArray = Object.entries({
+      ...infoFiles,
+    }).map(([fileName, url]) => ({
+      fileName,
+      url,
+    }));
+
+    const metadata = resultArray.reduce((acc, { fileName, url }) => {
+      acc[fileName] = url.metadata;
+      return acc;
+    }, {});
+
+    setPatientMetadata(metadata);
+    return resultArray;
+  }
+
+  function removeFileExtension(fileName) {
+    return fileName.replace(/\.[^/.]+$/, "");
+  }
+
+  const fetchFiles = async () => {
+    try {
+      const { token, email } = await getAuthSessionAndEmail();
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/get_all_files?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(patientName)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.ok) {
+        const fileData = await response.json();
+        setFiles(convertDocumentFilesToArray(fileData));
+        setPatientFiles(convertInfoFilesToArray(fileData));
+      } else {
+        console.error("Failed to fetch files:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching Files:", error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (patientData) {
+      console.log("Patient Data:", patientData);
+      setPatient(patientData);
+      setPatientName(patientData.patient_name);
+      setPatientAge(patientData.patient_age);
+      setPatientGender(patientData.patient_gender);
+      setPatientPrompt(patientData.patient_prompt);
+    }
+  }, [patientData]);
+
+  useEffect(() => {
+    if (patient) {
+      fetchFiles();
+    }
+  }, [patient]);
+
   const handleDelete = async () => {
     try {
-      const { token } = await getAuthSessionAndEmail();
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken
       const s3Response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/delete_patient_s3?simulation_group_id=${encodeURIComponent(
-          simulationGroupId
-        )}&patient_id=${encodeURIComponent(patientData.patient_id)}`,
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/delete_patient_s3?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(patient.patient_name)}`,
         {
           method: "DELETE",
-          headers: { Authorization: token, "Content-Type": "application/json" },
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      if (!s3Response.ok) throw new Error("Failed to delete patient from S3");
-
+      if (!s3Response.ok) {
+        throw new Error("Failed to delete patient from S3");
+      }
       const patientResponse = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/delete_patient?patient_id=${encodeURIComponent(
-          patientData.patient_id
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/delete_patient?patient_id=${encodeURIComponent(
+          patient.patient_id
         )}`,
         {
           method: "DELETE",
-          headers: { Authorization: token, "Content-Type": "application/json" },
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
         }
       );
 
       if (patientResponse.ok) {
-        toast.success("Successfully Deleted");
-        onSave && onSave();
-        onClose();
-      } else throw new Error("Failed to delete patient");
-    } catch (error) {
-      console.error("Error deleting patient:", error);
-      toast.error("Failed to delete patient");
-    }
-  };
-
-  const handleSave = async () => {
-    if (isSaving) return;
-
-    if (!patientName || !patientAge || !patientGender || !patientPrompt) {
-      toast.error("All fields (Name, Age, Gender, Prompt) are required");
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      await updatePatientInfo();
-      const { token } = await getAuthSessionAndEmail();
-
-      await Promise.all([
-        deleteFiles(deletedLlmFiles, token, true),
-        deleteFiles(deletedPatientFiles, token, false),
-        uploadFiles(newLlmFiles, token, true),
-        uploadFiles(newPatientFiles, token, false),
-      ]);
-
-      if (profilePicture) {
-        await uploadProfilePicture(profilePicture, token, patientData.patient_id);
+        toast.success("Successfully Deleted", {
+          position: "top-center",
+          autoClose: 1000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+        setTimeout(() => {
+          handleBackClick();
+        }, 1000);
+      } else {
+        throw new Error("Failed to delete patient");
       }
-
-      toast.success("Patient updated successfully");
-      onSave && onSave();
-      onClose();
     } catch (error) {
-      console.error("Error saving patient:", error);
-      toast.error(`Patient failed to update: ${error.message}`);
-    } finally {
-      setIsSaving(false);
+      console.error(error.message);
+      toast.error("Failed to delete patient", {
+        position: "top-center",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     }
   };
 
-  const updatePatientInfo = async () => {
+  const handleInputChange = (e) => {
+    setPatientName(e.target.value);
+  };
+
+  const getFileType = (filename) => {
+    const parts = filename.split(".");
+    return parts.length > 1 ? parts.pop() : "";
+  };
+
+  const updatePatient = async () => {
     const { token, email } = await getAuthSessionAndEmail();
-    const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}instructor/edit_patient?patient_id=${encodeURIComponent(
-        patientData.patient_id
+
+    const editPatientResponse = await fetch(
+      `${
+        import.meta.env.VITE_API_ENDPOINT
+      }instructor/edit_patient?patient_id=${encodeURIComponent(
+        patient.patient_id
       )}&instructor_email=${encodeURIComponent(email)}`,
       {
         method: "PUT",
@@ -208,103 +347,203 @@ const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId,
       }
     );
 
-    if (!response.ok) {
-      const errorMessage = await response.text();
-      throw new Error(`Failed to update patient: ${errorMessage}`);
+    if (!editPatientResponse.ok) {
+      throw new Error(editPatientResponse.statusText);
     }
+
+    return editPatientResponse;
   };
 
-  const deleteFiles = async (deletedFiles, token, isLlm) => {
-    const fileType = isLlm ? "llm" : "patient";
-    const deletePromises = deletedFiles.map(file => {
-      const fileName = cleanFileName(file.fileName);
+  const deleteFiles = async (deletedFiles, token) => {
+    const deletePromises = deletedFiles.map((file_name) => {
+      const fileType = getFileType(file_name);
+      const fileName = cleanFileName(removeFileExtension(file_name));
       return fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/delete_file?simulation_group_id=${encodeURIComponent(
-          simulationGroupId
-        )}&patient_id=${encodeURIComponent(patientData.patient_id)}&file_name=${encodeURIComponent(fileName)}&file_type=${fileType}`,
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/delete_file?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}`,
         {
           method: "DELETE",
-          headers: { Authorization: token, "Content-Type": "application/json" },
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
         }
       );
     });
     await Promise.all(deletePromises);
   };
 
-  const uploadFiles = async (newFiles, token, isLlm) => {
-    const fileType = isLlm ? "llm" : "patient";
-    const uploadPromises = newFiles.map(async file => {
-      const fileName = cleanFileName(file.name);
+  const cleanFileName = (fileName) => fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+  const uploadFiles = async (newFiles, token) => {
+    const uploadPromises = newFiles.map(async (file) => {
+      const fileType = getFileType(file.name);
+      const fileName = cleanFileName(removeFileExtension(file.name));
+
       const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-          simulationGroupId
-        )}&patient_id=${encodeURIComponent(patientData.patient_id)}&file_name=${encodeURIComponent(fileName)}&file_type=${fileType}`,
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${true}`,
         {
           method: "GET",
-          headers: { Authorization: token, "Content-Type": "application/json" },
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
         }
       );
-      const { presignedurl } = await response.json();
-      await fetch(presignedurl.presignedurl, {
+
+      const presignedUrl = await response.json();
+      await fetch(presignedUrl.presignedurl, {
         method: "PUT",
-        headers: { "Content-Type": file.type },
+        headers: {
+          "Content-Type": file.type,
+        },
         body: file,
       });
+      return file;
     });
-    await Promise.all(uploadPromises);
+
+    const uploadedFiles = await Promise.all(uploadPromises);
+    setSavedFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
   };
 
-  const handleProfilePictureChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProfilePicture(URL.createObjectURL(file));
-      setIsCropDialogOpen(true);
-    }
-  };
+  const uploadPatientFiles = async (newPatientFiles, token) => {
+    const uploadPromises = newPatientFiles.map(async (file) => {
+      const fileType = getFileType(file.name);
+      const fileName = cleanFileName(removeFileExtension(file.name));
 
-  const onCropComplete = (_, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  };
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-  const handleCropImage = async () => {
-    try {
-      const croppedImage = await getCroppedImg(profilePicture, croppedAreaPixels);
-      setProfilePicturePreview(croppedImage);
-      setIsCropDialogOpen(false);
-    } catch (error) {
-      console.error("Crop failed:", error);
-    }
-  };
-
-  const uploadProfilePicture = async (profilePicture, token, patientId) => {
-    if (!profilePicture) return;
-    const fileType = profilePicture.name.split(".").pop();
-    const fileName = cleanFileName(profilePicture.name);
-
-    const response = await fetch(
-      `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-        simulationGroupId
-      )}&patient_id=${encodeURIComponent(
-        patientId
-      )}&file_type=${encodeURIComponent(
-        fileType
-      )}&file_name=${encodeURIComponent(fileName)}&is_document=false`,
-      {
-        method: "GET",
+      const presignedUrl = await response.json();
+      await fetch(presignedUrl.presignedurl, {
+        method: "PUT",
         headers: {
-          Authorization: token,
-          "Content-Type": "application/json",
+          "Content-Type": file.type,
         },
-      }
-    );
+        body: file,
+      });
+      return file;
+    });
 
-    const presignedUrl = await response.json();
-    await fetch(presignedUrl.presignedurl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": profilePicture.type,
-      },
-      body: profilePicture,
+    const uploadedPatientFiles = await Promise.all(uploadPromises);
+    setSavedPatientFiles((prevFiles) => [...prevFiles, ...uploadedPatientFiles]);
+  };
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
+    if (!patientName) {
+      toast.error("Patient Name is required.", { position: "top-center" });
+      setIsSaving(false);
+      return;
+    }
+    if (!patientAge) {
+      toast.error("Patient Age is required.", { position: "top-center" });
+      setIsSaving(false);
+      return;
+    }
+    if (!patientPrompt) {
+      toast.error("Patient Prompt is required.", { position: "top-center" });
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      await updatePatient();
+      const { token } = await getAuthSessionAndEmail();
+      await deleteFiles(deletedFiles, token);
+      await uploadFiles(newFiles, token); // Upload LLM files
+      await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
+
+      await uploadProfilePicture(profilePicture, token, patient.patient_id); // Upload profile picture
+
+
+      await Promise.all([
+        updateMetaData(files, token),
+        updateMetaData(savedFiles, token),
+        updateMetaData(newFiles, token),
+      ]);
+
+      setFiles((prevFiles) =>
+        prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
+      );
+
+      setDeletedFiles([]);
+      setNewFiles([]);
+      setDeletedPatientFiles([]);
+      setNewPatientFiles([]);
+      toast.success("Patient updated successfully", { position: "top-center" });
+
+      setTimeout(() => handleBackClick(), 1000);
+    } catch (error) {
+      console.error("Error saving patient:", error);
+      toast.error("Patient failed to update", { position: "top-center" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateMetaData = (files, token) => {
+    files.forEach((file) => {
+      const fileNameWithExtension = file.fileName || file.name;
+      const fileMetadata = metadata[fileNameWithExtension] || "";
+      const fileName = cleanFileName(removeFileExtension(fileNameWithExtension));
+      const fileType = getFileType(fileNameWithExtension);
+      fetch(
+        `${
+          import.meta.env.VITE_API_ENDPOINT
+        }instructor/update_metadata?patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&filename=${encodeURIComponent(
+          fileName
+        )}&filetype=${encodeURIComponent(fileType)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ metadata: fileMetadata }),
+        }
+      );
     });
   };
 
@@ -315,12 +554,22 @@ const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId,
     return { token, email };
   };
 
+  if (!patient) return <Typography>Loading...</Typography>;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Edit Patient</DialogTitle>
-      <DialogContent>
-        <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <Avatar src={profilePicturePreview} alt="Profile Picture" sx={{ width: 100, height: 100 }} />
+    <PageContainer>
+      <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
+        <Typography variant="h6">
+          Edit Patient {titleCase(patient.patient_name)}{" "}
+        </Typography>
+
+        {/* Profile Picture Upload Section */}
+        <Box display="flex" alignItems="center" justifyContent="center" marginBottom={2}>
+          <Avatar
+            src={profilePicturePreview}
+            alt="Profile Picture"
+            sx={{ width: 100, height: 100 }}
+          />
           <input
             accept="image/*"
             id="profile-picture-upload"
@@ -334,6 +583,9 @@ const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId,
             </IconButton>
           </label>
         </Box>
+
+
+        {/* Cropper Dialog */}
         <Dialog open={isCropDialogOpen} onClose={() => setIsCropDialogOpen(false)}>
           <Box p={3} width="100%">
             <Typography variant="h6">Crop Profile Picture</Typography>
@@ -349,7 +601,14 @@ const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId,
               />
             </Box>
             <Box mt={2}>
-              <Slider value={zoom} min={1} max={3} step={0.1} onChange={(e, zoom) => setZoom(zoom)} />
+              <Typography gutterBottom>Zoom</Typography>
+              <Slider
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                onChange={(e, zoom) => setZoom(zoom)}
+              />
             </Box>
             <Box mt={2} display="flex" justifyContent="flex-end">
               <Button onClick={() => setIsCropDialogOpen(false)} color="secondary" sx={{ mr: 2 }}>
@@ -361,32 +620,71 @@ const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId,
             </Box>
           </Box>
         </Dialog>
-        <TextField label="Patient Name" value={patientName} onChange={(e) => setPatientName(e.target.value)} fullWidth margin="normal" required />
-        <TextField label="Patient Age" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} fullWidth margin="normal" required />
-        <FormControl fullWidth margin="normal" required>
+
+
+        <TextField
+          label="Patient Name"
+          name="name"
+          value={patientName}
+          onChange={(e) => setPatientName(e.target.value)}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: 50 }}
+        />
+        
+        <TextField
+          label="Patient Age"
+          name="age"
+          value={patientAge}
+          onChange={(e) => setPatientAge(e.target.value)}
+          fullWidth
+          margin="normal"
+        />
+        
+        <FormControl fullWidth margin="normal">
           <InputLabel>Gender</InputLabel>
-          <Select value={patientGender} onChange={(e) => setPatientGender(e.target.value)}>
+          <Select
+            value={patientGender}
+            onChange={(e) => setPatientGender(e.target.value)}
+          >
             <MenuItem value="Male">Male</MenuItem>
             <MenuItem value="Female">Female</MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </Select>
         </FormControl>
-        <TextField label="Patient Prompt" value={patientPrompt} onChange={(e) => setPatientPrompt(e.target.value)} fullWidth margin="normal" multiline rows={4} required />
 
-        <Typography variant="h6" sx={{ mt: 2 }}>LLM Files</Typography>
+        <TextField
+          label="Patient Prompt"
+          value={patientPrompt}
+          onChange={(e) => setPatientPrompt(e.target.value)}
+          fullWidth
+          margin="normal"
+          multiline
+          rows={4}
+        />
+
+        {/* LLM Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          LLM Upload
+        </Typography>
         <FileManagement
-          newFiles={newLlmFiles}
-          setNewFiles={setNewLlmFiles}
-          files={llmFiles}
-          setFiles={setLlmFiles}
-          setDeletedFiles={setDeletedLlmFiles}
-          savedFiles={savedLlmFiles}
-          setSavedFiles={setSavedLlmFiles}
+          newFiles={newFiles}
+          setNewFiles={setNewFiles}
+          files={files}
+          setFiles={setFiles}
+          setDeletedFiles={setDeletedFiles}
+          savedFiles={savedFiles}
+          setSavedFiles={setSavedFiles}
           loading={loading}
           metadata={metadata}
           setMetadata={setMetadata}
+          isDocument={true}
         />
-        <Typography variant="h6" sx={{ mt: 2 }}>Patient Information Files</Typography>
+
+        {/* Patient Info Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          Patient Information Upload
+        </Typography>
         <FileManagement
           newFiles={newPatientFiles}
           setNewFiles={setNewPatientFiles}
@@ -396,27 +694,75 @@ const InstructorEditPatients = ({ open, onClose, patientData, simulationGroupId,
           savedFiles={savedPatientFiles}
           setSavedFiles={setSavedPatientFiles}
           loading={loading}
-          metadata={metadata}
-          setMetadata={setMetadata}
+          metadata={patientMetadata}
+          setMetadata={setPatientMetadata}
+          isDocument={false}
         />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="secondary">Cancel</Button>
-        <Button onClick={handleDeleteConfirmation} color="error">Delete Patient</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">Save Patient</Button>
-      </DialogActions>
-      <ToastContainer position="top-center" autoClose={2000} />
+
+        <Grid container spacing={2} style={{ marginTop: 16 }}>
+          <Grid item xs={4}>
+            <Box display="flex" gap={6}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleBackClick}
+                sx={{ width: "30%" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleDeleteConfirmation}
+                sx={{ width: "30%" }}
+              >
+                Delete Patient
+              </Button>
+            </Box>
+          </Grid>
+          <Grid item xs={4}></Grid>
+          <Grid item xs={4} style={{ textAlign: "right" }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSave}
+              style={{ width: "30%" }}
+            >
+              Save Patient
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+      <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
-        <DialogTitle>Delete Patient</DialogTitle>
+        <DialogTitle>{"Delete Patient"}</DialogTitle>
         <DialogContent>
-          <DialogContentText>Are you sure you want to delete this patient? This action cannot be undone.</DialogContentText>
+          <DialogContentText>
+            Are you sure you want to delete this patient? This action cannot be
+            undone.
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogClose} color="primary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error">Confirm</Button>
+          <Button onClick={handleDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Confirm
+          </Button>
         </DialogActions>
       </Dialog>
-    </Dialog>
+    </PageContainer>
   );
 };
 
