@@ -54,7 +54,7 @@ const AdminSidebar = ({
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#36bd78", // Apply the primary color
+            backgroundColor: "#4de698", // Apply the primary color
             boxShadow: "none", // Remove shadow if causing darkening
             transition: "width 0.2s ease", // Smooth transition for resizing
             overflowX: "hidden", // Prevent horizontal scroll bar
