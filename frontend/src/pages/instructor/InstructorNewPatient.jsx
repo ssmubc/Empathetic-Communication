@@ -40,7 +40,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => {
+export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPatientCreated }) => {
   const [files, setFiles] = useState([]); // For LLM Upload
   const [newFiles, setNewFiles] = useState([]); // For LLM Upload
   const [savedFiles, setSavedFiles] = useState([]); // For LLM Upload
@@ -71,9 +71,6 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => 
 
   const cleanFileName = (fileName) => {
     return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  };
-  const handleBackClick = () => {
-    window.history.back();
   };
 
   const handleProfilePictureChange = (e) => {
@@ -347,6 +344,9 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => 
           progress: undefined,
           theme: "colored",
         });
+
+        onPatientCreated(updatedPatient);
+        
         onClose();
       }
     } catch (error) {
@@ -355,14 +355,14 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => 
       setIsSaving(false);
       setNextPatientNumber(nextPatientNumber + 1);
       setTimeout(() => {
-        handleBackClick();
+        onClose();
       }, 1000);
     }
   };
 
   return (
     <PageContainer>
-      <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
+      <Paper style={{ padding: 25, width: "100%", maxHeight: "70vh", overflowY: "auto" }}>
         <Typography variant="h6">New Patient</Typography>
 
         {/* Profile Picture Upload Section */}
@@ -506,7 +506,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => 
               <Button
                 variant="contained"
                 color="primary"
-                onClick={handleBackClick}
+                onClick={onClose}
                 sx={{ width: "30%" }}
               >
                 Cancel
@@ -519,7 +519,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => 
               variant="contained"
               color="primary"
               onClick={handleSave}
-              style={{ width: "30%" }}
+              style={{ width: "50%" }}
             >
               Save Patient
             </Button>

@@ -234,6 +234,10 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     }
   };
 
+  const onPatientCreated = (newPatient) => {
+    setData((prevData) => [...prevData, newPatient]);
+  };
+
   return (
     <Box
       component="main"
@@ -271,11 +275,12 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
 
         <Dialog open={openNewPatientDialog} onClose={handleCloseNewPatientDialog} fullWidth maxWidth="md">
           <DialogTitle>Create New Patient</DialogTitle>
-          <DialogContent>
+          <DialogContent style={{ overflow: "hidden" }}>
             <InstructorNewPatient
               data={data}
               simulation_group_id={simulation_group_id}
               onClose={handleCloseNewPatientDialog}
+              onPatientCreated={onPatientCreated}
             />
           </DialogContent>
           <DialogActions>
