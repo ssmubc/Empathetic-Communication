@@ -40,7 +40,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-export const InstructorNewPatient = () => {
+export const InstructorNewPatient = ({ data, simulation_group_id, onClose }) => {
   const [files, setFiles] = useState([]); // For LLM Upload
   const [newFiles, setNewFiles] = useState([]); // For LLM Upload
   const [savedFiles, setSavedFiles] = useState([]); // For LLM Upload
@@ -61,8 +61,6 @@ export const InstructorNewPatient = () => {
   const [patientAge, setPatientAge] = useState("");
   const [patientGender, setPatientGender] = useState("");
   const [patientPrompt, setPatientPrompt] = useState("");
-  const location = useLocation();
-  const { data, simulation_group_id } = location.state || {};
   const [nextPatientNumber, setNextPatientNumber] = useState(data.length + 1);
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -349,6 +347,7 @@ export const InstructorNewPatient = () => {
           progress: undefined,
           theme: "colored",
         });
+        onClose();
       }
     } catch (error) {
       console.error("Error saving changes:", error);

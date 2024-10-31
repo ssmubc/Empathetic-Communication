@@ -8,6 +8,8 @@ import {
 } from "material-react-table";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import InstructorNewPatient from "./InstructorNewPatient";
+import { Dialog, DialogContent, DialogTitle, DialogActions } from "@mui/material";
 
 function groupTitleCase(str) {
   if (typeof str !== "string") {
@@ -40,6 +42,7 @@ function titleCase(str) {
 const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
+  const [openNewPatientDialog, setOpenNewPatientDialog] = useState(false);
 
   const columns = useMemo(
     () => [
@@ -134,11 +137,8 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     });
   };
 
-  const handleCreatePatientClick = () => {
-    navigate(`/group/${groupName}/new-patient`, {
-      state: { data, simulation_group_id },
-    });
-  };
+  const handleOpenNewPatientDialog = () => setOpenNewPatientDialog(true);
+  const handleCloseNewPatientDialog = () => setOpenNewPatientDialog(false);
 
   const handleSaveChanges = async () => {
     try {
@@ -264,10 +264,27 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
         <Button
           variant="contained"
           color="primary"
-          onClick={handleCreatePatientClick}
+          onClick={handleOpenNewPatientDialog}
         >
           Create New Patient
         </Button>
+
+        <Dialog open={openNewPatientDialog} onClose={handleCloseNewPatientDialog} fullWidth maxWidth="md">
+          <DialogTitle>Create New Patient</DialogTitle>
+          <DialogContent>
+            <InstructorNewPatient
+              data={data}
+              simulation_group_id={simulation_group_id}
+              onClose={handleCloseNewPatientDialog}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseNewPatientDialog} color="primary">
+              Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Button variant="contained" color="primary" onClick={handleSaveChanges}>
           Save Changes
         </Button>
