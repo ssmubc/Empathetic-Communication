@@ -22,21 +22,23 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 const handleBackClick = () => {
   window.history.back();
 };
 
 // Formatting messages for PDF export
-const formatMessagesForPDF = (messages) =>
+const formatMessagesForPDF = (messages, studentName, patientName) =>
   messages
     .map(
       (msg) =>
-        `${msg.student_sent ? "Student" : "LLM"}: ${msg.message_content.trim()}`
+        `${msg.student_sent ? `${studentName} (Student)` : `${patientName} (LLM)`}: ${msg.message_content.trim()}`
     )
     .join("\n");
 
@@ -44,7 +46,7 @@ const formatNotesForPDF = (notes) =>
   `Notes: ${notes || "No notes available."}`;
 
 // Helper function to format chat messages with distinct styling
-const formatMessages = (messages) => {
+const formatMessages = (messages, studentName, patientName) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Invalid Date";
@@ -66,7 +68,6 @@ const formatMessages = (messages) => {
     return acc;
   }, {});
 
-  // Return an array of JSX elements for each date and message
   return Object.keys(groupedMessages).map((date) => (
     <Box key={date} sx={{ my: 2 }}>
       <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
@@ -85,7 +86,7 @@ const formatMessages = (messages) => {
           }}
         >
           <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-            {message.student_sent ? "Student" : "LLM"}
+            {message.student_sent ? `${studentName} (Student)` : `${patientName} (LLM)`}
           </Typography>
           <Typography variant="body1">{message.message_content.trim()}</Typography>
         </Box>
@@ -120,7 +121,9 @@ const StudentDetails = () => {
   const [sessions, setSessions] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const sessionRefs = useRef({}); // References for each session for PDF capture
+  const [completion, setCompletion] = useState(false); // State for Completion switch
+  const sessionRefs = useRef({});
+  
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -144,12 +147,40 @@ const StudentDetails = () => {
         if (response.ok) {
           const data = await response.json();
           setSessions(data);
-          setTabs(Object.keys(data));
+          setTabs(Object.keys(data)); // Tabs will represent patient names
         } else {
           console.error("Failed to fetch student data:", response.statusText);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+      }
+    };
+
+    // Fetch initial completion status
+    const fetchCompletionStatus = async () => {
+      try {
+        const session = await fetchAuthSession();
+        const token = session.tokens.idToken;
+        const response = await fetch(
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_completion_status?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+          )}&student_email=${encodeURIComponent(student.email)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setCompletion(data.is_completed);
+        } else {
+          console.error("Failed to fetch completion status:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching completion status:", error);
       }
     };
 
@@ -217,21 +248,20 @@ const StudentDetails = () => {
     }
   };
 
-  const handleDownloadSessionPDF = (session) => {
+  const handleDownloadSessionPDF = (session, patientName) => {
     const pdf = new jsPDF("p", "mm", "a4");
     pdf.setFontSize(12);
-    let yOffset = 10; // Keeps track of current vertical offset in the PDF
+    let yOffset = 10;
 
     pdf.text(`Session: ${session.sessionName}`, 10, yOffset);
     yOffset += 10;
 
-    const messages = formatMessagesForPDF(session.messages);
+    const messages = formatMessagesForPDF(session.messages, studentId, patientName);
     const notes = formatNotesForPDF(session.notes);
     const sessionContent = `${messages}\n\n${notes}`;
 
-    // Add content line by line to ensure we don't exceed page bounds
     sessionContent.split("\n").forEach((line) => {
-      if (yOffset > 280) { // Start a new page if we reach near the bottom
+      if (yOffset > 280) {
         pdf.addPage();
         yOffset = 10;
       }
@@ -285,7 +315,7 @@ const StudentDetails = () => {
               </DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  Are you sure you want to unenroll the student from this
+                  Are you sure you want to unenroll {studentId} from this
                   simulation group?
                 </DialogContentText>
               </DialogContent>
@@ -336,7 +366,7 @@ const StudentDetails = () => {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Box
-                      ref={(el) => (sessionRefs.current[session.sessionName] = el)} // Reference each session
+                      ref={(el) => (sessionRefs.current[session.sessionName] = el)}
                       sx={{
                         display: "flex",
                         flexDirection: "column",
@@ -344,11 +374,11 @@ const StudentDetails = () => {
                         overflowY: "auto",
                       }}
                     >
-                      {formatMessages(session.messages)}
+                      {formatMessages(session.messages, studentId, tabs[activeTab])}
                       {formatNotes(session.notes)}
                     </Box>
                     <Button
-                      onClick={() => handleDownloadSessionPDF(session)}
+                      onClick={() => handleDownloadSessionPDF(session, tabs[activeTab])}
                       variant="contained"
                       color="secondary"
                       sx={{ mt: 2 }}
@@ -363,6 +393,20 @@ const StudentDetails = () => {
                 Student has not entered any simulation groups yet.
               </Typography>
             )}
+
+            {/* Tooltip-wrapped Completion Switch with student's name */}
+            <Tooltip title={`Manually set the completion status for ${studentId}`} arrow>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={completion}
+                    onChange={() => setCompletion((prev) => !prev)}
+                  />
+                }
+                label="Completion"
+                sx={{ mt: 4 }}
+              />
+            </Tooltip>
           </Box>
         </Paper>
       </PageContainer>

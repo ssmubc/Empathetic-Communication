@@ -205,7 +205,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                             <span>PFP</span>
                           </div>
                           <div className="flex flex-row items-center gap-1">
-                            <FaInfoCircle className="text-xs" />
+                            {/* <FaInfoCircle className="text-xs" /> */}
                             <span className="text-base">
                               {titleCase(entry.patient_name)}
                             </span>
