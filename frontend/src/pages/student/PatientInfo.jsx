@@ -14,6 +14,7 @@ import { fetchAuthSession } from "aws-amplify/auth";
 
 function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId }) {
   const [patientInfoFiles, setPatientInfoFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null); // State to store selected file for viewing
 
   useEffect(() => {
     const fetchPatientInfoFiles = async () => {
@@ -58,6 +59,14 @@ function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId 
     }
   }, [open, patientId, simulationGroupId]);
 
+  const handleFileClick = (file) => {
+    setSelectedFile(file);
+  };
+
+  const handleCloseFileViewer = () => {
+    setSelectedFile(null);
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Patient Information Files</DialogTitle>
@@ -70,10 +79,7 @@ function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId 
               <ListItem
                 key={index}
                 button
-                component="a"
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() => handleFileClick(file)}
               >
                 <ListItemText primary={file.name} />
               </ListItem>
@@ -84,6 +90,27 @@ function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId 
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+
+      {/* File Viewer Dialog */}
+      {selectedFile && (
+        <Dialog open={!!selectedFile} onClose={handleCloseFileViewer} fullWidth maxWidth="lg">
+          <DialogTitle>{selectedFile.name}</DialogTitle>
+          <DialogContent>
+            <iframe
+              src={selectedFile.url}
+              title={selectedFile.name}
+              width="100%"
+              height="600px"
+              style={{ border: "none" }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseFileViewer} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
