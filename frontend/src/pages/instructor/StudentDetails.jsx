@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"; 
+import { useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
 import { toast, ToastContainer } from "react-toastify";
@@ -24,10 +24,24 @@ import {
   DialogTitle,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const handleBackClick = () => {
   window.history.back();
 };
+
+// Formatting messages for PDF export
+const formatMessagesForPDF = (messages) =>
+  messages
+    .map(
+      (msg) =>
+        `${msg.student_sent ? "Student" : "LLM"}: ${msg.message_content.trim()}`
+    )
+    .join("\n");
+
+const formatNotesForPDF = (notes) =>
+  `Notes: ${notes || "No notes available."}`;
 
 // Helper function to format chat messages with distinct styling
 const formatMessages = (messages) => {
@@ -106,7 +120,7 @@ const StudentDetails = () => {
   const [sessions, setSessions] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const textFieldRef = useRef(null);
+  const sessionRefs = useRef({}); // References for each session for PDF capture
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -141,12 +155,6 @@ const StudentDetails = () => {
 
     fetchHistory();
   }, [simulation_group_id, student.email]);
-
-  useEffect(() => {
-    if (textFieldRef.current) {
-      textFieldRef.current.scrollTop = textFieldRef.current.scrollHeight;
-    }
-  }, [sessions]);
 
   const handleDialogOpen = () => {
     setDialogOpen(true);
@@ -207,6 +215,31 @@ const StudentDetails = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
+  };
+
+  const handleDownloadSessionPDF = (session) => {
+    const pdf = new jsPDF("p", "mm", "a4");
+    pdf.setFontSize(12);
+    let yOffset = 10; // Keeps track of current vertical offset in the PDF
+
+    pdf.text(`Session: ${session.sessionName}`, 10, yOffset);
+    yOffset += 10;
+
+    const messages = formatMessagesForPDF(session.messages);
+    const notes = formatNotesForPDF(session.notes);
+    const sessionContent = `${messages}\n\n${notes}`;
+
+    // Add content line by line to ensure we don't exceed page bounds
+    sessionContent.split("\n").forEach((line) => {
+      if (yOffset > 280) { // Start a new page if we reach near the bottom
+        pdf.addPage();
+        yOffset = 10;
+      }
+      pdf.text(line, 10, yOffset);
+      yOffset += 8;
+    });
+
+    pdf.save(`${studentId}-${session.sessionName}-session.pdf`);
   };
 
   return (
@@ -302,8 +335,8 @@ const StudentDetails = () => {
                     <Typography>{session.sessionName}</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    {/* Render the formatted messages with distinct colors */}
                     <Box
+                      ref={(el) => (sessionRefs.current[session.sessionName] = el)} // Reference each session
                       sx={{
                         display: "flex",
                         flexDirection: "column",
@@ -312,10 +345,16 @@ const StudentDetails = () => {
                       }}
                     >
                       {formatMessages(session.messages)}
+                      {formatNotes(session.notes)}
                     </Box>
-
-                    {/* Render session-specific notes with consistent styling */}
-                    {formatNotes(session.notes)}
+                    <Button
+                      onClick={() => handleDownloadSessionPDF(session)}
+                      variant="contained"
+                      color="secondary"
+                      sx={{ mt: 2 }}
+                    >
+                      Download Session PDF
+                    </Button>
                   </AccordionDetails>
                 </Accordion>
               ))
