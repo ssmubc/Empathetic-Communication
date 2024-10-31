@@ -46,7 +46,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-const InstructorEditPatients = () => {
+const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onPatientUpdated }) => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [metadata, setMetadata] = useState({});
@@ -62,9 +62,7 @@ const InstructorEditPatients = () => {
   const [savedPatientFiles, setSavedPatientFiles] = useState([]);
   const [deletedPatientFiles, setDeletedPatientFiles] = useState([]);
 
-  const location = useLocation();
   const [patient, setPatient] = useState(null);
-  const { patientData, simulation_group_id } = location.state || {};
   const [patientName, setPatientName] = useState("");
   const [patientAge, setPatientAge] = useState("");
   const [patientGender, setPatientGender] = useState("");
@@ -133,12 +131,6 @@ const InstructorEditPatients = () => {
         },
         body: profilePicture,
     });
-  };
-
-
-
-  const handleBackClick = () => {
-    window.history.back();
   };
 
   const handleDeleteConfirmation = () => {
@@ -294,7 +286,7 @@ const InstructorEditPatients = () => {
           theme: "colored",
         });
         setTimeout(() => {
-          handleBackClick();
+          onClose();
         }, 1000);
       } else {
         throw new Error("Failed to delete patient");
@@ -487,7 +479,15 @@ const InstructorEditPatients = () => {
     }
 
     try {
+      const updatedPatientData = {
+        patient_id: patientData.patient_id,
+        patient_name: patientName,
+        patient_age: patientAge,
+        patient_gender: patientGender,
+        patient_prompt: patientPrompt,
+      };
       await updatePatient();
+      onPatientUpdated(updatedPatientData);
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
       await uploadFiles(newFiles, token); // Upload LLM files
@@ -512,7 +512,7 @@ const InstructorEditPatients = () => {
       setNewPatientFiles([]);
       toast.success("Patient updated successfully", { position: "top-center" });
 
-      setTimeout(() => handleBackClick(), 1000);
+      setTimeout(() => onClose(), 1000);
     } catch (error) {
       console.error("Error saving patient:", error);
       toast.error("Patient failed to update", { position: "top-center" });
@@ -558,7 +558,7 @@ const InstructorEditPatients = () => {
 
   return (
     <PageContainer>
-      <Paper style={{ padding: 25, width: "100%", overflow: "auto" }}>
+      <Paper style={{ padding: 25, width: "100%", maxHeight: "70vh", overflowY: "auto" }}>
         <Typography variant="h6">
           Edit Patient {titleCase(patient.patient_name)}{" "}
         </Typography>
@@ -705,8 +705,8 @@ const InstructorEditPatients = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={handleBackClick}
-                sx={{ width: "30%" }}
+                onClick={onClose}
+                sx={{ width: "100%" }}
               >
                 Cancel
               </Button>
@@ -714,7 +714,7 @@ const InstructorEditPatients = () => {
                 variant="contained"
                 color="error"
                 onClick={handleDeleteConfirmation}
-                sx={{ width: "30%" }}
+                sx={{ width: "100%" }}
               >
                 Delete Patient
               </Button>
@@ -726,7 +726,7 @@ const InstructorEditPatients = () => {
               variant="contained"
               color="primary"
               onClick={handleSave}
-              style={{ width: "30%" }}
+              style={{ width: "50%" }}
             >
               Save Patient
             </Button>

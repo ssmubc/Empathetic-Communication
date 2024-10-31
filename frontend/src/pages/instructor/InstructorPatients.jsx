@@ -9,6 +9,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InstructorNewPatient from "./InstructorNewPatient";
+import InstructorEditPatients from "./InstructorEditPatients";
 import { Dialog, DialogContent, DialogTitle, DialogActions } from "@mui/material";
 
 function groupTitleCase(str) {
@@ -43,6 +44,8 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [openNewPatientDialog, setOpenNewPatientDialog] = useState(false);
+  const [openEditPatientDialog, setOpenEditPatientDialog] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   const columns = useMemo(
     () => [
@@ -132,9 +135,13 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   }, [simulation_group_id]);
 
   const handleEditClick = (patientData) => {
-    navigate(`/group/${groupName}/edit-patient/${patientData.patient_id}`, {
-      state: { patientData, simulation_group_id: simulation_group_id },
-    });
+    setSelectedPatient(patientData);
+    setOpenEditPatientDialog(true);
+  };
+
+  const handleCloseEditPatientDialog = () => {
+    setSelectedPatient(null);
+    setOpenEditPatientDialog(false);
   };
 
   const handleOpenNewPatientDialog = () => setOpenNewPatientDialog(true);
@@ -238,6 +245,14 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     setData((prevData) => [...prevData, newPatient]);
   };
 
+  const onPatientUpdated = (updatedPatient) => {
+    setData((prevData) =>
+      prevData.map((patient) =>
+        patient.patient_id === updatedPatient.patient_id ? updatedPatient : patient
+      )
+    );
+  };
+
   return (
     <Box
       component="main"
@@ -285,6 +300,23 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseNewPatientDialog} color="primary">
+              Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={openEditPatientDialog} onClose={handleCloseEditPatientDialog} fullWidth maxWidth="md">
+          <DialogTitle>Edit Patient</DialogTitle>
+          <DialogContent style={{ overflow: "hidden" }}>
+            <InstructorEditPatients
+              patientData={selectedPatient}
+              simulation_group_id={simulation_group_id}
+              onClose={handleCloseEditPatientDialog}
+              onPatientUpdated={onPatientUpdated}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEditPatientDialog} color="primary">
               Cancel
             </Button>
           </DialogActions>
