@@ -397,7 +397,11 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
     let sessionData;
     let userEmail;
     let authToken;
-    setIsAItyping(true);
+
+    setTimeout(() => setIsAItyping(true), 775); 
+
+    // setIsAItyping(true);
+
     return fetchAuthSession()
       .then((session) => {
         authToken = session.tokens.idToken
