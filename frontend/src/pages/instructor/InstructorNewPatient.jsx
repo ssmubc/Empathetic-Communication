@@ -72,6 +72,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
   const cleanFileName = (fileName) => {
     return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   };
+  
 
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];

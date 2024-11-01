@@ -173,7 +173,7 @@ export const AdminCreateSimulationGroup = ({ setSelectedComponent }) => {
         );
 
         if (allEnrolledSuccessfully || selectedInstructors.length === 0) {
-          toast.success("🦄 Simulation Group Created!", {
+          toast.success("Simulation Group Created!", {
             position: "top-center",
             autoClose: 1000,
             hideProgressBar: false,
