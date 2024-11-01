@@ -7,10 +7,19 @@ import { useNavigate } from "react-router-dom";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import DraggableNotes from "./DraggableNotes"; // Correctly import DraggableNotes component
 import PatientInfo from "./PatientInfo";   // Importing the PatientInfo component
+import LLMDiagnosisInfo from "./LLMDiagnosisInfo"; // Import the new component
+
+
+import {
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Typography,
+} from "@mui/material";
+
 
 // Importing icons for Notes and Patient Info
 import DescriptionIcon from "@mui/icons-material/Description";
 import InfoIcon from "@mui/icons-material/Info";
+import KeyIcon from '@mui/icons-material/Key'; // Import KeyIcon
+
 
 // Importing l-mirage animation
 import { mirage } from 'ldrs';
@@ -57,6 +66,9 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
   const [isNotesOpen, setIsNotesOpen] = useState(false); // NEW ADDITIOPN Dialog control for Notes
   const [isPatientInfoOpen, setIsPatientInfoOpen] = useState(false); // NEW ADDITION Dialog control for Patient Info
+  const [isLLMDiagnosisOpen, setIsLLMDiagnosisOpen] = useState(false); // LLM Diagnosis Modal control
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false); // Confirmation dialog control
+
 
   const navigate = useNavigate();
 
@@ -647,6 +659,22 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
     }
   }, [session]);
 
+    // Open the confirmation dialog
+  const handleOpenConfirm = () => {
+    setIsConfirmOpen(true);
+  };
+
+  // Close the confirmation dialog
+  const handleCloseConfirm = () => {
+    setIsConfirmOpen(false);
+  };
+
+  // Open the LLM Diagnosis modal after confirmation
+  const handleConfirmReveal = () => {
+    setIsConfirmOpen(false);
+    setIsLLMDiagnosisOpen(true);
+  };
+
   if (!patient) {
     return <div>Loading...</div>;
   }
@@ -771,6 +799,29 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 )}
               </div>
             </button>
+            
+            {/* Reveal LLM Patient Diagnosis Button */}
+            <button
+              onClick={handleOpenConfirm}
+              className="border border-black bg-transparent pt-2 pb-2 w-full mt-4 hover:scale-105 transition-transform duration-300"
+            >
+            <div
+              className="flex items-center justify-center"
+              style={{
+                justifyContent: sidebarWidth <= 160 ? "center" : "flex-start",
+              }}
+            >
+              <KeyIcon
+                className={sidebarWidth <= 160 ? "mx-auto" : "mr-2"}
+                style={{ color: "black" }}
+              />
+              {sidebarWidth > 160 && (
+                <span className="text-black">Reveal Patient Report</span>
+              )}
+            </div>
+          </button>
+          
+
           </div>
         </div>
 
@@ -844,6 +895,31 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
           patientName={patient.patient_name}
           simulationGroupId={group.simulation_group_id}
         />
+
+        <LLMDiagnosisInfo
+          open={isLLMDiagnosisOpen}
+          onClose={() => setIsLLMDiagnosisOpen(false)}
+          simulationGroupId={group.simulation_group_id}
+          patientId={patient.patient_id}
+        />
+
+        {/* Confirmation Dialog for Reveal */}
+        <Dialog open={isConfirmOpen} onClose={handleCloseConfirm}>
+          <DialogTitle>Confirm Reveal</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to reveal the LLM Patient Diagnosis? This action will show the entire patient report.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseConfirm} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmReveal} color="error">
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     );
   };
