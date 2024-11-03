@@ -43,7 +43,7 @@ const formatMessagesForPDF = (messages, studentName, patientName) =>
     .join("\n");
 
 const formatNotesForPDF = (notes) =>
-  `Notes: ${notes || "No notes available."}`;
+  `Notes: ${notes || "No notes taken."}`;
 
 // Helper function to format chat messages with distinct styling
 const formatMessages = (messages, studentName, patientName) => {
