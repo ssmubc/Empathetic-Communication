@@ -37,8 +37,7 @@ def lambda_handler(event, context):
     patient_id = query_params.get("patient_id", "")
     file_type = query_params.get("file_type", "")
     file_name = query_params.get("file_name", "")
-    is_document_str = query_params.get("is_document", "").lower()
-    is_document = is_document_str == "true"
+    folder_type = query_params.get("folder_type", "")
 
     if not simulation_group_id:
         return {
@@ -89,12 +88,15 @@ def lambda_handler(event, context):
         'tiff': 'image/tiff', 'tif': 'image/tiff', 'webp': 'image/webp', 'xbm': 'image/x-xbitmap'
     }
 
-    if is_document and file_type in allowed_document_types:
+    if folder_type == "documents" and file_type in allowed_document_types:
         key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
-    elif file_type in allowed_info_types:
+    elif folder_type == "info" and file_type in allowed_info_types:
         key = f"{simulation_group_id}/{patient_id}/info/{file_name}.{file_type}"
         content_type = allowed_info_types[file_type]
+    elif folder_type == "profile_picture":
+        key = f"{simulation_group_id}/{patient_id}/profile_picture/{file_name}.{file_type}"
+        content_type = 'image/png'
     else:
         return {
             'statusCode': 400,

@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import InstructorNewPatient from "./InstructorNewPatient";
 import InstructorEditPatients from "./InstructorEditPatients";
 import { Dialog, DialogContent, DialogTitle, DialogActions } from "@mui/material";
+import { Avatar } from "@mui/material";
 
 function groupTitleCase(str) {
   if (typeof str !== "string") {
@@ -46,13 +47,23 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const [openNewPatientDialog, setOpenNewPatientDialog] = useState(false);
   const [openEditPatientDialog, setOpenEditPatientDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [profilePictures, setProfilePictures] = useState({});
 
   const columns = useMemo(
     () => [
       {
         accessorKey: "patient_name",
         header: "Patient Name",
-        Cell: ({ cell }) => titleCase(cell.getValue()),
+        Cell: ({ cell, row }) => (
+          <Box display="flex" alignItems="center">
+            <Avatar
+              src={profilePictures[row.original.patient_id] || ""}
+              alt={cell.getValue()}
+              sx={{ marginRight: 1 }}
+            />
+            <Typography variant="body1">{titleCase(cell.getValue())}</Typography>
+          </Box>
+        ),
       },
       {
         accessorKey: "patient_age",
@@ -76,7 +87,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
         ),
       },
     ],
-    []
+    [profilePictures]
   );
 
   const table = useMaterialReactTable({
@@ -146,6 +157,37 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
 
   const handleOpenNewPatientDialog = () => setOpenNewPatientDialog(true);
   const handleCloseNewPatientDialog = () => setOpenNewPatientDialog(false);
+
+  useEffect(() => {
+    const fetchProfilePictures = async () => {
+      try {
+        const session = await fetchAuthSession();
+        const token = session.tokens.idToken;
+  
+        const response = await fetch(
+          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_profile_pictures?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+  
+        if (response.ok) {
+          const profilePics = await response.json();
+          setProfilePictures(profilePics);
+        } else {
+          console.error("Failed to fetch profile pictures:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching profile pictures:", error);
+      }
+    };
+
+    fetchProfilePictures();
+  }, [simulation_group_id]);
 
   const handleSaveChanges = async () => {
     try {

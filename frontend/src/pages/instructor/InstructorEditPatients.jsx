@@ -92,28 +92,29 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
 
   const handleCropImage = async () => {
     try {
-        const croppedImage = await getCroppedImg(profilePicture, croppedAreaPixels);
-        setProfilePicturePreview(croppedImage); // Set the cropped image as preview
-        setIsCropDialogOpen(false); // Close the dialog
+      const croppedFile = await getCroppedImg(profilePicture, croppedAreaPixels, `${patientName}_profile_pic.png`);
+      setProfilePicture(croppedFile);
+      setProfilePicturePreview(URL.createObjectURL(croppedFile));
+      setIsCropDialogOpen(false);
     } catch (error) {
-        console.error("Error cropping image:", error);
+      console.error("Error cropping image:", error);
     }
   };
 
 
-  const uploadProfilePicture = async (profilePicture, token, patientId) => {
+  const uploadProfilePicture = async (profilePicture, token) => {
     if (!profilePicture) return;
-    const fileType = profilePicture.name.split('.').pop();
-    const fileName = profilePicture.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const fileType = "png";
+    const fileName = `${patient.patient_id}_profile_pic`;
 
     const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
             simulation_group_id
         )}&patient_id=${encodeURIComponent(
-            patientId
+          patient.patient_id
         )}&file_type=${encodeURIComponent(
             fileType
-        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=profile_picture`,
         {
             method: "GET",
             headers: {
@@ -127,7 +128,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     await fetch(presignedUrl.presignedurl, {
         method: "PUT",
         headers: {
-            "Content-Type": profilePicture.type,
+            "Content-Type": "image/png",
         },
         body: profilePicture,
     });
@@ -209,6 +210,10 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         const fileData = await response.json();
         setFiles(convertDocumentFilesToArray(fileData));
         setPatientFiles(convertInfoFilesToArray(fileData));
+  
+        if (fileData.profile_picture_url) {
+          setProfilePicturePreview(fileData.profile_picture_url);
+        }
       } else {
         console.error("Failed to fetch files:", response.statusText);
       }
@@ -392,7 +397,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}&is_document=${true}`,
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=documents`,
         {
           method: "GET",
           headers: {
@@ -433,7 +438,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=info`,
         {
           method: "GET",
           headers: {
@@ -493,7 +498,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       await uploadFiles(newFiles, token); // Upload LLM files
       await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
 
-      await uploadProfilePicture(profilePicture, token, patient.patient_id); // Upload profile picture
+      await uploadProfilePicture(profilePicture, token); // Upload profile picture
 
 
       await Promise.all([

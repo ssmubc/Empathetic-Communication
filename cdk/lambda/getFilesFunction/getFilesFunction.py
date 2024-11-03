@@ -145,9 +145,11 @@ def lambda_handler(event, context):
     try:
         document_prefix = f"{simulation_group_id}/{patient_id}/documents/"
         info_prefix = f"{simulation_group_id}/{patient_id}/info/"
+        profile_picture_prefix = f"{simulation_group_id}/{patient_id}/profile_picture/"
 
         document_files = list_files_in_s3_prefix(BUCKET, document_prefix)
         info_files = list_files_in_s3_prefix(BUCKET, info_prefix)
+        profile_picture_files = list_files_in_s3_prefix(BUCKET, profile_picture_prefix)
 
         # Retrieve metadata and generate presigned URLs for documents
         document_files_urls = {}
@@ -171,9 +173,16 @@ def lambda_handler(event, context):
                 "metadata": metadata
             }
 
+        # Get the profile picture URL if it exists
+        profile_picture_url = None
+        if profile_picture_files:
+            profile_picture_key = f"{profile_picture_prefix}{profile_picture_files[0]}"
+            profile_picture_url = generate_presigned_url(BUCKET, profile_picture_key)
+
         logger.info("Presigned URLs and metadata generated successfully", extra={
             "document_files": document_files_urls,
             "info_files": info_files_urls,
+            "profile_picture": profile_picture_url,
         })
 
         return {
@@ -187,6 +196,7 @@ def lambda_handler(event, context):
             'body': json.dumps({
                 'document_files': document_files_urls,
                 'info_files': info_files_urls,
+                'profile_picture_url': profile_picture_url,
             })
         }
     except Exception as e:

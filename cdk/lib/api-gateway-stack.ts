@@ -1197,6 +1197,56 @@ export class ApiGatewayStack extends cdk.Stack {
 
     /**
      *
+     * Create Lambda function that will return profile pictures of all patients within a simulation group
+     */
+    const getProfilePictures = new lambda.Function(this, "GetProfilePictures", {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromAsset("lambda/getProfilePictures"),
+      handler: "getProfilePictures.lambda_handler",
+      timeout: Duration.seconds(300),
+      memorySize: 128,
+      vpc: vpcStack.vpc,
+      environment: {
+        SM_DB_CREDENTIALS: db.secretPathUser.secretName,
+        RDS_PROXY_ENDPOINT: db.rdsProxyEndpoint,
+        BUCKET: dataIngestionBucket.bucketName,
+        REGION: this.region,
+      },
+      functionName: "GetProfilePictures",
+      layers: [psycopgLayer, powertoolsLayer],
+    });
+
+    // Override the Logical ID of the Lambda Function to get ARN in OpenAPI
+    const cfnGetProfilePictures = getProfilePictures.node
+      .defaultChild as lambda.CfnFunction;
+      cfnGetProfilePictures.overrideLogicalId("GetProfilePictures");
+
+    // Grant the Lambda function read-only permissions to the S3 bucket
+    dataIngestionBucket.grantRead(getProfilePictures);
+
+    // Grant access to Secret Manager
+    getProfilePictures.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          //Secrets Manager
+          "secretsmanager:GetSecretValue",
+        ],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:*`,
+        ],
+      })
+    );
+
+    // Add the permission to the Lambda function's policy to allow API Gateway access
+    getProfilePictures.addPermission("AllowApiGatewayInvoke", {
+      principal: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+      action: "lambda:InvokeFunction",
+      sourceArn: `arn:aws:execute-api:${this.region}:${this.account}:${this.api.restApiId}/*/*/instructor*`,
+    });
+
+    /**
+     *
      * Create Lambda function to delete certain file
      */
     const deleteFile = new lambda.Function(this, "DeleteFileFunc", {

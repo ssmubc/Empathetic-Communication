@@ -86,47 +86,46 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
   };
 
   const handleCropImage = async () => {
-      try {
-          const croppedImage = await getCroppedImg(profilePicture, croppedAreaPixels);
-          setProfilePicturePreview(croppedImage);
-          setIsCropDialogOpen(false); // Close cropping dialog
-      } catch (error) {
-          console.error("Crop failed:", error);
-      }
+    try {
+      const croppedFile = await getCroppedImg(profilePicture, croppedAreaPixels, `${patientName}_profile_pic.png`);
+      setProfilePicture(croppedFile);
+      setProfilePicturePreview(URL.createObjectURL(croppedFile));
+      setIsCropDialogOpen(false);
+    } catch (error) {
+      console.error("Error cropping image:", error);
+    }
   };
 
 
   const uploadProfilePicture = async (profilePicture, token, patientId) => {
     if (!profilePicture) return;
-    const fileType = profilePicture.name.split('.').pop();
-    const fileName = cleanFileName(profilePicture.name);
+    const fileType = "png";
+    const fileName = `${patient.patient_id}_profile_pic`;
 
     const response = await fetch(
-      `${
-        import.meta.env.VITE_API_ENDPOINT
-      }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-        simulation_group_id
-      )}&patient_id=${encodeURIComponent(
-        patientId
-      )}&file_type=${encodeURIComponent(
-        fileType
-      )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: token,
-          "Content-Type": "application/json",
-        },
-      }
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patientId
+        )}&file_type=${encodeURIComponent(
+            fileType
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=profile_picture`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        }
     );
 
     const presignedUrl = await response.json();
     await fetch(presignedUrl.presignedurl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": profilePicture.type,
-      },
-      body: profilePicture,
+        method: "PUT",
+        headers: {
+            "Content-Type": "image/png",
+        },
+        body: profilePicture,
     });
   };
 
@@ -145,7 +144,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
           patientName
         )}&file_type=${encodeURIComponent(fileType)}&file_name=${encodeURIComponent(
           fileName
-        )}&is_document=${true}`,
+        )}&folder_type=documents`,
         {
           method: "GET",
           headers: {
@@ -185,7 +184,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}&is_document=${false}`,
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=info`,
         {
           method: "GET",
           headers: {
