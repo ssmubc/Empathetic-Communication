@@ -69,6 +69,8 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   const [isLLMDiagnosisOpen, setIsLLMDiagnosisOpen] = useState(false); // LLM Diagnosis Modal control
   const [isConfirmOpen, setIsConfirmOpen] = useState(false); // Confirmation dialog control
 
+  const [patientInfoFiles, setPatientInfoFiles] = useState([]);
+  const [isInfoLoading, setIsInfoLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -181,6 +183,51 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
       .slice(recentStudentMessageIndex + 1)
       .some((message) => !message.student_sent);
   };
+
+  const fetchPatientInfoFiles = async () => {
+    setIsInfoLoading(true);
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken;
+  
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}student/get_all_files?simulation_group_id=${encodeURIComponent(
+          group.simulation_group_id
+        )}&patient_id=${encodeURIComponent(patient.patient_id)}&patient_name=${encodeURIComponent(patient.patient_name)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (response.ok) {
+        const data = await response.json();
+        const infoFiles = Object.entries(data.info_files).map(
+          ([fileName, fileDetails]) => ({
+            name: fileName,
+            url: fileDetails.url,
+            type: fileName.split('.').pop().toLowerCase(), 
+          })
+        );
+        setPatientInfoFiles(infoFiles); // Store only `info_files`
+      } else {
+        console.error("Failed to fetch patient info files:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching patient info files:", error);
+    } finally {      
+      setIsInfoLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (patient) {
+      fetchPatientInfoFiles();
+    }
+  }, [patient]);
 
   async function retrieveKnowledgeBase(message, sessionId) {
     try {
@@ -891,9 +938,8 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
         <PatientInfo
           open={isPatientInfoOpen}
           onClose={() => setIsPatientInfoOpen(false)}
-          patientId={patient.patient_id}
-          patientName={patient.patient_name}
-          simulationGroupId={group.simulation_group_id}
+          infoFiles={patientInfoFiles}
+          isLoading={isInfoLoading}
         />
 
         <LLMDiagnosisInfo

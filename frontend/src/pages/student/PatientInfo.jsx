@@ -5,9 +5,12 @@ import {
   DialogTitle,
   Button,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   IconButton,
 } from "@mui/material";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -15,7 +18,6 @@ import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import RotateRightIcon from "@mui/icons-material/RotateRight";
 import { useState, useEffect } from "react";
-import { fetchAuthSession } from "aws-amplify/auth";
 import { hourglass } from "ldrs";
 
 hourglass.register();
@@ -25,61 +27,12 @@ const IMAGE_FILE_TYPES = [
   "sgi", "tga", "tiff", "tif", "webp", "xbm"
 ];
 
-function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId }) {
-  const [patientInfoFiles, setPatientInfoFiles] = useState([]);
+function PatientInfo({ open, onClose, infoFiles, isLoading }) {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
-
-  useEffect(() => {
-    const fetchPatientInfoFiles = async () => {
-      setIsLoading(true);
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens.idToken;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}student/get_all_files?simulation_group_id=${encodeURIComponent(
-            simulationGroupId
-          )}&patient_id=${encodeURIComponent(
-            patientId
-          )}&patient_name=${encodeURIComponent(patientName)}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const infoFiles = Object.entries(data.info_files).map(
-            ([fileName, fileDetails]) => ({
-              name: fileName,
-              url: fileDetails.url,
-              type: fileName.split('.').pop().toLowerCase(), 
-            })
-          );
-          setPatientInfoFiles(infoFiles);
-        } else {
-          console.error("Failed to fetch patient info files:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching patient info files:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (open) {
-      fetchPatientInfoFiles();
-    }
-  }, [open, patientId, simulationGroupId]);
-
+  
   const handleFileClick = (file) => {
     setSelectedFile(file);
     setScale(1); 
@@ -140,16 +93,27 @@ function PatientInfo({ open, onClose, patientId, patientName, simulationGroupId 
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
             <l-hourglass size="40" bg-opacity="0.1" speed="1.75" color="black" />
           </div>
-        ) : patientInfoFiles.length === 0 ? (
+        ) : infoFiles.length === 0 ? (
           <Typography>No patient information files available.</Typography>
         ) : (
-          <List>
-            {patientInfoFiles.map((file, index) => (
-              <ListItem key={index} button onClick={() => handleFileClick(file)}>
-                <ListItemText primary={file.name} />
-              </ListItem>
-            ))}
-          </List>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>File Name</strong></TableCell>
+                  <TableCell><strong>Description</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {infoFiles.map((file, index) => (
+                  <TableRow key={index} hover onClick={() => handleFileClick(file)} style={{ cursor: 'pointer' }}>
+                    <TableCell>{file.name}</TableCell>
+                    <TableCell>{file.metadata || "No description available"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </DialogContent>
       <DialogActions>
