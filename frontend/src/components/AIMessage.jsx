@@ -21,7 +21,7 @@ const AIMessage = ({ message, profilePicture }) => {
   return (
     <div className="ml-16 mb-6 mr-16">
       <div className="flex flex-row flex-start">
-        {/* Use img tag for profile picture */}
+        
         <div
           className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"
           style={{
@@ -31,7 +31,7 @@ const AIMessage = ({ message, profilePicture }) => {
           }}
         >
           <img
-            src={profilePicture || "/default-profile.png"} // Add a default profile image path
+            src={profilePicture || "/default-profile.png"} 
             alt="Patient profile"
             className="w-full h-full rounded-full"
           />
@@ -56,7 +56,7 @@ const AIMessage = ({ message, profilePicture }) => {
 
 AIMessage.propTypes = {
   message: PropTypes.string.isRequired,
-  profilePicture: PropTypes.string, // Define prop type for profilePicture
+  profilePicture: PropTypes.string, 
 };
 
 export default AIMessage;
