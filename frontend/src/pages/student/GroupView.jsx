@@ -69,6 +69,7 @@ function titleCase(str) {
 export const GroupView = ({ group, setPatient, setGroup }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [profilePictures, setProfilePictures] = useState({});
 
   const navigate = useNavigate();
   const enterPatient = (patient) => {
@@ -108,6 +109,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
         if (response.ok) {
           const data = await response.json();
           setData(data);
+          await fetchProfilePictures(data);
           setLoading(false);
           console.log(data);
         } else {
@@ -119,6 +121,34 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
     };
     fetchGroupPage();
   }, [group]);
+
+  const fetchProfilePictures = async (patients) => {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}student/get_profile_pictures?simulation_group_id=${encodeURIComponent(group.simulation_group_id)}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ patient_ids: patients.map((p) => p.patient_id) }),
+        }
+      );
+
+      if (response.ok) {
+        const profilePics = await response.json();
+        setProfilePictures(profilePics);
+      } else {
+        console.error("Failed to fetch profile pictures:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching profile pictures:", error);
+    }
+  };
 
   useEffect(() => {
     sessionStorage.removeItem("patient");
@@ -201,8 +231,11 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                               color: "#757575",
                             }}
                           >
-                            {/* Placeholder text or image */}
-                            <span>PFP</span>
+                            <img
+                              src={profilePictures[entry.patient_id] || ""}
+                              alt={`${titleCase(entry.patient_name)} profile`}
+                              className="w-full h-full rounded-full"
+                            />
                           </div>
                           <div className="flex flex-row items-center gap-1">
                             {/* <FaInfoCircle className="text-xs" /> */}
