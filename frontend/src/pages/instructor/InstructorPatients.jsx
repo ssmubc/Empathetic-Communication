@@ -112,37 +112,50 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     }),
   });
 
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const session = await fetchAuthSession();
-        var token = session.tokens.idToken;
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
-          }instructor/view_patients?simulation_group_id=${encodeURIComponent(
-            simulation_group_id
-          )}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.ok) {
-          const patientData = await response.json();
-          setData(patientData);
-        } else {
-          console.error("Failed to fetch patients:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-      }
-    };
+  const fetchPatientsAndProfilePictures = async () => {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken;
 
-    fetchPatients();
+      // Fetch patient list
+      const patientResponse = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/view_patients?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const patientData = await patientResponse.json();
+      setData(patientData);
+
+      // Fetch profile pictures
+      const profileResponse = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/get_profile_pictures?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ patient_ids: patientData.map((p) => p.patient_id) }),
+        }
+      );
+
+      if (profileResponse.ok) {
+        const profilePics = await profileResponse.json();
+        setProfilePictures(profilePics);
+      }
+    } catch (error) {
+      console.error("Error fetching patients or profile pictures:", error);
+    }
+  };
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchPatientsAndProfilePictures();
   }, [simulation_group_id]);
 
   const handleEditClick = (patientData) => {
@@ -153,41 +166,11 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const handleCloseEditPatientDialog = () => {
     setSelectedPatient(null);
     setOpenEditPatientDialog(false);
+    fetchPatientsAndProfilePictures(); // Refresh data after edit
   };
 
   const handleOpenNewPatientDialog = () => setOpenNewPatientDialog(true);
   const handleCloseNewPatientDialog = () => setOpenNewPatientDialog(false);
-
-  useEffect(() => {
-    const fetchProfilePictures = async () => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens.idToken;
-  
-        const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_profile_pictures?simulation_group_id=${encodeURIComponent(simulation_group_id)}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-  
-        if (response.ok) {
-          const profilePics = await response.json();
-          setProfilePictures(profilePics);
-        } else {
-          console.error("Failed to fetch profile pictures:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching profile pictures:", error);
-      }
-    };
-
-    fetchProfilePictures();
-  }, [simulation_group_id]);
 
   const handleSaveChanges = async () => {
     try {
@@ -283,16 +266,13 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     }
   };
 
-  const onPatientCreated = (newPatient) => {
+  const onPatientCreated = async (newPatient) => {
     setData((prevData) => [...prevData, newPatient]);
+    await fetchPatientsAndProfilePictures();
   };
 
-  const onPatientUpdated = (updatedPatient) => {
-    setData((prevData) =>
-      prevData.map((patient) =>
-        patient.patient_id === updatedPatient.patient_id ? updatedPatient : patient
-      )
-    );
+  const onPatientUpdated = async () => {
+    await fetchPatientsAndProfilePictures();
   };
 
   return (

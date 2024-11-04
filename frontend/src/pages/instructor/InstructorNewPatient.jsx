@@ -101,7 +101,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
   const uploadProfilePicture = async (profilePicture, token, patientId) => {
     if (!profilePicture) return;
     const fileType = "png";
-    const fileName = `${patient.patient_id}_profile_pic`;
+    const fileName = `${patientId}_profile_pic`;
 
     const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(

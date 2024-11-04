@@ -466,7 +466,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
-
+  
     if (!patientName) {
       toast.error("Patient Name is required.", { position: "top-center" });
       setIsSaving(false);
@@ -482,7 +482,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       setIsSaving(false);
       return;
     }
-
+  
     try {
       const updatedPatientData = {
         patient_id: patientData.patient_id,
@@ -491,32 +491,39 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         patient_gender: patientGender,
         patient_prompt: patientPrompt,
       };
+  
       await updatePatient();
+  
+      // Update patient information in the parent component
       onPatientUpdated(updatedPatientData);
+  
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
       await uploadFiles(newFiles, token); // Upload LLM files
       await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
-
-      await uploadProfilePicture(profilePicture, token); // Upload profile picture
-
-
+  
+      // Upload profile picture and update the preview
+      await uploadProfilePicture(profilePicture, token);
+      setProfilePicturePreview(URL.createObjectURL(profilePicture));
+  
       await Promise.all([
         updateMetaData(files, token),
         updateMetaData(savedFiles, token),
         updateMetaData(newFiles, token),
       ]);
-
+  
+      // Refresh the file list in case of new or deleted files
       setFiles((prevFiles) =>
         prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
       );
-
+  
       setDeletedFiles([]);
       setNewFiles([]);
       setDeletedPatientFiles([]);
       setNewPatientFiles([]);
       toast.success("Patient updated successfully", { position: "top-center" });
-
+  
+      // Trigger a close and update the parent list
       setTimeout(() => onClose(), 1000);
     } catch (error) {
       console.error("Error saving patient:", error);
