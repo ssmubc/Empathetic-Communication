@@ -46,7 +46,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onPatientUpdated }) => {
+const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onPatientUpdated, showSuccessToast }) => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [metadata, setMetadata] = useState({});
@@ -280,19 +280,8 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       );
 
       if (patientResponse.ok) {
-        toast.success("Successfully Deleted", {
-          position: "top-center",
-          autoClose: 1000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
-        });
-        setTimeout(() => {
-          onClose();
-        }, 1000);
+        showSuccessToast("Successfully Deleted");
+        onClose();
       } else {
         throw new Error("Failed to delete patient");
       }
@@ -503,8 +492,10 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
   
       // Upload profile picture and update the preview
-      await uploadProfilePicture(profilePicture, token);
-      setProfilePicturePreview(URL.createObjectURL(profilePicture));
+      if (profilePicture) {
+        await uploadProfilePicture(profilePicture, token);
+        setProfilePicturePreview(URL.createObjectURL(profilePicture));
+      }
   
       await Promise.all([
         updateMetaData(files, token),
@@ -521,10 +512,8 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       setNewFiles([]);
       setDeletedPatientFiles([]);
       setNewPatientFiles([]);
-      toast.success("Patient updated successfully", { position: "top-center" });
-  
-      // Trigger a close and update the parent list
-      setTimeout(() => onClose(), 1000);
+      showSuccessToast("Patient updated successfully");  
+      onClose();
     } catch (error) {
       console.error("Error saving patient:", error);
       toast.error("Patient failed to update", { position: "top-center" });

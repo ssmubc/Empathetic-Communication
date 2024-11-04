@@ -49,6 +49,20 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [profilePictures, setProfilePictures] = useState({});
 
+  // Toast function to display success messages
+  const showSuccessToast = (message) => {
+    toast.success(message, {
+      position: "top-center",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -318,6 +332,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
               simulation_group_id={simulation_group_id}
               onClose={handleCloseNewPatientDialog}
               onPatientCreated={onPatientCreated}
+              showSuccessToast={showSuccessToast}
             />
           </DialogContent>
           <DialogActions>
@@ -335,6 +350,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
               simulation_group_id={simulation_group_id}
               onClose={handleCloseEditPatientDialog}
               onPatientUpdated={onPatientUpdated}
+              showSuccessToast={showSuccessToast}
             />
           </DialogContent>
           <DialogActions>

@@ -40,7 +40,7 @@ function titleCase(str) {
     .join(" ");
 }
 
-export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPatientCreated }) => {
+export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPatientCreated, showSuccessToast }) => {
   const [files, setFiles] = useState([]); // For LLM Upload
   const [newFiles, setNewFiles] = useState([]); // For LLM Upload
   const [savedFiles, setSavedFiles] = useState([]); // For LLM Upload
@@ -215,7 +215,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
     if (!patientName) {
       toast.error("Patient Name is required.", {
         position: "top-center",
-        autoClose: 2000,
+        autoClose: 1000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -334,19 +334,8 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
         setNewFiles([]);
         setDeletedPatientFiles([]);
         setNewPatientFiles([]);
-        toast.success("Patient Created Successfully", {
-          position: "top-center",
-          autoClose: 1000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
-        });
-
-        onPatientCreated(updatedPatient);
-        
+        showSuccessToast("Patient Created Successfully");
+        onPatientCreated(updatedPatient);        
         onClose();
       }
     } catch (error) {
