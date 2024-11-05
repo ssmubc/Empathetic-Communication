@@ -51,10 +51,10 @@ const LLMDiagnosisInfo = ({ open, onClose, simulationGroupId, patientId }) => {
         const files = await response.json();
         setLlmFiles(files);
       } else {
-        console.error("Failed to fetch LLM files:", response.statusText);
+        console.error("Failed to fetch Answer files:", response.statusText);
       }
     } catch (error) {
-      console.error("Error fetching LLM files:", error);
+      console.error("Error fetching Answer files:", error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ const LLMDiagnosisInfo = ({ open, onClose, simulationGroupId, patientId }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>LLM Patient Diagnosis</DialogTitle>
+      <DialogTitle>Patient Answer Key</DialogTitle>
       <DialogContent>
         {loading ? (
           <CircularProgress />
@@ -83,7 +83,7 @@ const LLMDiagnosisInfo = ({ open, onClose, simulationGroupId, patientId }) => {
           </List>
         ) : (
           <Typography variant="body1" color="textSecondary">
-            No LLM files available for this patient.
+            No answer available for this patient.
           </Typography>
         )}
       </DialogContent>

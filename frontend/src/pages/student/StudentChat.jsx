@@ -900,7 +900,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 style={{ color: "black" }}
               />
               {sidebarWidth > 160 && (
-                <span className="text-black">Reveal Patient Report</span>
+                <span className="text-black">Reveal Answer</span>
               )}
             </div>
           </button>
@@ -996,7 +996,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
           <DialogTitle>Confirm Reveal</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to reveal the LLM Patient Diagnosis? This action will show the entire patient report.
+              Are you sure you want to reveal the Patient's Diagnosis? This action will show the entire answer.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
