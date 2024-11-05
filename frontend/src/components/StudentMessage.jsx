@@ -28,7 +28,7 @@ const StudentMessage = ({ message, isMostRecent, onDelete, hasAiMessageAfter }) 
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex flex-row-reverse items-start">
-        <AccountBoxIcon fontSize="large" style={{ color: "#00FFFF" }} />
+        <AccountBoxIcon fontSize="large" style={{ color: "#99DFB2" }} />
         {/* Chat Bubble for Bot Message */}
         <div
           className="ml-4 mr-2 p-4 bg-gray-100 text-black rounded-xl shadow-md text-left"

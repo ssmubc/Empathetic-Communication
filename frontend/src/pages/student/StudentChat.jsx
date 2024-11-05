@@ -932,9 +932,10 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             />
             <img
               onClick={handleSubmit}
-              className="cursor-pointer w-3 h-3 mr-4"
+              className="cursor-pointer w-4 h-4 mr-5"
               src="./send.png"
               alt="send"
+              style={{ filter: "invert(58%) sepia(80%) saturate(600%) hue-rotate(100deg) brightness(90%) contrast(95%)" }} 
             />
           </div>
           <div className="flex-grow overflow-y-auto p-4 h-full">
