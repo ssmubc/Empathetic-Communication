@@ -72,7 +72,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   const [patientInfoFiles, setPatientInfoFiles] = useState([]);
   const [isInfoLoading, setIsInfoLoading] = useState(false);
 
-  const [profilePictures, setProfilePictures] = useState({}); // Add profilePictures state
+  const [profilePicture, setProfilePicture] = useState({});
 
 
   const navigate = useNavigate();
@@ -99,41 +99,6 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", stopResizing);
   };
-
-  useEffect(() => {
-    const fetchProfilePictures = async (patients) => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens.idToken;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}student/get_profile_pictures?simulation_group_id=${encodeURIComponent(group.simulation_group_id)}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ patient_ids: patients.map((p) => p.patient_id) }),
-          }
-        );
-
-        if (response.ok) {
-          const profilePics = await response.json();
-          setProfilePictures(profilePics); // Set profilePictures state
-        } else {
-          console.error("Failed to fetch profile pictures:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching profile pictures:", error);
-      }
-    };
-
-    if (patient) {
-      fetchProfilePictures([patient]); // Fetch profile pictures for the patient
-    }
-  }, [patient, group]);
-
 
   useEffect(() => {
     if (
@@ -221,7 +186,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
       .some((message) => !message.student_sent);
   };
 
-  const fetchPatientInfoFiles = async () => {
+  const fetchFiles = async () => {
     setIsInfoLoading(true);
     try {
       const session = await fetchAuthSession();
@@ -249,6 +214,8 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             type: fileName.split('.').pop().toLowerCase(), 
           })
         );
+        const profilePicture = data.profile_picture_url;
+        setProfilePicture(profilePicture);
         setPatientInfoFiles(infoFiles); // Store only `info_files`
       } else {
         console.error("Failed to fetch patient info files:", response.statusText);
@@ -262,7 +229,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
   useEffect(() => {
     if (patient) {
-      fetchPatientInfoFiles();
+      fetchFiles();
     }
   }, [patient]);
 
@@ -951,7 +918,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 <AIMessage
                   key={message.message_id}
                   message={message.message_content}
-                  profilePicture={profilePictures[patient.patient_id]} // Pass profile picture URL to AIMessage
+                  profilePicture={profilePicture} // Pass profile picture URL to AIMessage
                 />
               )
             )}
