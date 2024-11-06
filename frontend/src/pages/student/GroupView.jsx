@@ -210,7 +210,8 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontSize: "1.1rem" }}>Patient</TableCell>
-                    <TableCell sx={{ fontSize: "1.1rem" }}>Completion</TableCell>
+                    <TableCell sx={{ fontSize: "1.1rem" }}>LLM Evaluation</TableCell>
+                    <TableCell sx={{ fontSize: "1.1rem" }}>Instructor Evaluation</TableCell>
                     <TableCell sx={{ fontSize: "1.1rem" }}>Review</TableCell>
                   </TableRow>
                 </TableHead>
@@ -244,6 +245,18 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                             </span>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell sx={{ fontSize: "1rem" }}>
+                        {entry.patient_score === 100 ? (
+                          <span
+                            className="bg-[#2E7D32] text-white text-light rounded px-2 py-2"
+                            style={{ display: "inline-block" }}
+                          >
+                            Complete
+                          </span>
+                        ) : (
+                          "Incomplete"
+                        )}
                       </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
                         {entry.patient_score === 100 ? (
