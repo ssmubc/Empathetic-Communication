@@ -105,7 +105,7 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
         accessorKey: "llm_completion",
         header: "LLM Completion",
         Cell: ({ row }) => (
-          <Tooltip title="Turn on/off if the LLM evaluates the student based on diagnosis">
+          <Tooltip title="Turn on/off if the LLM evaluates the student">
             <Switch
               checked={row.original.llm_completion ?? false}
               onChange={(e) =>
