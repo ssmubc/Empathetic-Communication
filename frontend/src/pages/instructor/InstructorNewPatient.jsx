@@ -128,7 +128,31 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
         },
         body: profilePicture,
     });
+  };  
+
+  function removeFileExtension(fileName) {
+    return fileName.replace(/\.[^/.]+$/, "");
+  }
+
+  const getFileType = (filename) => {
+    const parts = filename.split(".");
+    return parts.length > 1 ? parts.pop() : "";
   };
+
+  function convertDocumentFilesToArray(files) {
+    const resultArray = Object.entries(files).map(([fileName, url]) => ({
+      fileName,
+      url,
+    }));
+  
+    const fileMetadata = resultArray.reduce((acc, { fileName, url }) => {
+      acc[fileName] = url.metadata || ""; // Store metadata
+      return acc;
+    }, {});
+  
+    setMetadata(fileMetadata);
+    return resultArray;
+  }
 
   const uploadFiles = async (newFiles, token, patientId) => {
     const newFilePromises = newFiles.map((file) => {
@@ -207,6 +231,31 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
     });
 
     return await Promise.all(newFilePromises);
+  };
+
+  const updateMetaData = (files, token, patientId, metadata) => {
+    files.forEach((file) => {
+      const fileNameWithExtension = file.fileName || file.name;
+      const fileMetadata = metadata[fileNameWithExtension] || "";
+      const fileName = cleanFileName(removeFileExtension(fileNameWithExtension));
+      const fileType = getFileType(fileNameWithExtension);
+      
+      fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/update_metadata?patient_id=${encodeURIComponent(
+          patientId
+        )}&filename=${encodeURIComponent(
+          fileName
+        )}&filetype=${encodeURIComponent(fileType)}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ metadata: fileMetadata }),
+        }
+      );
+    });
   };
 
   const handleSave = async () => {
@@ -319,6 +368,12 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
         await uploadProfilePicture(profilePicture, token, updatedPatient.patient_id); // Upload profile picture
         await uploadFiles(newFiles, token, updatedPatient.patient_id); // LLM Upload
         await uploadPatientFiles(newPatientFiles, token, updatedPatient.patient_id); // Patient Info Upload
+
+        // Update metadata for both LLM and patient files
+        await Promise.all([
+          updateMetaData(newFiles, token, updatedPatient.patient_id, metadata),
+          updateMetaData(newPatientFiles, token, updatedPatient.patient_id, patientMetadata)
+        ]);
 
         setFiles((prevFiles) =>
           prevFiles.filter((file) => !deletedFiles.includes(file.fileName))

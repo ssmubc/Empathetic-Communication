@@ -69,8 +69,8 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const [patientPrompt, setPatientPrompt] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
-  const [profilePicturePreview, setProfilePicturePreview] = useState(null); // For profile picture preview
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -191,9 +191,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     try {
       const { token, email } = await getAuthSessionAndEmail();
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }instructor/get_all_files?simulation_group_id=${encodeURIComponent(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/get_all_files?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
           patient.patient_id
@@ -210,7 +208,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         const fileData = await response.json();
         setFiles(convertDocumentFilesToArray(fileData));
         setPatientFiles(convertInfoFilesToArray(fileData));
-  
+
         if (fileData.profile_picture_url) {
           setProfilePicturePreview(fileData.profile_picture_url);
         }
@@ -501,6 +499,9 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         updateMetaData(files, token),
         updateMetaData(savedFiles, token),
         updateMetaData(newFiles, token),
+        updateMetaData(patientFiles, token, true),
+        updateMetaData(savedPatientFiles, token, true),
+        updateMetaData(newPatientFiles, token, true),
       ]);
   
       // Refresh the file list in case of new or deleted files
@@ -522,16 +523,15 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     }
   };
 
-  const updateMetaData = (files, token) => {
+  const updateMetaData = (files, token, isPatientFile = false) => {
+    const metadataToUse = isPatientFile ? patientMetadata : metadata;
     files.forEach((file) => {
       const fileNameWithExtension = file.fileName || file.name;
-      const fileMetadata = metadata[fileNameWithExtension] || "";
+      const fileMetadata = metadataToUse[fileNameWithExtension] || "";
       const fileName = cleanFileName(removeFileExtension(fileNameWithExtension));
       const fileType = getFileType(fileNameWithExtension);
       fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
-        }instructor/update_metadata?patient_id=${encodeURIComponent(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/update_metadata?patient_id=${encodeURIComponent(
           patient.patient_id
         )}&filename=${encodeURIComponent(
           fileName
