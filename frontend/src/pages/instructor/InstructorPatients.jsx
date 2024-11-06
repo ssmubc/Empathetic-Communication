@@ -364,11 +364,11 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
               showSuccessToast={showSuccessToast}
             />
           </DialogContent>
-          <DialogActions>
+          {/* <DialogActions>
             <Button onClick={handleCloseNewPatientDialog} color="primary">
               Cancel
             </Button>
-          </DialogActions>
+          </DialogActions> */}
         </Dialog>
 
         <Dialog open={openEditPatientDialog} onClose={handleCloseEditPatientDialog} fullWidth maxWidth="md">
@@ -382,11 +382,11 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
               showSuccessToast={showSuccessToast}
             />
           </DialogContent>
-          <DialogActions>
+          {/* <DialogActions>
             <Button onClick={handleCloseEditPatientDialog} color="primary">
               Cancel
             </Button>
-          </DialogActions>
+          </DialogActions> */}
         </Dialog>
 
         <Button variant="contained" color="primary" onClick={handleSaveChanges}>
