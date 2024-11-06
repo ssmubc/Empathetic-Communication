@@ -207,11 +207,13 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   
       if (response.ok) {
         const data = await response.json();
+        console.log(data);
         const infoFiles = Object.entries(data.info_files).map(
           ([fileName, fileDetails]) => ({
             name: fileName,
             url: fileDetails.url,
-            type: fileName.split('.').pop().toLowerCase(), 
+            type: fileName.split('.').pop().toLowerCase(),
+            metadata: fileDetails.metadata,
           })
         );
         const profilePicture = data.profile_picture_url;
