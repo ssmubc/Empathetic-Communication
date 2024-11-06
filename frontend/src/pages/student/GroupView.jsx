@@ -17,6 +17,9 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
+import { Avatar, Tooltip } from "@mui/material"; // Import Avatar and Tooltip
+
+
 // Function to calculate the color based on the average score
 const calculateColor = (score) => {
   if (score === null) {
@@ -210,40 +213,48 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontSize: "1.1rem" }}>Patient</TableCell>
-                    <TableCell sx={{ fontSize: "1.1rem" }}>Completion</TableCell>
+                    <TableCell sx={{ fontSize: "1.1rem" }}>LLM Evaluation</TableCell>
+                    <TableCell sx={{ fontSize: "1.1rem" }}>Instructor Evaluation</TableCell>
                     <TableCell sx={{ fontSize: "1.1rem" }}>Review</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {data.map((entry, index) => (
                     <TableRow key={entry.patient_id + index}>
+                            <TableCell sx={{ fontSize: "1rem" }}>
+                            <div className="flex flex-row gap-3 items-center">
+                              {/* Display Avatar with profile picture or initial */}
+                              <Avatar
+                                src={profilePictures[entry.patient_id] || ""}
+                                alt={`${titleCase(entry.patient_name)} profile`}
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  backgroundColor: "#e0e0e0",
+                                  color: "#757575",
+                                  fontSize: "0.8rem",
+                                }}
+                              >
+                                {!profilePictures[entry.patient_id] && titleCase(entry.patient_name).charAt(0)}
+                              </Avatar>
+                              <div className="flex flex-row items-center gap-1">
+                                <span className="text-base">
+                                  {titleCase(entry.patient_name)}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
-                        <div className="flex flex-row gap-3 items-center">
-                          {/* Placeholder for patient profile picture */}
-                          <div
-                            className="w-10 h-10 rounded-full bg-gray-300"
-                            style={{
-                              backgroundColor: "#e0e0e0",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "0.8rem",
-                              color: "#757575",
-                            }}
+                        {entry.patient_score === 100 ? (
+                          <span
+                            className="bg-[#2E7D32] text-white text-light rounded px-2 py-2"
+                            style={{ display: "inline-block" }}
                           >
-                            <img
-                              src={profilePictures[entry.patient_id] || ""}
-                              alt={`${titleCase(entry.patient_name)} profile`}
-                              className="w-full h-full rounded-full"
-                            />
-                          </div>
-                          <div className="flex flex-row items-center gap-1">
-                            {/* <FaInfoCircle className="text-xs" /> */}
-                            <span className="text-base">
-                              {titleCase(entry.patient_name)}
-                            </span>
-                          </div>
-                        </div>
+                            Complete
+                          </span>
+                        ) : (
+                          "Incomplete"
+                        )}
                       </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
                         {entry.patient_score === 100 ? (

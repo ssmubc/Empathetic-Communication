@@ -47,11 +47,18 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
   const [deletedFiles, setDeletedFiles] = useState([]); // For LLM Upload
   const [metadata, setMetadata] = useState({}); // For LLM Upload
 
+
   const [patientFiles, setPatientFiles] = useState([]); // For Patient Info Upload
   const [newPatientFiles, setNewPatientFiles] = useState([]); // For Patient Info Upload
   const [savedPatientFiles, setSavedPatientFiles] = useState([]); // For Patient Info Upload
   const [deletedPatientFiles, setDeletedPatientFiles] = useState([]); // For Patient Info Upload
   const [patientMetadata, setPatientMetadata] = useState({}); // For Patient Info Upload
+
+  const [answerKeyFiles, setAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [newAnswerKeyFiles, setNewAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [savedAnswerKeyFiles, setSavedAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [deletedAnswerKeyFiles, setDeletedAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [answerKeyMetadata, setAnswerKeyMetadata] = useState({}); // For Answer Key Upload
 
   const [profilePicture, setProfilePicture] = useState(null); // For profile picture upload
   const [profilePicturePreview, setProfilePicturePreview] = useState(null); // For profile picture preview
@@ -233,6 +240,45 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
     return await Promise.all(newFilePromises);
   };
 
+  const uploadAnswerKeyFiles = async (newFiles, token, patientId) => {
+    const newFilePromises = newFiles.map((file) => {
+      const fileType = file.name.split('.').pop();
+      const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
+
+      return fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patientId
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=answer_key`, // Use a specific folder for answer keys
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((presignedUrl) => {
+          return fetch(presignedUrl.presignedurl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": file.type,
+            },
+            body: file,
+          });
+        });
+    });
+
+    return await Promise.all(newFilePromises);
+  };
+
+
   const updateMetaData = (files, token, patientId, metadata) => {
     files.forEach((file) => {
       const fileNameWithExtension = file.fileName || file.name;
@@ -384,6 +430,9 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
           prevFiles.filter((file) => !deletedPatientFiles.includes(file.fileName))
         );
         setSavedPatientFiles((prevFiles) => [...prevFiles, ...newPatientFiles]);
+        
+        setAnswerKeyFiles((prevFiles) => prevFiles.filter((file) => !deletedAnswerKeyFiles.includes(file.fileName)));
+        setSavedAnswerKeyFiles((prevFiles) => [...prevFiles, ...newAnswerKeyFiles]);
 
         setDeletedFiles([]);
         setNewFiles([]);
@@ -543,6 +592,25 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
           setMetadata={setPatientMetadata}
           isDocument={false}
         />
+
+        {/* Answer Key Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          Answer Key Upload
+        </Typography>
+        <FileManagement
+          newFiles={newAnswerKeyFiles}
+          setNewFiles={setNewAnswerKeyFiles}
+          files={answerKeyFiles}
+          setFiles={setAnswerKeyFiles}
+          setDeletedFiles={setDeletedAnswerKeyFiles}
+          savedFiles={savedAnswerKeyFiles}
+          setSavedFiles={setSavedAnswerKeyFiles}
+          loading={loading}
+          metadata={answerKeyMetadata}
+          setMetadata={setAnswerKeyMetadata}
+          isDocument={false}
+        />
+
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>
           <Grid item xs={4}>

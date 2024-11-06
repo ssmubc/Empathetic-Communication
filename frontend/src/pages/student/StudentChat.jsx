@@ -867,7 +867,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 style={{ color: "black" }}
               />
               {sidebarWidth > 160 && (
-                <span className="text-black">Reveal Patient Report</span>
+                <span className="text-black">Reveal Answer</span>
               )}
             </div>
           </button>
@@ -899,9 +899,10 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             />
             <img
               onClick={handleSubmit}
-              className="cursor-pointer w-3 h-3 mr-4"
+              className="cursor-pointer w-4 h-4 mr-5"
               src="./send.png"
               alt="send"
+              style={{ filter: "invert(58%) sepia(80%) saturate(600%) hue-rotate(100deg) brightness(90%) contrast(95%)" }} 
             />
           </div>
           <div className="flex-grow overflow-y-auto p-4 h-full">
@@ -962,7 +963,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
           <DialogTitle>Confirm Reveal</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to reveal the LLM Patient Diagnosis? This action will show the entire patient report.
+              Are you sure you want to reveal the Patient's Diagnosis? This action will show the entire answer.
             </DialogContentText>
           </DialogContent>
           <DialogActions>

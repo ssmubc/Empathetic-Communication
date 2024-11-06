@@ -10,7 +10,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InstructorNewPatient from "./InstructorNewPatient";
 import InstructorEditPatients from "./InstructorEditPatients";
-import { Dialog, DialogContent, DialogTitle, DialogActions } from "@mui/material";
+import { Dialog, DialogContent, DialogTitle, DialogActions, Switch, Tooltip } from "@mui/material";
 import { Avatar } from "@mui/material";
 
 function groupTitleCase(str) {
@@ -63,6 +63,20 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     });
   };
 
+  const handleSwitchChange = (patientId, newStatus) => {
+    // Update the LLM Completion state in `data`
+    setData((prevData) =>
+      prevData.map((patient) =>
+        patient.patient_id === patientId
+          ? { ...patient, llm_completion: newStatus }
+          : patient
+      )
+    );
+
+    console.log(`LLM Completion for Patient ID ${patientId}: ${newStatus ? "On" : "Off"}`);
+    // Future backend call can be added here to persist this state change
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -86,6 +100,21 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
       {
         accessorKey: "patient_gender",
         header: "Gender",
+      },
+      {
+        accessorKey: "llm_completion",
+        header: "LLM Completion",
+        Cell: ({ row }) => (
+          <Tooltip title="Turn on/off if the LLM evaluates the student">
+            <Switch
+              checked={row.original.llm_completion ?? false}
+              onChange={(e) =>
+                handleSwitchChange(row.original.patient_id, e.target.checked)
+              }
+              color="primary"
+            />
+          </Tooltip>
+        ),
       },
       {
         accessorKey: "actions",
@@ -335,11 +364,11 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
               showSuccessToast={showSuccessToast}
             />
           </DialogContent>
-          <DialogActions>
+          {/* <DialogActions>
             <Button onClick={handleCloseNewPatientDialog} color="primary">
               Cancel
             </Button>
-          </DialogActions>
+          </DialogActions> */}
         </Dialog>
 
         <Dialog open={openEditPatientDialog} onClose={handleCloseEditPatientDialog} fullWidth maxWidth="md">
@@ -353,11 +382,11 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
               showSuccessToast={showSuccessToast}
             />
           </DialogContent>
-          <DialogActions>
+          {/* <DialogActions>
             <Button onClick={handleCloseEditPatientDialog} color="primary">
               Cancel
             </Button>
-          </DialogActions>
+          </DialogActions> */}
         </Dialog>
 
         <Button variant="contained" color="primary" onClick={handleSaveChanges}>

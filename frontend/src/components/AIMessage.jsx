@@ -2,8 +2,9 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { dracula } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { Avatar } from "@mui/material";
 
-const AIMessage = ({ message, profilePicture }) => {
+const AIMessage = ({ message, profilePicture, name = "AI" }) => {
   const renderCodeBlock = (code, language) => {
     return (
       <SyntaxHighlighter
@@ -21,21 +22,19 @@ const AIMessage = ({ message, profilePicture }) => {
   return (
     <div className="ml-16 mb-6 mr-16">
       <div className="flex flex-row flex-start">
-        
-        <div
-          className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+        <Avatar
+          src={profilePicture || ""}
+          alt="Profile Picture"
+          sx={{
+            width: 40,
+            height: 40,
+            backgroundColor: "#e0e0e0",
+            color: "#757575",
+            fontSize: "0.8rem",
           }}
         >
-          <img
-            src={profilePicture || "/default-profile.png"} 
-            alt="Patient profile"
-            className="w-full h-full rounded-full"
-          />
-        </div>
+          {!profilePicture && name.charAt(0).toUpperCase()}
+        </Avatar>
         <div
           className="text-start ml-4 text-black"
           style={{ maxWidth: "61vw", width: "61vw", wordWrap: "break-word" }}
@@ -56,7 +55,8 @@ const AIMessage = ({ message, profilePicture }) => {
 
 AIMessage.propTypes = {
   message: PropTypes.string.isRequired,
-  profilePicture: PropTypes.string, 
+  profilePicture: PropTypes.string,
+  name: PropTypes.string, 
 };
 
 export default AIMessage;

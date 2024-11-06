@@ -62,6 +62,12 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const [savedPatientFiles, setSavedPatientFiles] = useState([]);
   const [deletedPatientFiles, setDeletedPatientFiles] = useState([]);
 
+  const [answerKeyFiles, setAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [newAnswerKeyFiles, setNewAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [savedAnswerKeyFiles, setSavedAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [deletedAnswerKeyFiles, setDeletedAnswerKeyFiles] = useState([]); // For Answer Key Upload
+  const [answerKeyMetadata, setAnswerKeyMetadata] = useState({}); // For Answer Key Upload
+
   const [patient, setPatient] = useState(null);
   const [patientName, setPatientName] = useState("");
   const [patientAge, setPatientAge] = useState("");
@@ -450,6 +456,47 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     setSavedPatientFiles((prevFiles) => [...prevFiles, ...uploadedPatientFiles]);
   };
 
+
+  const uploadAnswerKeyFiles = async (newFiles, token) => {
+    const uploadPromises = newFiles.map(async (file) => {
+      const fileType = file.name.split('.').pop();
+      const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+          simulation_group_id
+        )}&patient_id=${encodeURIComponent(
+          patient.patient_id
+        )}&patient_name=${encodeURIComponent(
+          patientName
+        )}&file_type=${encodeURIComponent(
+          fileType
+        )}&file_name=${encodeURIComponent(fileName)}&folder_type=answer_key`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const presignedUrl = await response.json();
+      await fetch(presignedUrl.presignedurl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+      return file;
+    });
+
+    const uploadedAnswerKeyFiles = await Promise.all(uploadPromises);
+    setSavedAnswerKeyFiles((prevFiles) => [...prevFiles, ...uploadedAnswerKeyFiles]);
+  };
+
+
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -489,6 +536,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       await deleteFiles(deletedPatientFiles, token);
       await uploadFiles(newFiles, token); // Upload LLM files
       await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
+      await uploadAnswerKeyFiles(newAnswerKeyFiles, token);
   
       // Upload profile picture and update the preview
       if (profilePicture) {
@@ -514,6 +562,9 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       setNewFiles([]);
       setDeletedPatientFiles([]);
       setNewPatientFiles([]);
+      setDeletedAnswerKeyFiles([]);
+      setNewAnswerKeyFiles([]);
+
       showSuccessToast("Patient updated successfully");  
       onClose();
     } catch (error) {
@@ -700,6 +751,11 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
           setMetadata={setPatientMetadata}
           isDocument={false}
         />
+
+        {/* Answer Key Upload Section */}
+        <Typography variant="h6" style={{ marginTop: 20 }}>Answer Key Upload</Typography>
+        <FileManagement newFiles={newAnswerKeyFiles} setNewFiles={setNewAnswerKeyFiles} files={answerKeyFiles} setFiles={setAnswerKeyFiles} setDeletedFiles={setDeletedAnswerKeyFiles} savedFiles={savedAnswerKeyFiles} setSavedFiles={setSavedAnswerKeyFiles} loading={loading} metadata={answerKeyMetadata} setMetadata={setAnswerKeyMetadata} isDocument={false} />
+
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>
           <Grid item xs={4}>
