@@ -486,6 +486,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
+      await deleteFiles(deletedPatientFiles, token);
       await uploadFiles(newFiles, token); // Upload LLM files
       await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
   
