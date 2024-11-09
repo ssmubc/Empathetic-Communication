@@ -414,11 +414,13 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
         await uploadProfilePicture(profilePicture, token, updatedPatient.patient_id); // Upload profile picture
         await uploadFiles(newFiles, token, updatedPatient.patient_id); // LLM Upload
         await uploadPatientFiles(newPatientFiles, token, updatedPatient.patient_id); // Patient Info Upload
+        await uploadAnswerKeyFiles(newAnswerKeyFiles, token, updatedPatient.patient_id); // Answer Key Upload
 
         // Update metadata for both LLM and patient files
         await Promise.all([
           updateMetaData(newFiles, token, updatedPatient.patient_id, metadata),
-          updateMetaData(newPatientFiles, token, updatedPatient.patient_id, patientMetadata)
+          updateMetaData(newPatientFiles, token, updatedPatient.patient_id, patientMetadata),
+          updateMetaData(newAnswerKeyFiles, token, updatedPatient.patient_id, answerKeyMetadata),
         ]);
 
         setFiles((prevFiles) =>
@@ -431,13 +433,17 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
         );
         setSavedPatientFiles((prevFiles) => [...prevFiles, ...newPatientFiles]);
         
-        setAnswerKeyFiles((prevFiles) => prevFiles.filter((file) => !deletedAnswerKeyFiles.includes(file.fileName)));
+        setAnswerKeyFiles((prevFiles) => 
+          prevFiles.filter((file) => !deletedAnswerKeyFiles.includes(file.fileName))
+        );
         setSavedAnswerKeyFiles((prevFiles) => [...prevFiles, ...newAnswerKeyFiles]);
 
         setDeletedFiles([]);
         setNewFiles([]);
         setDeletedPatientFiles([]);
         setNewPatientFiles([]);
+        setDeletedAnswerKeyFiles([]);
+        setNewAnswerKeyFiles([]);
         showSuccessToast("Patient Created Successfully");
         onPatientCreated(updatedPatient);        
         onClose();

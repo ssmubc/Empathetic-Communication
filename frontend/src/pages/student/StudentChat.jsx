@@ -5,9 +5,8 @@ import StudentMessage from "../../components/StudentMessage";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { useNavigate } from "react-router-dom";
 import { fetchUserAttributes } from "aws-amplify/auth";
-import DraggableNotes from "./DraggableNotes"; // Correctly import DraggableNotes component
-import PatientInfo from "./PatientInfo";   // Importing the PatientInfo component
-import LLMDiagnosisInfo from "./LLMDiagnosisInfo"; // Import the new component
+import DraggableNotes from "./DraggableNotes";
+import FilesPopout from "./FilesPopout";
 
 
 import {
@@ -15,10 +14,10 @@ import {
 } from "@mui/material";
 
 
-// Importing icons for Notes and Patient Info
+// Importing icons
 import DescriptionIcon from "@mui/icons-material/Description";
 import InfoIcon from "@mui/icons-material/Info";
-import KeyIcon from '@mui/icons-material/Key'; // Import KeyIcon
+import KeyIcon from '@mui/icons-material/Key';
 
 
 // Importing l-mirage animation
@@ -64,13 +63,16 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
   const [isAItyping, setIsAItyping] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [isNotesOpen, setIsNotesOpen] = useState(false); // NEW ADDITIOPN Dialog control for Notes
-  const [isPatientInfoOpen, setIsPatientInfoOpen] = useState(false); // NEW ADDITION Dialog control for Patient Info
-  const [isLLMDiagnosisOpen, setIsLLMDiagnosisOpen] = useState(false); // LLM Diagnosis Modal control
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false); // Confirmation dialog control
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isPatientInfoOpen, setIsPatientInfoOpen] = useState(false);
+  const [isAnswerKeyOpen, setIsAnswerKeyOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [patientInfoFiles, setPatientInfoFiles] = useState([]);
   const [isInfoLoading, setIsInfoLoading] = useState(false);
+
+  const [answerKeyFiles, setAnswerKeyFiles] = useState([]);
+  const [isAnswerLoading, setIsAnswerLoading] = useState(false);
 
   const [profilePicture, setProfilePicture] = useState({});
 
@@ -188,6 +190,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
 
   const fetchFiles = async () => {
     setIsInfoLoading(true);
+    setIsAnswerLoading(true);
     try {
       const session = await fetchAuthSession();
       const token = session.tokens.idToken;
@@ -216,9 +219,18 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
             metadata: fileDetails.metadata,
           })
         );
+        const answerKeyFiles = Object.entries(data.answer_key_files).map(
+          ([fileName, fileDetails]) => ({
+            name: fileName,
+            url: fileDetails.url,
+            type: fileName.split('.').pop().toLowerCase(),
+            metadata: fileDetails.metadata,
+          })
+        );
         const profilePicture = data.profile_picture_url;
         setProfilePicture(profilePicture);
-        setPatientInfoFiles(infoFiles); // Store only `info_files`
+        setPatientInfoFiles(infoFiles);
+        setAnswerKeyFiles(answerKeyFiles);
       } else {
         console.error("Failed to fetch patient info files:", response.statusText);
       }
@@ -226,6 +238,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
       console.error("Error fetching patient info files:", error);
     } finally {      
       setIsInfoLoading(false);
+      setIsAnswerLoading(false);
     }
   };
 
@@ -722,10 +735,10 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
     setIsConfirmOpen(false);
   };
 
-  // Open the LLM Diagnosis modal after confirmation
+  // Open the modal for Answer Key(s) after confirmation
   const handleConfirmReveal = () => {
     setIsConfirmOpen(false);
-    setIsLLMDiagnosisOpen(true);
+    setIsAnswerKeyOpen(true);
   };
 
   if (!patient) {
@@ -945,19 +958,18 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
           />
         )}
 
-        {/* Patient Info Modal */}
-        <PatientInfo
+        <FilesPopout
           open={isPatientInfoOpen}
           onClose={() => setIsPatientInfoOpen(false)}
-          infoFiles={patientInfoFiles}
+          files={patientInfoFiles}
           isLoading={isInfoLoading}
         />
 
-        <LLMDiagnosisInfo
-          open={isLLMDiagnosisOpen}
-          onClose={() => setIsLLMDiagnosisOpen(false)}
-          simulationGroupId={group.simulation_group_id}
-          patientId={patient.patient_id}
+        <FilesPopout
+          open={isAnswerKeyOpen}
+          onClose={() => setIsAnswerKeyOpen(false)}
+          files={answerKeyFiles}
+          isLoading={isAnswerLoading}
         />
 
         {/* Confirmation Dialog for Reveal */}

@@ -69,8 +69,8 @@ def lambda_handler(event, context):
         "cbz": "application/vnd.comicbook+zip"
     }
 
-    # Allowed file types for information with their corresponding MIME types
-    allowed_info_types = {
+    # Allowed file types for information and answer keys with their corresponding MIME types
+    allowed_generic_types = {
         "pdf": "application/pdf",
         "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -91,9 +91,12 @@ def lambda_handler(event, context):
     if folder_type == "documents" and file_type in allowed_document_types:
         key = f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"
         content_type = allowed_document_types[file_type]
-    elif folder_type == "info" and file_type in allowed_info_types:
+    elif folder_type == "info" and file_type in allowed_generic_types:
         key = f"{simulation_group_id}/{patient_id}/info/{file_name}.{file_type}"
-        content_type = allowed_info_types[file_type]
+        content_type = allowed_generic_types[file_type]
+    elif folder_type == "answer_key" and file_type in allowed_generic_types:
+        key = f"{simulation_group_id}/{patient_id}/answer_key/{file_name}.{file_type}"
+        content_type = allowed_generic_types[file_type]
     elif folder_type == "profile_picture":
         key = f"{simulation_group_id}/{patient_id}/profile_picture/{file_name}.{file_type}"
         content_type = 'image/png'

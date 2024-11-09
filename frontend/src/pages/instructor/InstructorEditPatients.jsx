@@ -51,6 +51,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const [isSaving, setIsSaving] = useState(false);
   const [metadata, setMetadata] = useState({});
   const [patientMetadata, setPatientMetadata] = useState({});
+  const [answerKeyMetadata, setAnswerKeyMetadata] = useState({});
 
   const [files, setFiles] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
@@ -62,11 +63,10 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const [savedPatientFiles, setSavedPatientFiles] = useState([]);
   const [deletedPatientFiles, setDeletedPatientFiles] = useState([]);
 
-  const [answerKeyFiles, setAnswerKeyFiles] = useState([]); // For Answer Key Upload
-  const [newAnswerKeyFiles, setNewAnswerKeyFiles] = useState([]); // For Answer Key Upload
-  const [savedAnswerKeyFiles, setSavedAnswerKeyFiles] = useState([]); // For Answer Key Upload
-  const [deletedAnswerKeyFiles, setDeletedAnswerKeyFiles] = useState([]); // For Answer Key Upload
-  const [answerKeyMetadata, setAnswerKeyMetadata] = useState({}); // For Answer Key Upload
+  const [answerKeyFiles, setAnswerKeyFiles] = useState([]);
+  const [newAnswerKeyFiles, setNewAnswerKeyFiles] = useState([]);
+  const [savedAnswerKeyFiles, setSavedAnswerKeyFiles] = useState([]);
+  const [deletedAnswerKeyFiles, setDeletedAnswerKeyFiles] = useState([]);
 
   const [patient, setPatient] = useState(null);
   const [patientName, setPatientName] = useState("");
@@ -189,6 +189,24 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     return resultArray;
   }
 
+  function convertAnswerKeyFilesToArray(files) {
+    const answerKeyFiles = files.answer_key_files;
+    const resultArray = Object.entries({
+      ...answerKeyFiles,
+    }).map(([fileName, url]) => ({
+      fileName,
+      url,
+    }));
+
+    const metadata = resultArray.reduce((acc, { fileName, url }) => {
+      acc[fileName] = url.metadata;
+      return acc;
+    }, {});
+
+    setAnswerKeyMetadata(metadata);
+    return resultArray;
+  }
+
   function removeFileExtension(fileName) {
     return fileName.replace(/\.[^/.]+$/, "");
   }
@@ -214,6 +232,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         const fileData = await response.json();
         setFiles(convertDocumentFilesToArray(fileData));
         setPatientFiles(convertInfoFilesToArray(fileData));
+        setAnswerKeyFiles(convertAnswerKeyFilesToArray(fileData));
 
         if (fileData.profile_picture_url) {
           setProfilePicturePreview(fileData.profile_picture_url);
@@ -457,10 +476,10 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   };
 
 
-  const uploadAnswerKeyFiles = async (newFiles, token) => {
-    const uploadPromises = newFiles.map(async (file) => {
-      const fileType = file.name.split('.').pop();
-      const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
+  const uploadAnswerKeyFiles = async (newAnswerKeyFiles, token) => {
+    const uploadPromises = newAnswerKeyFiles.map(async (file) => {
+      const fileType = getFileType(file.name);
+      const fileName = cleanFileName(removeFileExtension(file.name));
 
       const response = await fetch(
         `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
@@ -534,8 +553,9 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
       await deleteFiles(deletedPatientFiles, token);
-      await uploadFiles(newFiles, token); // Upload LLM files
-      await uploadPatientFiles(newPatientFiles, token); // Upload Patient Info files
+      await deleteFiles(deletedAnswerKeyFiles, token);
+      await uploadFiles(newFiles, token);
+      await uploadPatientFiles(newPatientFiles, token);
       await uploadAnswerKeyFiles(newAnswerKeyFiles, token);
   
       // Upload profile picture and update the preview
@@ -545,12 +565,15 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       }
   
       await Promise.all([
-        updateMetaData(files, token),
-        updateMetaData(savedFiles, token),
-        updateMetaData(newFiles, token),
-        updateMetaData(patientFiles, token, true),
-        updateMetaData(savedPatientFiles, token, true),
-        updateMetaData(newPatientFiles, token, true),
+        updateMetaData(files, token, metadata),
+        updateMetaData(savedFiles, token, metadata),
+        updateMetaData(newFiles, token, metadata),
+        updateMetaData(patientFiles, token, patientMetadata),
+        updateMetaData(savedPatientFiles, token, patientMetadata),
+        updateMetaData(newPatientFiles, token, patientMetadata),
+        updateMetaData(answerKeyFiles, token, answerKeyMetadata),
+        updateMetaData(savedAnswerKeyFiles, token, answerKeyMetadata),
+        updateMetaData(newAnswerKeyFiles, token, answerKeyMetadata),
       ]);
   
       // Refresh the file list in case of new or deleted files
@@ -575,8 +598,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     }
   };
 
-  const updateMetaData = (files, token, isPatientFile = false) => {
-    const metadataToUse = isPatientFile ? patientMetadata : metadata;
+  const updateMetaData = (files, token, metadataToUse) => {
     files.forEach((file) => {
       const fileNameWithExtension = file.fileName || file.name;
       const fileMetadata = metadataToUse[fileNameWithExtension] || "";
@@ -753,9 +775,22 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         />
 
         {/* Answer Key Upload Section */}
-        <Typography variant="h6" style={{ marginTop: 20 }}>Answer Key Upload</Typography>
-        <FileManagement newFiles={newAnswerKeyFiles} setNewFiles={setNewAnswerKeyFiles} files={answerKeyFiles} setFiles={setAnswerKeyFiles} setDeletedFiles={setDeletedAnswerKeyFiles} savedFiles={savedAnswerKeyFiles} setSavedFiles={setSavedAnswerKeyFiles} loading={loading} metadata={answerKeyMetadata} setMetadata={setAnswerKeyMetadata} isDocument={false} />
-
+        <Typography variant="h6" style={{ marginTop: 20 }}>
+          Answer Key Upload
+        </Typography>
+        <FileManagement
+          newFiles={newAnswerKeyFiles}
+          setNewFiles={setNewAnswerKeyFiles}
+          files={answerKeyFiles}
+          setFiles={setAnswerKeyFiles}
+          setDeletedFiles={setDeletedAnswerKeyFiles}
+          savedFiles={savedAnswerKeyFiles}
+          setSavedFiles={setSavedAnswerKeyFiles}
+          loading={loading}
+          metadata={answerKeyMetadata}
+          setMetadata={setAnswerKeyMetadata}
+          isDocument={false}
+        />
 
         <Grid container spacing={2} style={{ marginTop: 16 }}>
           <Grid item xs={4}>

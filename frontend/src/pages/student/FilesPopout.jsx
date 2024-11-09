@@ -27,7 +27,7 @@ const IMAGE_FILE_TYPES = [
   "sgi", "tga", "tiff", "tif", "webp", "xbm"
 ];
 
-function PatientInfo({ open, onClose, infoFiles, isLoading }) {
+function FilesPopout({ open, onClose, files, isLoading }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -93,7 +93,7 @@ function PatientInfo({ open, onClose, infoFiles, isLoading }) {
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "200px" }}>
             <l-hourglass size="40" bg-opacity="0.1" speed="1.75" color="black" />
           </div>
-        ) : infoFiles.length === 0 ? (
+        ) : files.length === 0 ? (
           <Typography>No patient information files available.</Typography>
         ) : (
           <TableContainer>
@@ -105,7 +105,7 @@ function PatientInfo({ open, onClose, infoFiles, isLoading }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {infoFiles.map((file, index) => (
+                {files.map((file, index) => (
                   <TableRow key={index} hover onClick={() => handleFileClick(file)} style={{ cursor: 'pointer' }}>
                     <TableCell>{file.name}</TableCell>
                     <TableCell>{file.metadata || "No description available"}</TableCell>
@@ -186,4 +186,4 @@ function PatientInfo({ open, onClose, infoFiles, isLoading }) {
   );
 }
 
-export default PatientInfo;
+export default FilesPopout;
