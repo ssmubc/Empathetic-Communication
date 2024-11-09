@@ -108,7 +108,8 @@ def handler(event, context):
                 "enrolment_id" uuid,
                 "patient_score" integer,
                 "last_accessed" timestamp,
-                "patient_context_embedding" float[]
+                "patient_context_embedding" float[],
+                "is_completed" BOOLEAN DEFAULT FALSE
             );
 
             CREATE TABLE IF NOT EXISTS "sessions" (

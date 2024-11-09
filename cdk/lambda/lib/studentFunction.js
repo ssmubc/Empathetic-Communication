@@ -266,7 +266,8 @@ exports.handler = async (event) => {
                   sp.student_interaction_id,
                   sp.patient_score,
                   sp.last_accessed,
-                  sp.patient_context_embedding
+                  sp.patient_context_embedding,
+                  sp.is_completed
                 FROM
                   "patients" p
                 LEFT JOIN
@@ -883,8 +884,8 @@ exports.handler = async (event) => {
               // Step 5: Insert a record into student_interactions for each patient
               const studentPatientInsertions = patientsResult.map((patient) => {
                 return sqlConnection`
-                      INSERT INTO "student_interactions" (student_interaction_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
-                      VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL);
+                      INSERT INTO "student_interactions" (student_interaction_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding, is_completed)
+                      VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL, FALSE);
                   `;
               });
     

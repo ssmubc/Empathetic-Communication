@@ -121,7 +121,7 @@ const StudentDetails = () => {
   const [sessions, setSessions] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [completion, setCompletion] = useState(false); // State for Completion switch
+  const [completion, setCompletion] = useState(false);
   const sessionRefs = useRef({});
   
 
@@ -153,34 +153,6 @@ const StudentDetails = () => {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-      }
-    };
-
-    // Fetch initial completion status
-    const fetchCompletionStatus = async () => {
-      try {
-        const session = await fetchAuthSession();
-        const token = session.tokens.idToken;
-        const response = await fetch(
-          `${import.meta.env.VITE_API_ENDPOINT}instructor/get_completion_status?simulation_group_id=${encodeURIComponent(
-            simulation_group_id
-          )}&student_email=${encodeURIComponent(student.email)}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: token,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setCompletion(data.is_completed);
-        } else {
-          console.error("Failed to fetch completion status:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching completion status:", error);
       }
     };
 
@@ -390,7 +362,7 @@ const StudentDetails = () => {
               ))
             ) : (
               <Typography sx={{ ml: 2, mt: 4 }} variant="body1">
-                Student has not entered any simulation groups yet.
+                Student does not have chat history.
               </Typography>
             )}
 

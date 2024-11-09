@@ -120,8 +120,8 @@ exports.handler = async (event) => {
                 // Insert a record into student_interactions for each patient in the simulation group
                 const studentInteractionInsertions = patientsResult.map((patient) => {
                   return sqlConnectionTableCreator`
-                      INSERT INTO "student_interactions" (student_interaction_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding)
-                      VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL);
+                      INSERT INTO "student_interactions" (student_interaction_id, patient_id, enrolment_id, patient_score, last_accessed, patient_context_embedding, is_completed)
+                      VALUES (uuid_generate_v4(), ${patient.patient_id}, ${enrolment_id}, 0, CURRENT_TIMESTAMP, NULL, FALSE);
                     `;
                 });
       
