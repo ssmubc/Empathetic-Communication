@@ -117,11 +117,12 @@ const StudentDetails = () => {
   const { studentId } = useParams();
   const location = useLocation();
   const { simulation_group_id, student } = location.state;
+  // console.log(student);
   const [tabs, setTabs] = useState([]);
   const [sessions, setSessions] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [completion, setCompletion] = useState(false);
+  const [completionStatuses, setCompletionStatuses] = useState([]);
   const sessionRefs = useRef({});
   
 
@@ -158,6 +159,73 @@ const StudentDetails = () => {
 
     fetchHistory();
   }, [simulation_group_id, student.email]);
+
+  useEffect(() => {
+    const fetchCompletionStatuses = async () => {
+      try {
+        const session = await fetchAuthSession();
+        const token = session.tokens.idToken;
+        const response = await fetch(
+          `${import.meta.env.VITE_API_ENDPOINT            
+          }instructor/get_completion_status?simulation_group_id=${encodeURIComponent(
+            simulation_group_id
+          )}&student_email=${encodeURIComponent(student.email)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+  
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data);
+          setCompletionStatuses(data); // Set state with completion statuses
+        } else {
+          console.error("Failed to fetch completion statuses:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching completion statuses:", error);
+      }
+    };
+  
+    fetchCompletionStatuses();
+  }, [simulation_group_id, student.email]);
+
+  const toggleCompletionStatus = async (studentInteractionId) => {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken;
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT          
+        }instructor/toggle_completion?student_interaction_id=${studentInteractionId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (response.ok) {
+        const data = await response.json();
+        setCompletionStatuses((prevStatuses) =>
+          prevStatuses.map((status) =>
+            status.student_interaction_id === studentInteractionId
+              ? { ...status, is_completed: data.is_completed }
+              : status
+          )
+        );
+      } else {
+        console.error("Failed to toggle completion status:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error toggling completion status:", error);
+    }
+  };
 
   const handleDialogOpen = () => {
     setDialogOpen(true);
@@ -367,7 +435,7 @@ const StudentDetails = () => {
             )}
 
             {/* Tooltip-wrapped Completion Switch with student's name */}
-            <Tooltip title={`Manually set the completion status for ${studentId}`} arrow>
+            {/* <Tooltip title={`Manually set the completion status for ${studentId}`} arrow>
               <FormControlLabel
                 control={
                   <Switch
@@ -378,7 +446,29 @@ const StudentDetails = () => {
                 label="Completion"
                 sx={{ mt: 4 }}
               />
-            </Tooltip>
+            </Tooltip> */}
+            <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
+              Patient Completion Status:
+            </Typography>
+            {/* Render each patient's completion status with toggle */}
+            {completionStatuses.map((status) => (
+              <Tooltip
+                key={status.student_interaction_id}
+                title={`Toggle completion status for ${status.patient_name}`}
+                arrow
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={status.is_completed}
+                      onChange={() => toggleCompletionStatus(status.student_interaction_id)}
+                    />
+                  }
+                  label={`${status.patient_name} Completion`}
+                  sx={{ mt: 2 }}
+                />
+              </Tooltip>
+            ))}
           </Box>
         </Paper>
       </PageContainer>
