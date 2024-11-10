@@ -14,11 +14,10 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
-import { Avatar, Tooltip } from "@mui/material"; // Import Avatar and Tooltip
-
 
 // Function to calculate the color based on the average score
 const calculateColor = (score) => {
@@ -73,6 +72,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [profilePictures, setProfilePictures] = useState({});
+  const [completionStatuses, setCompletionStatuses] = useState({});
 
   const navigate = useNavigate();
   const enterPatient = (patient) => {
@@ -113,6 +113,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
           const data = await response.json();
           setData(data);
           await fetchProfilePictures(data);
+          fetchCompletionStatuses();
           setLoading(false);
           console.log(data);
         } else {
@@ -122,36 +123,73 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
         console.error("Error fetching name:", error);
       }
     };
+
+    const fetchCompletionStatuses = async () => {
+      try {
+        const session = await fetchAuthSession();
+        const { email } = await fetchUserAttributes();
+        const token = session.tokens.idToken;
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_ENDPOINT}student/get_completion_status?simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
+          )}&student_email=${encodeURIComponent(email)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const completionMap = data.reduce((acc, entry) => {
+            acc[entry.patient_name] = entry.is_completed;
+            return acc;
+          }, {});
+          setCompletionStatuses(completionMap);
+        } else {
+          console.error("Failed to fetch completion statuses:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching completion statuses:", error);
+      }
+    };
+
+    const fetchProfilePictures = async (patients) => {
+      try {
+        const session = await fetchAuthSession();
+        const token = session.tokens.idToken;
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_ENDPOINT}student/get_profile_pictures?simulation_group_id=${encodeURIComponent(
+            group.simulation_group_id
+          )}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: token,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ patient_ids: patients.map((p) => p.patient_id) }),
+          }
+        );
+
+        if (response.ok) {
+          const profilePics = await response.json();
+          setProfilePictures(profilePics);
+        } else {
+          console.error("Failed to fetch profile pictures:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching profile pictures:", error);
+      }
+    };
+
     fetchGroupPage();
   }, [group]);
-
-  const fetchProfilePictures = async (patients) => {
-    try {
-      const session = await fetchAuthSession();
-      const token = session.tokens.idToken;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}student/get_profile_pictures?simulation_group_id=${encodeURIComponent(group.simulation_group_id)}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ patient_ids: patients.map((p) => p.patient_id) }),
-        }
-      );
-
-      if (response.ok) {
-        const profilePics = await response.json();
-        setProfilePictures(profilePics);
-      } else {
-        console.error("Failed to fetch profile pictures:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error fetching profile pictures:", error);
-    }
-  };
 
   useEffect(() => {
     sessionStorage.removeItem("patient");
@@ -257,7 +295,7 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                         )}
                       </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
-                        {entry.patient_score === 100 ? (
+                        {completionStatuses[entry.patient_name] ? (
                           <span
                             className="bg-[#2E7D32] text-white text-light rounded px-2 py-2"
                             style={{ display: "inline-block" }}

@@ -1135,6 +1135,50 @@ exports.handler = async (event) => {
             response.body = JSON.stringify({ error: "Invalid input." });
         }
         break;
+      case "GET /student/get_completion_status":
+        if (
+          event.queryStringParameters != null &&
+          event.queryStringParameters.student_email &&
+          event.queryStringParameters.simulation_group_id
+        ) {
+          const { student_email, simulation_group_id } = event.queryStringParameters;
+      
+          try {
+            // Step 1: Get the user_id from the student's email
+            const userResult = await sqlConnection`
+              SELECT user_id FROM "users" WHERE user_email = ${student_email} LIMIT 1;
+            `;
+      
+            const userId = userResult[0]?.user_id;
+      
+            if (!userId) {
+              response.statusCode = 404;
+              response.body = JSON.stringify({ error: "Student not found" });
+              break;
+            }
+      
+            // Step 2: Fetch all interactions with completion status for the specified simulation group
+            const completionStatus = await sqlConnection`
+              SELECT si.student_interaction_id, si.is_completed, p.patient_name
+              FROM "student_interactions" si
+              JOIN "patients" p ON si.patient_id = p.patient_id
+              JOIN "enrolments" e ON si.enrolment_id = e.enrolment_id
+              WHERE e.user_id = ${userId} AND e.simulation_group_id = ${simulation_group_id}
+              ORDER BY p.patient_name;
+            `;
+      
+            response.statusCode = 200;
+            response.body = JSON.stringify(completionStatus);
+          } catch (err) {
+            response.statusCode = 500;
+            console.error(err);
+            response.body = JSON.stringify({ error: "Internal server error" });
+          }
+        } else {
+          response.statusCode = 400;
+          response.body = JSON.stringify({ error: "student_email and simulation_group_id are required" });
+        }
+        break;
       default:
         throw new Error(`Unsupported route: "${pathData}"`);
     }
