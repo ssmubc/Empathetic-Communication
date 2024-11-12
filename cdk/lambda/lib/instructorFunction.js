@@ -768,7 +768,7 @@ exports.handler = async (event) => {
             try {
                 // Query to get all patients for the given simulation group
                 const simulationPatients = await sqlConnection`
-                    SELECT p.patient_id, p.patient_name, p.patient_age, p.patient_gender, p.patient_prompt
+                    SELECT p.patient_id, p.patient_name, p.patient_age, p.patient_gender, p.patient_prompt, p.llm_completion
                     FROM "patients" p
                     WHERE p.simulation_group_id = ${simulation_group_id}
                     ORDER BY p.patient_name ASC;
@@ -1163,6 +1163,46 @@ exports.handler = async (event) => {
         } else {
           response.statusCode = 400;
           response.body = JSON.stringify({ error: "student_interaction_id is required" });
+        }
+        break;
+      case "PUT /instructor/toggle_llm_completion":
+        if (event.queryStringParameters != null && event.queryStringParameters.patient_id) {
+            const { patient_id } = event.queryStringParameters;
+    
+            try {
+                // Retrieve the current llm_completion status for the patient
+                const result = await sqlConnection`
+                    SELECT llm_completion FROM "patients" WHERE patient_id = ${patient_id};
+                `;
+    
+                if (result.length > 0) {
+                    // Toggle the llm_completion value
+                    const newStatus = !result[0].llm_completion;
+    
+                    // Update the status to the opposite value in the database
+                    await sqlConnection`
+                        UPDATE "patients"
+                        SET llm_completion = ${newStatus}
+                        WHERE patient_id = ${patient_id};
+                    `;
+    
+                    response.statusCode = 200;
+                    response.body = JSON.stringify({
+                        message: "LLM completion status updated",
+                        llm_completion: newStatus,
+                    });
+                } else {
+                    response.statusCode = 404;
+                    response.body = JSON.stringify({ error: "Patient not found" });
+                }
+            } catch (err) {
+                response.statusCode = 500;
+                console.error(err);
+                response.body = JSON.stringify({ error: "Internal server error" });
+            }
+        } else {
+            response.statusCode = 400;
+            response.body = JSON.stringify({ error: "patient_id is required" });
         }
         break;
 

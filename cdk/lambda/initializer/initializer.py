@@ -78,7 +78,8 @@ def handler(event, context):
                 "patient_age" integer,
                 "patient_gender" varchar,
                 "patient_number" integer,
-                "patient_prompt" text
+                "patient_prompt" text,
+                "llm_completion"  BOOLEAN DEFAULT TRUE
             );
 
             CREATE TABLE IF NOT EXISTS "enrolments" (

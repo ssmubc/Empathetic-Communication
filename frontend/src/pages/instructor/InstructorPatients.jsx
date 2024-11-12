@@ -63,18 +63,40 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
     });
   };
 
-  const handleSwitchChange = (patientId, newStatus) => {
+  const handleSwitchChange = async (patientId, currentStatus) => {
     // Update the LLM Completion state in `data`
     setData((prevData) =>
       prevData.map((patient) =>
         patient.patient_id === patientId
-          ? { ...patient, llm_completion: newStatus }
+          ? { ...patient, llm_completion: !currentStatus }
           : patient
       )
     );
 
-    console.log(`LLM Completion for Patient ID ${patientId}: ${newStatus ? "On" : "Off"}`);
-    // Future backend call can be added here to persist this state change
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens.idToken;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_ENDPOINT}instructor/toggle_llm_completion?patient_id=${encodeURIComponent(
+          patientId
+        )}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Failed to update LLM completion status:", response.statusText);
+        toast.error("Failed to update LLM completion status");
+      }
+    } catch (error) {
+      console.error("Error updating LLM completion status:", error);
+    }
   };
 
   const columns = useMemo(
@@ -108,8 +130,8 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
           <Tooltip title="Turn on/off if the LLM evaluates the student">
             <Switch
               checked={row.original.llm_completion ?? false}
-              onChange={(e) =>
-                handleSwitchChange(row.original.patient_id, e.target.checked)
+              onChange={() =>
+                handleSwitchChange(row.original.patient_id, row.original.llm_completion)
               }
               color="primary"
             />
