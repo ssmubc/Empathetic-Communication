@@ -263,6 +263,7 @@ exports.handler = async (event) => {
                   p.patient_age,
                   p.patient_gender,
                   p.patient_number,
+                  p.llm_completion,
                   sp.student_interaction_id,
                   sp.patient_score,
                   sp.last_accessed,

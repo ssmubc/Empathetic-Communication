@@ -283,15 +283,24 @@ export const GroupView = ({ group, setPatient, setGroup }) => {
                             </div>
                           </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
-                        {entry.patient_score === 100 ? (
-                          <span
-                            className="bg-[#2E7D32] text-white text-light rounded px-2 py-2"
-                            style={{ display: "inline-block" }}
-                          >
-                            Complete
-                          </span>
-                        ) : (
-                          "Incomplete"
+                        {entry.llm_completion ? (
+                          entry.patient_score === 100 ? (
+                              <span
+                                className="bg-[#2E7D32] text-white text-light rounded px-2 py-2"
+                                style={{ display: "inline-block" }}
+                              >
+                                Complete
+                              </span>
+                            ) : (
+                              "Incomplete"
+                            )
+                          ) : (
+                            <span
+                              className="bg-gray-500 text-white text-light rounded px-2 py-2"
+                              style={{ display: "inline-block" }}
+                            >
+                              LLM is not checking
+                            </span>
                         )}
                       </TableCell>
                       <TableCell sx={{ fontSize: "1rem" }}>
