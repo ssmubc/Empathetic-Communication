@@ -53,58 +53,6 @@ embeddings = BedrockEmbeddings(
 
 create_dynamodb_history_table(TABLE_NAME)
 
-def get_patient_name(patient_id):
-    connection = None
-    cur = None
-    try:
-        logger.info(f"Fetching patient name for patient_id: {patient_id}")
-        db_secret = get_secret(DB_SECRET_NAME)
-
-        connection_params = {
-            'dbname': db_secret["dbname"],
-            'user': db_secret["username"],
-            'password': db_secret["password"],
-            'host': db_secret["host"],
-            'port': db_secret["port"]
-        }
-
-        connection_string = " ".join([f"{key}={value}" for key, value in connection_params.items()])
-
-        connection = psycopg2.connect(connection_string)
-        cur = connection.cursor()
-        logger.info("Connected to RDS instance!")
-        cur.execute("""
-            SELECT patient_name
-            FROM "patients"
-            WHERE patient_id = %s;
-        """, (patient_id,))
-
-        result = cur.fetchone()
-        logger.info(f"Query result: {result}")
-        patient_name = result[0] if result else None
-
-        cur.close()
-        connection.close()
-        
-        if patient_name:
-            logger.info(f"Patient name for patient_id {patient_id} found: {patient_name}")
-        else:
-            logger.warning(f"No patient name found for patient_id {patient_id}")
-        
-        return patient_name
-
-    except Exception as e:
-        logger.error(f"Error fetching patient name: {e}")
-        if connection:
-            connection.rollback()
-        return None
-    finally:
-        if cur:
-            cur.close()
-        if connection:
-            connection.close()
-        logger.info("Connection closed.")
-
 def get_system_prompt(simulation_group_id):
     connection = None
     cur = None
@@ -157,11 +105,11 @@ def get_system_prompt(simulation_group_id):
             connection.close()
         logger.info("Connection closed.")
 
-def get_patient_prompt(patient_id):
+def get_patient_details(patient_id):
     connection = None
     cur = None
     try:
-        logger.info(f"Fetching patient prompt for patient_id: {patient_id}")
+        logger.info(f"Fetching details for patient_id: {patient_id}")
         db_secret = get_secret(DB_SECRET_NAME)
 
         connection_params = {
@@ -178,30 +126,28 @@ def get_patient_prompt(patient_id):
         cur = connection.cursor()
         logger.info("Connected to RDS instance!")
         cur.execute("""
-            SELECT patient_prompt
+            SELECT patient_name, patient_prompt, llm_completion
             FROM "patients"
             WHERE patient_id = %s;
         """, (patient_id,))
 
         result = cur.fetchone()
         logger.info(f"Query result: {result}")
-        patient_prompt = result[0] if result else None
-
-        cur.close()
-        connection.close()
         
-        if patient_prompt:
-            logger.info(f"Patient prompt for patient_id {patient_id} found: {patient_prompt}")
+        if result:
+            patient_name, patient_prompt, llm_completion = result
+            logger.info(f"Patient details found for patient_id {patient_id}: "
+                        f"Name: {patient_name}, Prompt: {patient_prompt}, LLM Completion: {llm_completion}")
+            return patient_name, patient_prompt, llm_completion
         else:
-            logger.warning(f"No patient prompt found for patient_id {patient_id}")
-        
-        return patient_prompt
+            logger.warning(f"No details found for patient_id {patient_id}")
+            return None, None, None
 
     except Exception as e:
-        logger.error(f"Error fetching patient prompt: {e}")
+        logger.error(f"Error fetching patient details: {e}")
         if connection:
             connection.rollback()
-        return None
+        return None, None, None
     finally:
         if cur:
             cur.close()
@@ -244,9 +190,9 @@ def handler(event, context):
             'body': json.dumps('Error fetching system prompt')
         }
     
-    patient_prompt = get_patient_prompt(patient_id)
-    if patient_prompt is None:
-        logger.error(f"Error fetching patient prompt for patient_id: {patient_id}")
+    patient_name, patient_prompt, llm_completion = get_patient_details(patient_id)
+    if patient_name is None or patient_prompt is None or llm_completion is None:
+        logger.error(f"Error fetching patient details for patient_id: {patient_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -255,15 +201,7 @@ def handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "*",
             },
-            'body': json.dumps('Error fetching system prompt')
-        }
-
-    patient_name = get_patient_name(patient_id)
-    if patient_name is None:
-        logger.error(f"Invalid patient_id: {patient_id}")
-        return {
-            'statusCode': 400,
-            'body': json.dumps("Invalid patient_id")
+            'body': json.dumps('Error fetching patient details')
         }
 
     body = {} if event.get("body") is None else json.loads(event.get("body"))
@@ -347,7 +285,8 @@ def handler(event, context):
             table_name=TABLE_NAME,
             session_id=session_id,
             system_prompt=system_prompt,
-            patient_prompt=patient_prompt
+            patient_prompt=patient_prompt,
+            llm_completion=llm_completion
         )
     except Exception as e:
         logger.error(f"Error getting response: {e}")
