@@ -110,6 +110,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
       !isAItyping &&
       sessions.length === 0
     ) {
+      setCreatingSession(true);
       handleNewChat();
     }
   }, [sessions, creatingSession]);
@@ -476,9 +477,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
     let userEmail;
     let authToken;
 
-    setTimeout(() => setIsAItyping(true), 775); 
-
-    // setIsAItyping(true);
+    setTimeout(() => setIsAItyping(true), 775);
 
     return fetchAuthSession()
       .then((session) => {
