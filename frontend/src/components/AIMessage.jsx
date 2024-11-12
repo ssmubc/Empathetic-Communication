@@ -33,7 +33,7 @@ const AIMessage = ({ message, profilePicture, name = "AI" }) => {
             fontSize: "0.8rem",
           }}
         >
-          {!profilePicture && name.charAt(0).toUpperCase()}
+          {/* {!profilePicture && name.charAt(0).toUpperCase()} */} 
         </Avatar>
         <div
           className="text-start ml-4 text-black"
