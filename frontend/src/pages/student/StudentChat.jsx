@@ -935,6 +935,7 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                   key={message.message_id}
                   message={message.message_content}
                   profilePicture={profilePicture} // Pass profile picture URL to AIMessage
+                  name={patient?.patient_name}      // Pass patient's name to display as fallback
                 />
               )
             )}

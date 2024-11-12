@@ -24,7 +24,7 @@ const AIMessage = ({ message, profilePicture, name = "AI" }) => {
       <div className="flex flex-row flex-start">
         <Avatar
           src={profilePicture || ""}
-          alt="Profile Picture"
+          // alt="Profile Picture"
           sx={{
             width: 40,
             height: 40,
@@ -33,7 +33,7 @@ const AIMessage = ({ message, profilePicture, name = "AI" }) => {
             fontSize: "0.8rem",
           }}
         >
-          {!profilePicture && name.charAt(0).toUpperCase()}
+          {!profilePicture && name.charAt(0).toUpperCase()} 
         </Avatar>
         <div
           className="text-start ml-4 text-black"
