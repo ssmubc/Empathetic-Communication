@@ -109,7 +109,7 @@ const formatNotes = (noteText) => (
     <Typography variant="body2" sx={{ fontWeight: "bold" }}>
       Notes:
     </Typography>
-    <Typography variant="body1">{noteText.trim || "No notes available."}</Typography>
+    <Typography variant="body1">{noteText || "No notes available."}</Typography>
   </Box>
 );
 
@@ -461,7 +461,7 @@ const StudentDetails = () => {
                       color="secondary"
                       sx={{ mt: 2, mr: 2 }}
                     >
-                      Download Chat 
+                      Download Chat PDF
                     </Button>
 
                     {/* Button for downloading only the notes */}
@@ -471,7 +471,7 @@ const StudentDetails = () => {
                       color="secondary"
                       sx={{ mt: 2 }}
                     >
-                      Download Notes 
+                      Download Notes PDF
                     </Button>
                   </AccordionDetails>
                 </Accordion>
