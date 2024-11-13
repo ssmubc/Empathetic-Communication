@@ -53,7 +53,7 @@ def delete_last_two_db_messages(session_id):
 
         cur.execute("""
             SELECT message_id 
-            FROM "Messages" 
+            FROM "messages" 
             WHERE session_id = %s
             ORDER BY time_sent DESC
             LIMIT 2;
@@ -68,7 +68,7 @@ def delete_last_two_db_messages(session_id):
         message_ids = tuple([msg[0] for msg in messages])
         
         cur.execute("""
-            DELETE FROM "Messages"
+            DELETE FROM "messages"
             WHERE message_id IN %s;
         """, (message_ids,))
         

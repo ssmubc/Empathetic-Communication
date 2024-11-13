@@ -925,9 +925,12 @@ const StudentChat = ({ group, patient, setPatient, setGroup }) => {
                 <StudentMessage
                   key={message.message_id}
                   message={message.message_content}
-                  isMostRecent={index === 0}
+                  isMostRecent={getMostRecentStudentMessageIndex() === index}
                   onDelete={() => handleDeleteMessage(message)}
-                  hasAiMessageAfter={() => false}
+                  hasAiMessageAfter={() => hasAiMessageAfter(
+                    messages,
+                    getMostRecentStudentMessageIndex()
+                  )}
                 />
               ) : (
                 <AIMessage
