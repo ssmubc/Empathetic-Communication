@@ -288,29 +288,65 @@ const StudentDetails = () => {
     }
   };
 
-  const handleDownloadSessionPDF = (session, patientName) => {
+  const handleDownloadChatPDF = (session, patientName) => {
     const pdf = new jsPDF("p", "mm", "a4");
     pdf.setFontSize(12);
+    const pageWidth = pdf.internal.pageSize.width;
+    const margin = 10;
+    const maxLineWidth = pageWidth - 2 * margin;
     let yOffset = 10;
 
-    pdf.text(`Session: ${session.sessionName}`, 10, yOffset);
+    pdf.text(`Session Chat: ${session.sessionName}`, margin, yOffset);
     yOffset += 10;
 
     const messages = formatMessagesForPDF(session.messages, studentId, patientName);
-    const notes = formatNotesForPDF(session.notes);
-    const sessionContent = `${messages}\n\n${notes}`;
 
-    sessionContent.split("\n").forEach((line) => {
+    messages.split("\n").forEach((line, index, lines) => {
+      const splitLine = pdf.splitTextToSize(line, maxLineWidth);
+
+      splitLine.forEach((textLine) => {
+        if (yOffset > 280) {
+          pdf.addPage();
+          yOffset = 10;
+        }
+        pdf.text(textLine, margin, yOffset);
+        yOffset += 8;
+      });
+
+      if (lines[index + 1]) {
+        yOffset += 8;
+      }
+    });
+
+    pdf.save(`${studentId}-${session.sessionName}-chat.pdf`);
+  };
+
+  const handleDownloadNotesPDF = (session) => {
+    const pdf = new jsPDF("p", "mm", "a4");
+    pdf.setFontSize(12);
+    const margin = 10;
+    let yOffset = 10;
+
+    pdf.text(`Session Notes: ${session.sessionName}`, margin, yOffset);
+    yOffset += 10;
+
+    const notes = formatNotesForPDF(session.notes);
+    const notesContent = notes.split("\n");
+
+    notesContent.forEach((line) => {
       if (yOffset > 280) {
         pdf.addPage();
         yOffset = 10;
       }
-      pdf.text(line, 10, yOffset);
+      pdf.text(line, margin, yOffset);
       yOffset += 8;
     });
 
-    pdf.save(`${studentId}-${session.sessionName}-session.pdf`);
+    pdf.save(`${studentId}-${session.sessionName}-notes.pdf`);
   };
+
+  
+  
 
   return (
     <>
@@ -417,13 +453,25 @@ const StudentDetails = () => {
                       {formatMessages(session.messages, studentId, tabs[activeTab])}
                       {formatNotes(session.notes)}
                     </Box>
+                    
+                    {/* Button for downloading only the chat responses */}
                     <Button
-                      onClick={() => handleDownloadSessionPDF(session, tabs[activeTab])}
+                      onClick={() => handleDownloadChatPDF(session, tabs[activeTab])}
+                      variant="contained"
+                      color="secondary"
+                      sx={{ mt: 2, mr: 2 }}
+                    >
+                      Download Chat PDF
+                    </Button>
+
+                    {/* Button for downloading only the notes */}
+                    <Button
+                      onClick={() => handleDownloadNotesPDF(session)}
                       variant="contained"
                       color="secondary"
                       sx={{ mt: 2 }}
                     >
-                      Download Session PDF
+                      Download Notes PDF
                     </Button>
                   </AccordionDetails>
                 </Accordion>
@@ -433,6 +481,7 @@ const StudentDetails = () => {
                 Student does not have chat history.
               </Typography>
             )}
+
 
             {/* Tooltip-wrapped Completion Switch with student's name */}
             {/* <Tooltip title={`Manually set the completion status for ${studentId}`} arrow>
