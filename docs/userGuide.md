@@ -105,20 +105,30 @@ The instructor can also set the completion status for a student on this page but
 Upon logging in as an student, they see the following home page:
 ![image](./images/student-home-page.png)
 
-We are going to be looking at the CPSC 210 course as an example. Upon selecting CPSC 210, the student is shown a list of concepts at the top: Basics, Abstraction, Construction, and Design. Within each concept, there are several modules. For example, the Basics concept has the Program Structure, Methods And Calls, Classes, and Data Flow modules:
+We are going to be looking at the Chronic Pain group as an example. Upon selecting Chronic Pain, the student is shown a list of patients including: Pamela and Timothy:
 ![image](./images/student-modules.png)
 
-If we click the "Review" button beside the Program Structure module, we are taken to a page where an LLM asks us a question and creates a new conversation:
+If we click the "Review" button beside a patient in this case we will do Pamela, we are taken to a page where an LLM asks us a question and creates a new conversation:
 ![image](./images/student-new-conversation.png)
 
 The student can then answer the questions the LLM asks in a conversation manner. Upon answering multiple questions correctly, the LLM determines when the student has achieved competency over the module:
-![image](./images/student-conversation-1.png)
-![image](./images/student-conversation-2.png)
+The student can then respond to the questions the LLM asks to try and eventually find a cure or diagnos the patient. Once the student gives a cure or diagnosis the LLM will either evaluate them (if the instructor has LLM evaluation on).
+![image](./images/student-new-conversation-LLM-evaluation.png)
 
-Upon going back to the list of modules in this course, the student can see their learning journey as the module they achieved competency for is complete. The concept that module belonged to has also slightly changed in color by going from an inital red color to orange:
+Or the LLM will stop answering the student (if the instructor has LLM evaluation off).
+![image](./images/student-new-conversation-LLM-no-evaluation.png)
+
+Additionally, on the chat page, the student can use the 'Notes' button to open a noteboard for anything they want to jot down while chatting with the patient. 
+![image](./images/student-new-conversation-notes-button.png)
+![image](./images/student-new-conversation-notes.png)
+
+The student can also access the patient info which is posted by the instructor. There they can find useful information which may assist them in chating with the patient. 
+![image](./images/student-new-conversation-patient-info-button.png)
+![image](./images/student-new-conversation-patient-info.png)
+
+The way students interact with patient information varies depending on the file type. For instance, as shown below, with an image, students can zoom in and flip it to examine details more closely. In contrast, with a PDF, they can scroll through pages or print the document for further review
+![image](./images/student-new-conversation-patient-info-img.png)
+
+
+Upon going back to the list of modules in this course, the student can see their learning journey as the patient they achieved competency for is complete:
 ![image](./images/student-complete-module.png)
-
-After completing more modules, the concept those modules belongs to gradually changes color to show the student's learning journey:
-![image](./images/student-complete-module-1.png)
-![image](./images/student-complete-module-2.png)
-![image](./images/student-complete-module-3.png)
