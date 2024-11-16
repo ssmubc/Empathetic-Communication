@@ -1,17 +1,19 @@
 # User Guide
 
 **Please ensure the application is deployed, instructions in the deployment guide here:**
+
 - [Deployment Guide](./deploymentGuide.md)
 
 Once you have deployed the solution, the following user guide will help you navigate the functions available.
 
-| Index    | Description |
-| -------- | ------- |
-| [Administrator View](#admin-view)  | How the Admnistrator views the project | 
-| [Instructor View](#instructor-view)  | How the Instructor views the project |
-| [Student View](#student-view)  | How the Student views the project |
+| Index                               | Description                            |
+| ----------------------------------- | -------------------------------------- |
+| [Administrator View](#admin-view)   | How the Admnistrator views the project |
+| [Instructor View](#instructor-view) | How the Instructor views the project   |
+| [Student View](#student-view)       | How the Student views the project      |
 
 ## Administrator View
+
 To sign up as an administrator, you need to sign up regularly first as a student:
 ![image](./images/create-account.png)
 
@@ -39,46 +41,67 @@ Clicking the "ADD INSTRUCTOR" button opens a pop-up where the administrator can 
 The administrator can also click an instructor in the list which takes them to a page consisting of that instructor's details which includes their name, email, and active courses:
 ![image](./images/admin-instructor-details.png)
 
-In the "Courses" tab, the administrator can view a list of the courses available in this project:
+In the "Courses" tab, the administrator can view a list of the simulation groups available in this project:
 ![image](./images/admin-courses.png)
 
-Clicking the "Active" button leads to a page where the administrator can view all the instructors in that course while being able to change the status of the course:
+Clicking on a simulation group leads to a page where the administrator can view all the instructors in that group while being able to change the status of the group:
 ![image](./images/admin-active.png)
 
 In the "Create Course" tab, the administrator can create a course by specifying the name, department, and code of the course. The administrator can also assign instructors to the course here while changing the "System Prompt" that the Large Language Model (LLM) uses as intructions when generating responses:
+![image](./images/admin-create-course-button.png)
 ![image](./images/admin-create-course.png)
 
 ## Instructor View
+
 Upon logging in as an instructor, they see the following home page:
 ![image](./images/instructor-home-page.png)
 
-The instructor can click on the "Student View" to see the project how a student would. For more information on how a student views the project, click [here](#student-view). After clicking the "ACTIVE" button beside a course, the instructor can see the analytics of that course with several insights:
+The instructor can click on the "Student View" to see the project how a student would. For more information on how a student views the project, click [here](#student-view). After clicking on a simulation group, the instructor can see the analytics of that course with several insights:
 ![image](./images/instructor-analytics.png)
 
-Clicking the "Edit Concepts" tab leads to a page where the instructor can see a list of concepts within the course. Here a new concept can be created or existing concepts can be edited or deleted:
+Clicking the "Edit Patients" tab leads to a page where the instructor can see a list of patients within the course. Here a new patient can be created or existing patients can be edited or deleted:
 ![image](./images/instructor-edit-concept.png)
-![image](./images/instructor-create-concept.png)
+
+The instructor can set for each patient whether or not they want the LLM to evaluate the student.
+![image](./images/instructor-edit-LLM-completion.png)
+
+By clicking the "CREATE NEW PATIENT" button a pop up will open where the instructor can create a new patient.
+![image](./images/instructor-create-concept-button.png)
+
+The patient's name, age and gender can be specified here along with a patient prompt to influence how they will act.
+![image](./images/instructor-create-concept1.png)
+
+The instructor can then upload LLM, Patient and Answer Key files to this patient from their device. `PDF`, `DOCX`, `PPTX`, `TXT`, `XLSX`, `XPS`, `MOBI`, and `CBZ` file types are supported. The "SAVE PATIENT" button here saves the patient:
+![image](./images/instructor-create-concept2.png)
+![image](./images/instructor-create-concept3.png)
+
+By clicking the "EDIT" button a pop up will open where the instructor can edit the patient.
+![image](./images/instructor-change-concept-button.png)
+
+The patient's name, age and gender can be edited here along with its patient prompt to influence how they will act. The instructor can also edit the LLM, Patient and Answer Key files for the patient.
 ![image](./images/instructor-change-concept.png)
-
-Clicking the "Edit Modules" tab leads to a page where the instructor can see a list of modules along with the concepts they belong to in that course. Here a new module can be created or existing modules can be edited:
-![image](./images/instructor-edit-modules.png)
-
-Clicking the "CREATE NEW MODULE" button leads to a page where the instructor can create a module. The module's name can be specified here along with the concept it belongs to. The instructor can then upload files to this module from their device. `PDF`, `DOCX`, `PPTX`, `TXT`, `XLSX`, `XPS`, `MOBI`, and `CBZ` file types are supported. The "SAVE MODULE" button here saves the module:
-![image](./images/instructor-create-module.png)
-
-Clicking the "EDIT" button beside a course leads to a page similar to creating a module. The module's name and concept can be changed here. The instructor can also remove previous files from the module while adding new ones. Each file in the module can be downloaded on the instructor's device. The "SAVE MODULE" button here saves the changes made to the module and the "DELETE MODULE" deletes the entire module:
-![image](./images/instructor-edit-module.png)
+![image](./images/instructor-change-patient1.png)
+![image](./images/instructor-change-patient2.png)
+![image](./images/instructor-change-patient3.png)
 
 Clicking the "Prompt Settings" tab leads to a page where the instructor can change the prompt applied to the LLM for this specific course. Upon applying a new prompt, the instructor can also scroll to previous prompts the course used:
 ![image](./images/instructor-prompt-settings.png)
+![image](./images/instructor-prompt-settings1.png)
 
-Clicking the "View Students" tab leads to a page where the instructor can view all the students in this course. The "Access Code" of the course is a special code that allows students to join the course. The instructor will have to send this code to them. The instructor can also generate a new course code on this page:
+Clicking the "View Students" tab leads to a page where the instructor can view all the students in this simulation group. The "Access Code" of the group is a special code that allows students to join the group. The instructor will have to send this code to them. The instructor can also generate a new group code on this page:
 ![image](./images/instructor-view-students.png)
 
-The instructor can then click on a student which takes them to that student's chat logs for every module in the course. Each tab represents a different module. Different conversations with the LLM are rendered as different drop downs:
+The instructor can then click on a student which takes them to that student's chat logs for every module in the simulation group. Each tab represents a different module. Different conversations with the LLM are rendered as different drop downs:
 ![image](./images/instructor-view-student-logs.png)
 
+By clicking the session drop down we can view the chat history between that student and the LLM.
+![image](./images/instructor-view-student-chat-history.png)
+
+The instructor can also set the completion status for a student on this page but toggling the switch for the patients.
+![image](./images/instructor-view-student-completion.png)
+
 ## Student View
+
 Upon logging in as an student, they see the following home page:
 ![image](./images/student-home-page.png)
 
