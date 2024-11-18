@@ -61,10 +61,12 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
         );
         if (response.ok) {
           const analytics_data = await response.json();
+          console.log(analytics_data);
           setData(analytics_data);
           const graphDataFormatted = analytics_data.map((patient) => ({
             patient: patient.patient_name,
-            Messages: patient.message_count,
+            StudentMessages: patient.student_message_count,
+            AIMessages: patient.ai_message_count,
           }));
           setGraphData(graphDataFormatted);
         } else {
@@ -80,8 +82,13 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
 
   useEffect(() => {
     if (graphData.length > 0) {
-      const max = Math.max(...graphData.map((data) => data.Messages));
-      setMaxMessages(max);
+      const maxStudent = Math.max(
+        ...graphData.map((data) => data.StudentMessages || 0)
+      );
+      const maxAI = Math.max(
+        ...graphData.map((data) => data.AIMessages || 0)
+      );
+      setMaxMessages(Math.max(maxStudent, maxAI));
     }
   }, [graphData]);
 
@@ -133,9 +140,17 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
               <Legend />
               <Line
                 type="monotone"
-                dataKey="Messages"
+                dataKey="StudentMessages"
                 stroke="#8884d8"
                 activeDot={{ r: 8 }}
+                name="Student Messages"
+              />
+              <Line
+                type="monotone"
+                dataKey="AIMessages"
+                stroke="#82ca9d"
+                activeDot={{ r: 8 }}
+                name="AI Messages"
               />
             </LineChart>
           ) : (
@@ -182,8 +197,12 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                         />
                       </Grid>
                       <Grid item>
-                        <Typography>Message Count</Typography>
-                        <Typography>{patient.message_count}</Typography>
+                        <Typography>Student Message Count</Typography>
+                        <Typography>{patient.student_message_count}</Typography>
+                      </Grid>
+                      <Grid item>
+                        <Typography>AI Message Count</Typography>
+                        <Typography>{patient.ai_message_count}</Typography>
                       </Grid>
                       <Grid item>
                         <Typography>Access Count</Typography>
