@@ -235,6 +235,33 @@ exports.handler = async (event) => {
                     GROUP BY p.patient_id;
                 `;
 
+                // Query to calculate the percentage of completed interactions for each patient
+                const completionPercentages = await sqlConnection`
+                SELECT 
+                    p.patient_id, 
+                    CASE 
+                        WHEN COUNT(sp.student_interaction_id) = 0 THEN 0 
+                        ELSE COUNT(CASE WHEN sp.is_completed THEN 1 END) * 100.0 / COUNT(sp.student_interaction_id)
+                    END AS completion_percentage
+                FROM "patients" p
+                LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
+                WHERE p.simulation_group_id = ${simulationGroupId}
+                GROUP BY p.patient_id;
+                `;
+
+                const studentInteractions = await sqlConnection`
+                SELECT 
+                    p.patient_id,
+                    u.first_name || ' ' || u.last_name AS student_name,
+                    sp.is_completed,
+                    sp.last_accessed
+                FROM "patients" p
+                LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
+                LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                LEFT JOIN "users" u ON e.user_id = u.user_id
+                WHERE p.simulation_group_id = ${simulationGroupId};
+            `;
+
                 // Combine all data into a single response, ensuring all patients are included
                 const analyticsData = messageCreations.map((patient) => {
                     const accesses =
@@ -243,17 +270,31 @@ exports.handler = async (event) => {
                         averageScores.find((as) => as.patient_id === patient.patient_id) || {};
                     const perfectScore =
                         perfectScores.find((ps) => ps.patient_id === patient.patient_id) || {};
+                    const completionData =
+                        completionPercentages.find((cp) => cp.patient_id === patient.patient_id) || {};
+                    const studentsForPatient = 
+                        studentInteractions.filter((interaction) => interaction.patient_id === patient.patient_id)
+                        .reduce((acc, interaction) => {
+                            acc[interaction.student_name] = {
+                                is_completed: interaction.is_completed || false,
+                                last_accessed: interaction.last_accessed || null,
+                            };
+                            return acc;
+                        }, {});
 
                     return {
                         patient_id: patient.patient_id,
                         patient_name: patient.patient_name,
-                        patient_number: patient.patient_number,  // New addition based on schema
+                        patient_number: patient.patient_number,
                         student_message_count: patient.student_message_count || 0,
                         ai_message_count: patient.ai_message_count || 0,
                         access_count: accesses.access_count || 0,
                         average_score: parseFloat(scores.average_score) || 0,
                         perfect_score_percentage:
                             parseFloat(perfectScore.perfect_score_percentage) || 0,
+                        completion_percentage:
+                            parseFloat(completionData.completion_percentage) || 0,
+                        students: studentsForPatient,
                     };
                 });
 
