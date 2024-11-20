@@ -139,7 +139,6 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                 <Grid item xs={12} sm={6}>
                   <Typography>Student Message Count: {patient.student_message_count}</Typography>
                   <Typography>AI Message Count: {patient.ai_message_count}</Typography>
-                  <Typography>Access Count: {patient.access_count}</Typography>
                 </Grid>
               </Grid>
             </Paper>
@@ -183,11 +182,11 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
             </Box>
           </Paper>
 
-          {/* Scores and Access Chart */}
+          {/* Scores Chart */}
           <Paper>
             <Box mb={4} sx={{ height: 400, paddingBottom: 4 }}>
               <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
-                Scores, Access Count, and Avg Last Access (in Days)
+                Scores
               </Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -229,16 +228,6 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                     dataKey="PerfectScorePercentage"
                     fill="#8884d8"
                     name="Perfect Score %"
-                  />
-                  <Bar
-                    dataKey="AccessCount"
-                    fill="#8dd1e1"
-                    name="Access Count"
-                  />
-                  <Bar
-                    dataKey="AvgLastAccessInDays"
-                    fill="#ff8042"
-                    name="Avg Last Access (Days)"
                   />
                 </BarChart>
               </ResponsiveContainer>
