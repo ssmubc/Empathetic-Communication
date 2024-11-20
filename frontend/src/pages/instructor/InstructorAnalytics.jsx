@@ -6,14 +6,10 @@ import {
   Box,
   Tabs,
   Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   LinearProgress,
   Grid,
   Paper,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   BarChart,
   Bar,
@@ -125,8 +121,9 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                 justifyContent="space-between"
                 sx={{ padding: 2 }}
               >
+                {/* Instructor Completion Percentage */}
                 <Grid item xs={12} sm={6}>
-                  <Typography>Completion Percentage:</Typography>
+                  <Typography>Instructor Completion Percentage:</Typography>
                   <LinearProgress
                     variant="determinate"
                     value={patient.instructor_completion_percentage || 0}
@@ -136,10 +133,55 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                     {patient.instructor_completion_percentage.toFixed(2)}%
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography>Student Message Count: {patient.student_message_count}</Typography>
-                  <Typography>AI Message Count: {patient.ai_message_count}</Typography>
-                </Grid>
+
+                {/* LLM Completion Percentage: (conditionally displayed) */}
+                {patient.llm_completion && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography>LLM Completion Percentage:</Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={patient.ai_score_percentage || 0}
+                      sx={{ marginY: 1 }}
+                    />
+                    <Typography textAlign="right">
+                      {patient.ai_score_percentage.toFixed(2)}%
+                    </Typography>
+                  </Grid>
+                )}
+                {/* Student and AI Message Counts with Access Count */}
+                {patient.llm_completion && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography>
+                      Student Message Count: {patient.student_message_count}
+                    </Typography>
+                    <Typography>
+                      AI Message Count: {patient.ai_message_count}
+                    </Typography>
+                  </Grid>
+                )}
+
+                {patient.llm_completion && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography>
+                      Student Access Count: {patient.access_count}
+                    </Typography>
+                  </Grid>
+
+                )}
+
+                {!patient.llm_completion && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography>
+                      Student Message Count: {patient.student_message_count}
+                    </Typography>
+                    <Typography>
+                      AI Message Count: {patient.ai_message_count}
+                    </Typography>
+                    <Typography>
+                      Access Count: {patient.access_count}
+                    </Typography>
+                  </Grid>
+                )}
               </Grid>
             </Paper>
           </Box>
@@ -147,7 +189,12 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
           {/* Message Count Chart */}
           <Paper>
             <Box mb={4} sx={{ height: 400, paddingBottom: 4 }}>
-              <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
+              <Typography
+                color="black"
+                textAlign="left"
+                paddingLeft={2}
+                padding={2}
+              >
                 Message Count
               </Typography>
               <ResponsiveContainer width="100%" height="100%">
@@ -155,7 +202,8 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                   data={[
                     {
                       name: "Messages",
-                      StudentMessages: parseInt(patient.student_message_count, 10) || 0,
+                      StudentMessages:
+                        parseInt(patient.student_message_count, 10) || 0,
                       AIMessages: parseInt(patient.ai_message_count, 10) || 0,
                     },
                   ]}
@@ -182,53 +230,50 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
             </Box>
           </Paper>
 
-          {/* Scores Chart */}
+          {/* Completion Chart */}
           <Paper>
             <Box mb={4} sx={{ height: 400, paddingBottom: 4 }}>
-              <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
-                Scores
+              <Typography
+                color="black"
+                textAlign="left"
+                paddingLeft={2}
+                padding={2}
+              >
+                Completion Overview
               </Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={[
                     {
-                      patient: titleCase(patient.patient_name),
-                      AverageScore: parseFloat(patient.average_score) || 0,
-                      PerfectScorePercentage: parseFloat(patient.ai_score_percentage) || 0,
-                      AccessCount: parseInt(patient.access_count, 10) || 0,
-                      AvgLastAccessInDays:
-                        patient.students &&
-                        Object.values(patient.students).length > 0
-                          ? Object.values(patient.students)
-                              .map((student) => {
-                                const lastAccess = new Date(student.last_accessed);
-                                return Math.round(
-                                  (new Date() - lastAccess) / (1000 * 60 * 60 * 24)
-                                );
-                              })
-                              .reduce((a, b) => a + b, 0) /
-                            Object.values(patient.students).length
-                          : 0,
+                      name: "Completion",
+                      InstructorCompletion:
+                        parseFloat(patient.instructor_completion_percentage) ||
+                        0,
+                      LLMCompletion: patient.llm_completion
+                        ? parseFloat(patient.ai_score_percentage) || 0
+                        : null,
                     },
                   ]}
                   margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                   barSize={20}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="patient" tickMargin={10} />
+                  <XAxis dataKey="name" tickMargin={10} />
                   <YAxis />
                   <Tooltip />
                   <Legend />
                   <Bar
-                    dataKey="AverageScore"
-                    fill="#ffc658"
-                    name="Average Score"
+                    dataKey="InstructorCompletion"
+                    fill="#FFA500" // Orange for Instructor Completion
+                    name="Instructor Completion %"
                   />
-                  <Bar
-                    dataKey="PerfectScorePercentage"
-                    fill="#8884d8"
-                    name="Perfect Score %"
-                  />
+                  {patient.llm_completion && (
+                    <Bar
+                      dataKey="LLMCompletion"
+                      fill="#800080" // Purple for LLM Completion
+                      name="LLM Completion %"
+                    />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </Box>
