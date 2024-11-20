@@ -58,6 +58,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
         );
         if (response.ok) {
           const analytics_data = await response.json();
+          console.log("Analytics data:", analytics_data);
           setData(analytics_data);
         } else {
           console.error("Failed to fetch analytics:", response.statusText);
@@ -128,11 +129,11 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                   <Typography>Completion Percentage:</Typography>
                   <LinearProgress
                     variant="determinate"
-                    value={patient.completion_percentage || 0}
+                    value={patient.instructor_completion_percentage || 0}
                     sx={{ marginY: 1 }}
                   />
                   <Typography textAlign="right">
-                    {patient.completion_percentage.toFixed(2)}%
+                    {patient.instructor_completion_percentage.toFixed(2)}%
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -193,7 +194,21 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                     {
                       patient: titleCase(patient.patient_name),
                       AverageScore: parseFloat(patient.average_score) || 0,
-                      PerfectScorePercentage: parseFloat(patient.perfect_score_percentage) || 0,
+                      PerfectScorePercentage: parseFloat(patient.ai_score_percentage) || 0,
+                      AccessCount: parseInt(patient.access_count, 10) || 0,
+                      AvgLastAccessInDays:
+                        patient.students &&
+                        Object.values(patient.students).length > 0
+                          ? Object.values(patient.students)
+                              .map((student) => {
+                                const lastAccess = new Date(student.last_accessed);
+                                return Math.round(
+                                  (new Date() - lastAccess) / (1000 * 60 * 60 * 24)
+                                );
+                              })
+                              .reduce((a, b) => a + b, 0) /
+                            Object.values(patient.students).length
+                          : 0,
                     },
                   ]}
                   margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
