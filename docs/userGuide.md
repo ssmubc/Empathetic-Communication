@@ -41,7 +41,7 @@ Clicking the "ADD INSTRUCTOR" button opens a pop-up where the administrator can 
 The administrator can also click an instructor in the list, which takes them to a page consisting of that instructor's details, including their name, email, and active groups:
 ![image](./images/admin-instructor-details.png)
 
-In the "Simulation Groups" tab, the administrator can view a list of the simulation groups available in this project:
+In the "Simulation Groups" tab, the administrator can view a list of the simulation groups available:
 ![image](./images/admin-courses.png)
 
 Clicking on a simulation group leads to a page where the administrator can view all the instructors in that group while being able to change the status of the group:
@@ -58,6 +58,10 @@ Upon logging in as an instructor, you will see the following home page:
 
 The instructor can click on the "Student View" to see the project as a student would. For more information on how a student views the project, click [here](#student-view). After clicking on a simulation group, the instructor can see the analytics of that group with several insights:
 ![image](./images/instructor-analytics.png)
+
+Additionally, the instructor can access detailed graphs that illustrate student interactions with patients and their performance levels.
+![image](./images/instructor-analytics1.png)
+![image](./images/instructor-analytics2.png)
 
 Clicking the "Edit Patients" tab leads to a page where the instructor can see a list of patients within the gorup. Here a new patient can be created or existing patients can be edited or deleted:
 ![image](./images/instructor-edit-concept.png)

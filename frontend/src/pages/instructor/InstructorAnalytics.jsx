@@ -178,7 +178,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                       AI Message Count: {patient.ai_message_count}
                     </Typography>
                     <Typography>
-                      Access Count: {patient.access_count}
+                      Student Access Count: {patient.access_count}
                     </Typography>
                   </Grid>
                 )}
