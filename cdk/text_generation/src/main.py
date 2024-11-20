@@ -75,8 +75,7 @@ def get_system_prompt(simulation_group_id):
     connection = None
     cur = None
     try:
-        logger.info(f"Fetching system prompt for simulation_group_id: {
-                    simulation_group_id}")
+        logger.info(f"Fetching system prompt for simulation_group_id: {simulation_group_id}")
         db_secret = get_secret(DB_SECRET_NAME)
 
         connection_params = {
@@ -107,11 +106,9 @@ def get_system_prompt(simulation_group_id):
         connection.close()
 
         if system_prompt:
-            logger.info(f"System prompt for simulation_group_id {
-                        simulation_group_id} found: {system_prompt}")
+            logger.info(f"System prompt for simulation_group_id {simulation_group_id} found: {system_prompt}")
         else:
-            logger.warning(f"No system prompt found for simulation_group_id {
-                           simulation_group_id}")
+            logger.warning(f"No system prompt found for simulation_group_id {simulation_group_id}")
 
         return system_prompt
 
@@ -203,8 +200,7 @@ def handler(event, context):
 
     system_prompt = get_system_prompt(simulation_group_id)
     if system_prompt is None:
-        logger.error(f"Error fetching system prompt for simulation_group_id: {
-                     simulation_group_id}")
+        logger.error(f"Error fetching system prompt for simulation_group_id: {simulation_group_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -219,8 +215,7 @@ def handler(event, context):
     patient_name, patient_prompt, llm_completion = get_patient_details(
         patient_id)
     if patient_name is None or patient_prompt is None or llm_completion is None:
-        logger.error(
-            f"Error fetching patient details for patient_id: {patient_id}")
+        logger.error(f"Error fetching patient details for patient_id: {patient_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -236,8 +231,7 @@ def handler(event, context):
     question = body.get("message_content", "")
 
     if not question:
-        logger.info(
-            f"Start of conversation. Creating conversation history table in DynamoDB.")
+        logger.info(f"Start of conversation. Creating conversation history table in DynamoDB.")
         student_query = get_initial_student_query(patient_name)
     else:
         logger.info(f"Processing student question: {question}")
@@ -331,17 +325,14 @@ def handler(event, context):
         }
 
     try:
-        logger.info(
-            "Updating session name if this is the first exchange between the LLM and student")
+        logger.info("Updating session name if this is the first exchange between the LLM and student")
         potential_session_name = update_session_name(
             TABLE_NAME, session_id, BEDROCK_LLM_ID)
         if potential_session_name:
-            logger.info(
-                "This is the first exchange between the LLM and student. Updating session name.")
+            logger.info("This is the first exchange between the LLM and student. Updating session name.")
             session_name = potential_session_name
         else:
-            logger.info(
-                "Not the first exchange between the LLM and student. Session name remains the same.")
+            logger.info("Not the first exchange between the LLM and student. Session name remains the same.")
     except Exception as e:
         logger.error(f"Error updating session name: {e}")
         session_name = "New Chat"
