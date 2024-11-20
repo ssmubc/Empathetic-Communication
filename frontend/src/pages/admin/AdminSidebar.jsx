@@ -17,30 +17,26 @@ const AdminSidebar = ({
   setSelectedInstructor,
   setSelectedGroup,
 }) => {
-  // State to control the drawer width
   const [drawerWidth, setDrawerWidth] = useState(220);
 
-  // Function to handle mouse drag for resizing
   const handleMouseMove = (e) => {
-    const newWidth = e.clientX; // Get the new width based on the mouse position
-    if (newWidth >= 85 && newWidth <= 400) { // Limit the resizing range
+    const newWidth = e.clientX;
+    if (newWidth >= 85 && newWidth <= 400) {
       setDrawerWidth(newWidth);
     }
   };
 
-  // Function to handle mouse release (stop resizing)
   const stopResizing = () => {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", stopResizing);
-    document.body.style.userSelect = ""; // Re-enable text selection
+    document.body.style.userSelect = "";
   };
 
-  // Start resizing on mousedown
   const startResizing = (e) => {
-    e.preventDefault(); // Prevent default behavior to avoid issues
+    e.preventDefault();
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", stopResizing);
-    document.body.style.userSelect = "none"; // Disable text selection
+    document.body.style.userSelect = "none";
   };
 
   return (
@@ -54,18 +50,17 @@ const AdminSidebar = ({
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#4de698", // Apply the primary color
-            boxShadow: "none", // Remove shadow if causing darkening
-            transition: "width 0.2s ease", // Smooth transition for resizing
-            overflowX: "hidden", // Prevent horizontal scroll bar
+            backgroundColor: "#4de698",
+            boxShadow: "none",
+            transition: "width 0.2s ease",
+            overflowX: "hidden",
           },
         }}
       >
         <Box
           sx={{
-            overflow: "hidden", // Prevent horizontal scrolling
+            overflow: "hidden",
             paddingTop: 10,
-            textAlign: drawerWidth <= 160 ? "center" : "left", // Center icons when sidebar is small
           }}
         >
           <List>
@@ -76,17 +71,31 @@ const AdminSidebar = ({
                 setSelectedGroup(null);
                 setSelectedComponent("AdminInstructors");
               }}
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "row", // Ensures icon and text are in a row
+              }}
             >
               <ListItemIcon
                 sx={{
-                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start", // Center icons when text is hidden
                   display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minWidth: "40px", // Ensures space for the icon
                 }}
               >
                 <ContactPageIcon />
               </ListItemIcon>
-              {drawerWidth > 160 && ( // Hide text when sidebar is narrow
-                <ListItemText primary="Instructors" />
+              {drawerWidth > 160 && (
+                <ListItemText
+                  primary="Instructors"
+                  sx={{
+                    textAlign: "left", // Aligns text with the icon when expanded
+                    marginLeft: 2, // Adds spacing between icon and text
+                  }}
+                />
               )}
             </ListItem>
             <Divider />
@@ -97,17 +106,31 @@ const AdminSidebar = ({
                 setSelectedGroup(null);
                 setSelectedComponent("AdminSimulationGroups");
               }}
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "row", // Ensures icon and text are in a row
+              }}
             >
               <ListItemIcon
                 sx={{
-                  justifyContent: drawerWidth <= 160 ? "center" : "flex-start", // Center icons when text is hidden
                   display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minWidth: "40px", // Ensures space for the icon
                 }}
               >
                 <GroupsIcon />
               </ListItemIcon>
-              {drawerWidth > 160 && ( // Hide text when sidebar is narrow
-                <ListItemText primary="Simulation Groups" />
+              {drawerWidth > 160 && (
+                <ListItemText
+                  primary="Simulation Groups"
+                  sx={{
+                    textAlign: "left", // Aligns text with the icon when expanded
+                    marginLeft: 2, // Adds spacing between icon and text
+                  }}
+                />
               )}
             </ListItem>
             <Divider />
