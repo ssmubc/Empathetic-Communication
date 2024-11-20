@@ -38,7 +38,6 @@ function titleCase(str) {
 const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
   const [tabValue, setTabValue] = useState(0);
   const [data, setData] = useState([]);
-  const [maxMessages, setMaxMessages] = useState(0);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -147,7 +146,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
 
           {/* Message Count Chart */}
           <Paper>
-            <Box mb={4} sx={{ height: 350 }}>
+            <Box mb={4} sx={{ height: 400, paddingBottom: 4 }}>
               <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
                 Message Count
               </Typography>
@@ -160,11 +159,11 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                       AIMessages: parseInt(patient.ai_message_count, 10) || 0,
                     },
                   ]}
-                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                   barSize={20}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="name" tickMargin={10} />
                   <YAxis />
                   <Tooltip />
                   <Legend />
@@ -185,7 +184,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
 
           {/* Scores and Access Chart */}
           <Paper>
-            <Box mb={4} sx={{ height: 350 }}>
+            <Box mb={4} sx={{ height: 400, paddingBottom: 4 }}>
               <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
                 Scores, Access Count, and Avg Last Access (in Days)
               </Typography>
@@ -212,11 +211,11 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
                           : 0,
                     },
                   ]}
-                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                   barSize={20}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="patient" />
+                  <XAxis dataKey="patient" tickMargin={10} />
                   <YAxis />
                   <Tooltip />
                   <Legend />
