@@ -15,12 +15,14 @@ logger = logging.getLogger()
 DB_SECRET_NAME = os.environ["SM_DB_CREDENTIALS"]
 REGION = os.environ["REGION"]
 
+
 def get_secret(secret_name, expect_json=True):
     try:
         # secretsmanager client to get db credentials
         sm_client = boto3.client("secretsmanager")
-        response = sm_client.get_secret_value(SecretId=secret_name)["SecretString"]
-        
+        response = sm_client.get_secret_value(
+            SecretId=secret_name)["SecretString"]
+
         if expect_json:
             return json.loads(response)
         else:
@@ -29,10 +31,12 @@ def get_secret(secret_name, expect_json=True):
 
     except json.JSONDecodeError as e:
         logger.error(f"Failed to decode JSON for secret {secret_name}: {e}")
-        raise ValueError(f"Secret {secret_name} is not properly formatted as JSON.")
+        raise ValueError(
+            f"Secret {secret_name} is not properly formatted as JSON.")
     except Exception as e:
         logger.error(f"Error fetching secret {secret_name}: {e}")
         raise
+
 
 def get_parameter(param_name):
     """
@@ -40,35 +44,39 @@ def get_parameter(param_name):
     """
     try:
         ssm_client = boto3.client("ssm", region_name=REGION)
-        response = ssm_client.get_parameter(Name=param_name, WithDecryption=True)
+        response = ssm_client.get_parameter(
+            Name=param_name, WithDecryption=True)
         return response["Parameter"]["Value"]
     except Exception as e:
         logger.error(f"Error fetching parameter {param_name}: {e}")
         raise
 
-## GET PARAMETER VALUES FOR CONSTANTS
+
+# GET PARAMETER VALUES FOR CONSTANTS
 BEDROCK_LLM_ID = get_parameter(os.environ["BEDROCK_LLM_PARAM"])
 EMBEDDING_MODEL_ID = get_parameter(os.environ["EMBEDDING_MODEL_PARAM"])
 TABLE_NAME = get_parameter(os.environ["TABLE_NAME_PARAM"])
 
-## GETTING AMAZON TITAN EMBEDDINGS MODEL
+# GETTING AMAZON TITAN EMBEDDINGS MODEL
 bedrock_runtime = boto3.client(
-        service_name="bedrock-runtime",
-        region_name=REGION,
-    )
+    service_name="bedrock-runtime",
+    region_name=REGION,
+)
 embeddings = BedrockEmbeddings(
-    model_id=EMBEDDING_MODEL_ID, 
+    model_id=EMBEDDING_MODEL_ID,
     client=bedrock_runtime,
     region_name=REGION
 )
 
 create_dynamodb_history_table(TABLE_NAME)
 
+
 def get_system_prompt(simulation_group_id):
     connection = None
     cur = None
     try:
-        logger.info(f"Fetching system prompt for simulation_group_id: {simulation_group_id}")
+        logger.info(f"Fetching system prompt for simulation_group_id: {
+                    simulation_group_id}")
         db_secret = get_secret(DB_SECRET_NAME)
 
         connection_params = {
@@ -79,7 +87,8 @@ def get_system_prompt(simulation_group_id):
             'port': db_secret["port"]
         }
 
-        connection_string = " ".join([f"{key}={value}" for key, value in connection_params.items()])
+        connection_string = " ".join(
+            [f"{key}={value}" for key, value in connection_params.items()])
 
         connection = psycopg2.connect(connection_string)
         cur = connection.cursor()
@@ -96,12 +105,14 @@ def get_system_prompt(simulation_group_id):
 
         cur.close()
         connection.close()
-        
+
         if system_prompt:
-            logger.info(f"System prompt for simulation_group_id {simulation_group_id} found: {system_prompt}")
+            logger.info(f"System prompt for simulation_group_id {
+                        simulation_group_id} found: {system_prompt}")
         else:
-            logger.warning(f"No system prompt found for simulation_group_id {simulation_group_id}")
-        
+            logger.warning(f"No system prompt found for simulation_group_id {
+                           simulation_group_id}")
+
         return system_prompt
 
     except Exception as e:
@@ -115,6 +126,7 @@ def get_system_prompt(simulation_group_id):
         if connection:
             connection.close()
         logger.info("Connection closed.")
+
 
 def get_patient_details(patient_id):
     connection = None
@@ -131,7 +143,8 @@ def get_patient_details(patient_id):
             'port': db_secret["port"]
         }
 
-        connection_string = " ".join([f"{key}={value}" for key, value in connection_params.items()])
+        connection_string = " ".join(
+            [f"{key}={value}" for key, value in connection_params.items()])
 
         connection = psycopg2.connect(connection_string)
         cur = connection.cursor()
@@ -144,7 +157,7 @@ def get_patient_details(patient_id):
 
         result = cur.fetchone()
         logger.info(f"Query result: {result}")
-        
+
         if result:
             patient_name, patient_prompt, llm_completion = result
             logger.info(f"Patient details found for patient_id {patient_id}: "
@@ -165,6 +178,7 @@ def get_patient_details(patient_id):
         if connection:
             connection.close()
         logger.info("Connection closed.")
+
 
 def handler(event, context):
     logger.info("Text Generation Lambda function is called!")
@@ -189,7 +203,8 @@ def handler(event, context):
 
     system_prompt = get_system_prompt(simulation_group_id)
     if system_prompt is None:
-        logger.error(f"Error fetching system prompt for simulation_group_id: {simulation_group_id}")
+        logger.error(f"Error fetching system prompt for simulation_group_id: {
+                     simulation_group_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -200,10 +215,12 @@ def handler(event, context):
             },
             'body': json.dumps('Error fetching system prompt')
         }
-    
-    patient_name, patient_prompt, llm_completion = get_patient_details(patient_id)
+
+    patient_name, patient_prompt, llm_completion = get_patient_details(
+        patient_id)
     if patient_name is None or patient_prompt is None or llm_completion is None:
-        logger.error(f"Error fetching patient details for patient_id: {patient_id}")
+        logger.error(
+            f"Error fetching patient details for patient_id: {patient_id}")
         return {
             'statusCode': 400,
             "headers": {
@@ -217,9 +234,10 @@ def handler(event, context):
 
     body = {} if event.get("body") is None else json.loads(event.get("body"))
     question = body.get("message_content", "")
-    
+
     if not question:
-        logger.info(f"Start of conversation. Creating conversation history table in DynamoDB.")
+        logger.info(
+            f"Start of conversation. Creating conversation history table in DynamoDB.")
         student_query = get_initial_student_query(patient_name)
     else:
         logger.info(f"Processing student question: {question}")
@@ -313,26 +331,30 @@ def handler(event, context):
         }
 
     try:
-        logger.info("Updating session name if this is the first exchange between the LLM and student")
-        potential_session_name = update_session_name(TABLE_NAME, session_id, BEDROCK_LLM_ID)
+        logger.info(
+            "Updating session name if this is the first exchange between the LLM and student")
+        potential_session_name = update_session_name(
+            TABLE_NAME, session_id, BEDROCK_LLM_ID)
         if potential_session_name:
-            logger.info("This is the first exchange between the LLM and student. Updating session name.")
+            logger.info(
+                "This is the first exchange between the LLM and student. Updating session name.")
             session_name = potential_session_name
         else:
-            logger.info("Not the first exchange between the LLM and student. Session name remains the same.")
+            logger.info(
+                "Not the first exchange between the LLM and student. Session name remains the same.")
     except Exception as e:
         logger.error(f"Error updating session name: {e}")
         session_name = "New Chat"
-    
+
     logger.info("Returning the generated response.")
     return {
         "statusCode": 200,
         "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "*",
-            },
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+        },
         "body": json.dumps({
             "session_name": session_name,
             "llm_output": response.get("llm_output", "LLM failed to create response"),

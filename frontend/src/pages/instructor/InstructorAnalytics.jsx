@@ -14,15 +14,7 @@ import {
   Paper,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 function titleCase(str) {
   if (typeof str !== "string") {
@@ -30,15 +22,12 @@ function titleCase(str) {
   }
   return str
     .split(" ")
-    .map(function (word) {
-      return word.charAt(0).toUpperCase() + word.slice(1); // Capitalize only the first letter, leave the rest of the word unchanged
-    })
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
 const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
-  const [value, setValue] = useState(0);
-  const [graphData, setGraphData] = useState([]);
+  const [tabValue, setTabValue] = useState(0);
   const [data, setData] = useState([]);
   const [maxMessages, setMaxMessages] = useState(0);
 
@@ -46,7 +35,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
     const fetchAnalytics = async () => {
       try {
         const session = await fetchAuthSession();
-        const token = session.tokens.idToken
+        const token = session.tokens.idToken;
         const response = await fetch(
           `${
             import.meta.env.VITE_API_ENDPOINT
@@ -61,14 +50,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
         );
         if (response.ok) {
           const analytics_data = await response.json();
-          console.log(analytics_data);
           setData(analytics_data);
-          const graphDataFormatted = analytics_data.map((patient) => ({
-            patient: patient.patient_name,
-            StudentMessages: patient.student_message_count,
-            AIMessages: patient.ai_message_count,
-          }));
-          setGraphData(graphDataFormatted);
         } else {
           console.error("Failed to fetch analytics:", response.statusText);
         }
@@ -80,20 +62,8 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
     fetchAnalytics();
   }, [simulation_group_id]);
 
-  useEffect(() => {
-    if (graphData.length > 0) {
-      const maxStudent = Math.max(
-        ...graphData.map((data) => data.StudentMessages || 0)
-      );
-      const maxAI = Math.max(
-        ...graphData.map((data) => data.AIMessages || 0)
-      );
-      setMaxMessages(Math.max(maxStudent, maxAI));
-    }
-  }, [graphData]);
-
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
   return (
@@ -107,124 +77,166 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
       >
         {titleCase(groupName)}
       </Typography>
-      <Paper>
-        <Box mb={4}>
-          <Typography
-            color="black"
-            textAlign="left"
-            paddingLeft={10}
-            padding={2}
-          >
-            Message Count
-          </Typography>
-          {graphData.length > 0 ? (
-            <LineChart
-              width={900}
-              height={300}
-              data={graphData}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="patient"
-                tick={{ fontSize: 12 }}
-                tickFormatter={(tick) => titleCase(tick)}
-              />
-              <YAxis domain={[0, maxMessages + 3]} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="StudentMessages"
-                stroke="#8884d8"
-                activeDot={{ r: 8 }}
-                name="Student Messages"
-              />
-              <Line
-                type="monotone"
-                dataKey="AIMessages"
-                stroke="#82ca9d"
-                activeDot={{ r: 8 }}
-                name="AI Messages"
-              />
-            </LineChart>
-          ) : (
-            <Typography
-              variant="h6"
-              color="textSecondary"
-              textAlign="center"
-              padding={4}
-            >
-              No data found
-            </Typography>
-          )}
-        </Box>
-      </Paper>
 
-      <Tabs value={value} onChange={handleChange} aria-label="grade tabs">
-        <Tab label="Insights" />
+      {/* Tabs for Patients */}
+      <Tabs
+        value={tabValue}
+        onChange={handleTabChange}
+        aria-label="patient tabs"
+        variant="scrollable"
+        scrollButtons="auto"
+      >
+        {data.map((patient, index) => (
+          <Tab key={index} label={titleCase(patient.patient_name)} />
+        ))}
       </Tabs>
 
-      {value === 0 ? (
-        data.length > 0 ? (
-          <Box mt={2}>
-            {data.map((patient, index) => (
-              <Accordion key={index}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography>{titleCase(patient.patient_name)}</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Box width="100%">
-                    <Grid
-                      container
-                      spacing={1}
-                      alignItems="center"
-                      direction="column"
-                    >
-                      <Grid item width="80%">
-                        <Typography textAlign="right">
-                          Completion Percentage:{" "}
-                          {patient.perfect_score_percentage.toFixed(2)}%
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={patient.perfect_score_percentage}
-                        />
-                      </Grid>
-                      <Grid item>
-                        <Typography>Student Message Count</Typography>
-                        <Typography>{patient.student_message_count}</Typography>
-                      </Grid>
-                      <Grid item>
-                        <Typography>AI Message Count</Typography>
-                        <Typography>{patient.ai_message_count}</Typography>
-                      </Grid>
-                      <Grid item>
-                        <Typography>Access Count</Typography>
-                        <Typography>{patient.access_count}</Typography>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                </AccordionDetails>
-              </Accordion>
-            ))}
-          </Box>
-        ) : (
+      {data.map((patient, index) => (
+        <Box
+          key={index}
+          hidden={tabValue !== index}
+          sx={{ marginTop: 4, paddingTop: 2 }}
+        >
           <Typography
             variant="h6"
-            color="textSecondary"
-            textAlign="center"
-            padding={4}
+            color="textPrimary"
+            gutterBottom
+            sx={{ marginBottom: 2 }}
           >
-            No insights available
+            {titleCase(patient.patient_name)} Overview
           </Typography>
-        )
-      ) : null}
+
+          {/* Insights Section */}
+          <Box mb={4}>
+            <Paper>
+              <Grid
+                container
+                spacing={2}
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ padding: 2 }}
+              >
+                <Grid item xs={12} sm={6}>
+                  <Typography>Completion Percentage:</Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={patient.completion_percentage || 0}
+                    sx={{ marginY: 1 }}
+                  />
+                  <Typography textAlign="right">
+                    {patient.completion_percentage.toFixed(2)}%
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography>Student Message Count: {patient.student_message_count}</Typography>
+                  <Typography>AI Message Count: {patient.ai_message_count}</Typography>
+                  <Typography>Access Count: {patient.access_count}</Typography>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Box>
+
+          {/* Message Count Chart */}
+          <Paper>
+            <Box mb={4}>
+              <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
+                Message Count
+              </Typography>
+              <BarChart
+                width={900}
+                height={300}
+                data={[
+                  {
+                    name: "Messages",
+                    StudentMessages: parseInt(patient.student_message_count, 10) || 0,
+                    AIMessages: parseInt(patient.ai_message_count, 10) || 0,
+                  },
+                ]}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                barSize={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="StudentMessages"
+                  fill="#8884d8"
+                  name="Student Messages"
+                />
+                <Bar
+                  dataKey="AIMessages"
+                  fill="#82ca9d"
+                  name="AI Messages"
+                />
+              </BarChart>
+            </Box>
+          </Paper>
+
+          {/* Scores and Access Chart */}
+          <Paper>
+            <Box mb={4}>
+              <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
+                Scores, Access Count, and Avg Last Access (in Days)
+              </Typography>
+              <BarChart
+                width={900}
+                height={300}
+                data={[
+                  {
+                    patient: titleCase(patient.patient_name),
+                    AverageScore: parseFloat(patient.average_score) || 0,
+                    PerfectScorePercentage: parseFloat(patient.perfect_score_percentage) || 0,
+                    AccessCount: parseInt(patient.access_count, 10) || 0,
+                    AvgLastAccessInDays:
+                      patient.students &&
+                      Object.values(patient.students).length > 0
+                        ? Object.values(patient.students)
+                            .map((student) => {
+                              const lastAccess = new Date(student.last_accessed);
+                              return Math.round(
+                                (new Date() - lastAccess) / (1000 * 60 * 60 * 24)
+                              );
+                            })
+                            .reduce((a, b) => a + b, 0) /
+                          Object.values(patient.students).length
+                        : 0,
+                  },
+                ]}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                barSize={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="patient" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="AverageScore"
+                  fill="#ffc658"
+                  name="Average Score"
+                />
+                <Bar
+                  dataKey="PerfectScorePercentage"
+                  fill="#8884d8"
+                  name="Perfect Score %"
+                />
+                <Bar
+                  dataKey="AccessCount"
+                  fill="#8dd1e1"
+                  name="Access Count"
+                />
+                <Bar
+                  dataKey="AvgLastAccessInDays"
+                  fill="#ff8042"
+                  name="Avg Last Access (Days)"
+                />
+              </BarChart>
+            </Box>
+          </Paper>
+        </Box>
+      ))}
     </Container>
   );
 };
