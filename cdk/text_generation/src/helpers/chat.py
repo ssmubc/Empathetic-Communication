@@ -140,7 +140,8 @@ def get_response(
     """
     
     completion_string = """
-                Keep speaking to me, the pharmacy student, regardless if I have given you the proper diagnosis or not for the patient you are pretending to be.
+                Once I, the pharmacy student, have give you a diagnosis, politely leave the conversation and wish me goodbye.
+                Regardless if I have given you the proper diagnosis or not for the patient you are pretending to be, stop talking to me.
                 """
     if llm_completion:
         completion_string = """
@@ -153,7 +154,7 @@ def get_response(
         f"""
         <|begin_of_text|>
         <|start_header_id|>patient<|end_header_id|>
-        Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
+        You are a patient, I am a pharmacy student. Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
         You are not the pharmacy student. You are the patient. Look at the document(s) provided to you and act as a patient with those symptoms.
         Please pay close attention to this: {system_prompt}
         Here are some additional details about your personality, symptoms, or overall condition: {patient_prompt}
