@@ -17,26 +17,30 @@ const AdminSidebar = ({
   setSelectedInstructor,
   setSelectedGroup,
 }) => {
+  // State to control the drawer width
   const [drawerWidth, setDrawerWidth] = useState(220);
 
+  // Function to handle mouse drag for resizing
   const handleMouseMove = (e) => {
-    const newWidth = e.clientX;
-    if (newWidth >= 85 && newWidth <= 400) {
-      setDrawerWidth(newWidth);
+    const newWidth = e.clientX; // Get the new width based on the mouse position
+    if (newWidth >= 85 && newWidth <= 250) {
+      setDrawerWidth(newWidth); // Limit the resizing range
     }
   };
 
+  // Function to handle mouse release (stop resizing)
   const stopResizing = () => {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", stopResizing);
-    document.body.style.userSelect = "";
+    document.body.style.userSelect = ""; // Re-enable text selection
   };
 
+  // Start resizing on mousedown
   const startResizing = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default behavior to avoid issues
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", stopResizing);
-    document.body.style.userSelect = "none";
+    document.body.style.userSelect = "none"; // Disable text selection
   };
 
   return (
@@ -50,90 +54,55 @@ const AdminSidebar = ({
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#4de698",
-            boxShadow: "none",
-            transition: "width 0.2s ease",
-            overflowX: "hidden",
+            backgroundColor: "#4de698", // Apply the primary color
+            boxShadow: "none", // Remove shadow if causing darkening
+            transition: "width 0.2s ease", // Smooth transition for resizing
+            overflowX: "hidden", // Prevent horizontal scroll bar
           },
         }}
       >
         <Box
           sx={{
-            overflow: "hidden",
+            overflow: "hidden", // Prevent horizontal scrolling
             paddingTop: 10,
           }}
         >
           <List>
-            <ListItem
-              button
-              onClick={() => {
-                setSelectedInstructor(null);
-                setSelectedGroup(null);
-                setSelectedComponent("AdminInstructors");
-              }}
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                flexDirection: "row", // Ensures icon and text are in a row
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minWidth: "40px", // Ensures space for the icon
-                }}
-              >
-                <ContactPageIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && (
-                <ListItemText
-                  primary="Instructors"
-                  sx={{
-                    textAlign: "left", // Aligns text with the icon when expanded
-                    marginLeft: 2, // Adds spacing between icon and text
+            {[
+              { text: "Instructors", icon: <ContactPageIcon />, route: "AdminInstructors" },
+              { text: "Simulation Groups", icon: <GroupsIcon />, route: "AdminSimulationGroups" },
+            ].map((item, index) => (
+              <React.Fragment key={index}>
+                <ListItem
+                  button
+                  onClick={() => {
+                    setSelectedInstructor(null);
+                    setSelectedGroup(null);
+                    setSelectedComponent(item.route);
                   }}
-                />
-              )}
-            </ListItem>
-            <Divider />
-            <ListItem
-              button
-              onClick={() => {
-                setSelectedInstructor(null);
-                setSelectedGroup(null);
-                setSelectedComponent("AdminSimulationGroups");
-              }}
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                flexDirection: "row", // Ensures icon and text are in a row
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  minWidth: "40px", // Ensures space for the icon
-                }}
-              >
-                <GroupsIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && (
-                <ListItemText
-                  primary="Simulation Groups"
                   sx={{
-                    textAlign: "left", // Aligns text with the icon when expanded
-                    marginLeft: 2, // Adds spacing between icon and text
+                    display: "flex",
+                    justifyContent: drawerWidth <= 160 ? "center" : "flex-start",
+                    alignItems: "center",
                   }}
-                />
-              )}
-            </ListItem>
-            <Divider />
+                >
+                  <ListItemIcon
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minWidth: 0,
+                      marginRight: drawerWidth > 160 ? 2 : 0,
+                      width: drawerWidth <= 160 ? "100%" : "auto",
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  {drawerWidth > 160 && <ListItemText primary={item.text} />}
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
           </List>
         </Box>
       </Drawer>
