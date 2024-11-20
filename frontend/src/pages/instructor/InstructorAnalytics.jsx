@@ -14,7 +14,16 @@ import {
   Paper,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 function titleCase(str) {
   if (typeof str !== "string") {
@@ -138,101 +147,101 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
 
           {/* Message Count Chart */}
           <Paper>
-            <Box mb={4}>
+            <Box mb={4} sx={{ height: 350 }}>
               <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
                 Message Count
               </Typography>
-              <BarChart
-                width={900}
-                height={300}
-                data={[
-                  {
-                    name: "Messages",
-                    StudentMessages: parseInt(patient.student_message_count, 10) || 0,
-                    AIMessages: parseInt(patient.ai_message_count, 10) || 0,
-                  },
-                ]}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                barSize={20}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar
-                  dataKey="StudentMessages"
-                  fill="#8884d8"
-                  name="Student Messages"
-                />
-                <Bar
-                  dataKey="AIMessages"
-                  fill="#82ca9d"
-                  name="AI Messages"
-                />
-              </BarChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    {
+                      name: "Messages",
+                      StudentMessages: parseInt(patient.student_message_count, 10) || 0,
+                      AIMessages: parseInt(patient.ai_message_count, 10) || 0,
+                    },
+                  ]}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                  barSize={20}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="StudentMessages"
+                    fill="#8884d8"
+                    name="Student Messages"
+                  />
+                  <Bar
+                    dataKey="AIMessages"
+                    fill="#82ca9d"
+                    name="AI Messages"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </Box>
           </Paper>
 
           {/* Scores and Access Chart */}
           <Paper>
-            <Box mb={4}>
+            <Box mb={4} sx={{ height: 350 }}>
               <Typography color="black" textAlign="left" paddingLeft={2} padding={2}>
                 Scores, Access Count, and Avg Last Access (in Days)
               </Typography>
-              <BarChart
-                width={900}
-                height={300}
-                data={[
-                  {
-                    patient: titleCase(patient.patient_name),
-                    AverageScore: parseFloat(patient.average_score) || 0,
-                    PerfectScorePercentage: parseFloat(patient.perfect_score_percentage) || 0,
-                    AccessCount: parseInt(patient.access_count, 10) || 0,
-                    AvgLastAccessInDays:
-                      patient.students &&
-                      Object.values(patient.students).length > 0
-                        ? Object.values(patient.students)
-                            .map((student) => {
-                              const lastAccess = new Date(student.last_accessed);
-                              return Math.round(
-                                (new Date() - lastAccess) / (1000 * 60 * 60 * 24)
-                              );
-                            })
-                            .reduce((a, b) => a + b, 0) /
-                          Object.values(patient.students).length
-                        : 0,
-                  },
-                ]}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                barSize={20}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="patient" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar
-                  dataKey="AverageScore"
-                  fill="#ffc658"
-                  name="Average Score"
-                />
-                <Bar
-                  dataKey="PerfectScorePercentage"
-                  fill="#8884d8"
-                  name="Perfect Score %"
-                />
-                <Bar
-                  dataKey="AccessCount"
-                  fill="#8dd1e1"
-                  name="Access Count"
-                />
-                <Bar
-                  dataKey="AvgLastAccessInDays"
-                  fill="#ff8042"
-                  name="Avg Last Access (Days)"
-                />
-              </BarChart>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    {
+                      patient: titleCase(patient.patient_name),
+                      AverageScore: parseFloat(patient.average_score) || 0,
+                      PerfectScorePercentage: parseFloat(patient.perfect_score_percentage) || 0,
+                      AccessCount: parseInt(patient.access_count, 10) || 0,
+                      AvgLastAccessInDays:
+                        patient.students &&
+                        Object.values(patient.students).length > 0
+                          ? Object.values(patient.students)
+                              .map((student) => {
+                                const lastAccess = new Date(student.last_accessed);
+                                return Math.round(
+                                  (new Date() - lastAccess) / (1000 * 60 * 60 * 24)
+                                );
+                              })
+                              .reduce((a, b) => a + b, 0) /
+                            Object.values(patient.students).length
+                          : 0,
+                    },
+                  ]}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                  barSize={20}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="patient" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="AverageScore"
+                    fill="#ffc658"
+                    name="Average Score"
+                  />
+                  <Bar
+                    dataKey="PerfectScorePercentage"
+                    fill="#8884d8"
+                    name="Perfect Score %"
+                  />
+                  <Bar
+                    dataKey="AccessCount"
+                    fill="#8dd1e1"
+                    name="Access Count"
+                  />
+                  <Bar
+                    dataKey="AvgLastAccessInDays"
+                    fill="#ff8042"
+                    name="Avg Last Access (Days)"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </Box>
           </Paper>
         </Box>
