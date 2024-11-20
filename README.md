@@ -1,6 +1,6 @@
-# AI Learning Assistant
+# Virtual Care Interaction
 
-This prototype explores how Large Language Models (LLMs) can enhance education by offering a personalized and adaptive learning experience. The LLM complements an instructor's role by providing tailored feedback, identifying knowledge gaps, and recommending targeted resources to students. This approach resonates with the core principles of personalized education, transforming the learning experience into a journey of self-discovery and growth.
+This project leverages Large Language Models (LLMs) to revolutionize pharmacy education by enabling students to conduct realistic virtual patient interviews with diverse scenarios and personalities. By addressing limitations in existing tools, the prototype fosters practical skill development and offers scalable, GenAI-driven solutions for clinical education across institutions.
 
 
 | Index                                               | Description                                             |
