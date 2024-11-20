@@ -16,8 +16,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import GroupIcon from "@mui/icons-material/Group";
 
-import GroupsIcon from '@mui/icons-material/Groups';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
+import GroupsIcon from "@mui/icons-material/Groups";
+import ShowChartIcon from "@mui/icons-material/ShowChart";
 
 const InstructorSidebar = ({ setSelectedComponent }) => {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
 
   const handleNavigation = (component) => {
     if (component === "InstructorAllCourses") {
-      navigate("/home"); 
+      navigate("/home");
     } else {
       setSelectedComponent(component);
     }
@@ -72,44 +72,43 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
           sx={{
             overflow: "hidden",
             paddingTop: 10,
-            textAlign: drawerWidth <= 160 ? "center" : "left",
           }}
         >
           <List>
-            <ListItem button onClick={() => handleNavigation("InstructorAllCourses")}>
-              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
-                <GroupsIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && <ListItemText primary="All Groups" />}
-            </ListItem>
-            <Divider />
-            <ListItem button onClick={() => handleNavigation("InstructorAnalytics")}>
-              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
-                <ShowChartIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && <ListItemText primary="Analytics" />}
-            </ListItem>
-            <Divider />
-            <ListItem button onClick={() => handleNavigation("InstructorEditPatients")}>
-              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
-                <EditIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && <ListItemText primary="Edit Patients" />}
-            </ListItem>
-            <Divider />
-            <ListItem button onClick={() => handleNavigation("PromptSettings")}>
-              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
-                <PsychologyIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && <ListItemText primary="Prompt Settings" />}
-            </ListItem>
-            <Divider />
-            <ListItem button onClick={() => handleNavigation("ViewStudents")}>
-              <ListItemIcon sx={{ justifyContent: drawerWidth <= 160 ? "center" : "flex-start" }}>
-                <GroupIcon />
-              </ListItemIcon>
-              {drawerWidth > 160 && <ListItemText primary="View Students" />}
-            </ListItem>
+            {[
+              { text: "All Groups", icon: <GroupsIcon />, route: "InstructorAllCourses" },
+              { text: "Analytics", icon: <ShowChartIcon />, route: "InstructorAnalytics" },
+              { text: "Edit Patients", icon: <EditIcon />, route: "InstructorEditPatients" },
+              { text: "Prompt Settings", icon: <PsychologyIcon />, route: "PromptSettings" },
+              { text: "View Students", icon: <GroupIcon />, route: "ViewStudents" },
+            ].map((item, index) => (
+              <React.Fragment key={index}>
+                <ListItem
+                  button
+                  onClick={() => handleNavigation(item.route)}
+                  sx={{
+                    display: "flex",
+                    justifyContent: drawerWidth <= 160 ? "center" : "flex-start",
+                    alignItems: "center",
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minWidth: 0,
+                      marginRight: drawerWidth > 160 ? 2 : 0,
+                      width: drawerWidth <= 160 ? "100%" : "auto",
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  {drawerWidth > 160 && <ListItemText primary={item.text} />}
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
           </List>
         </Box>
       </Drawer>
