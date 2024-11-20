@@ -25,7 +25,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
 
   const handleMouseMove = (e) => {
     const newWidth = e.clientX;
-    if (newWidth >= 85 && newWidth <= 400) {
+    if (newWidth >= 85 && newWidth <= 250) {
       setDrawerWidth(newWidth);
     }
   };
