@@ -482,17 +482,19 @@ export const Login = () => {
                 sx={{
                   color: 'black',
                   fontWeight: 'bold',
-                  fontSize: '2rem', // Increase the font size for a bolder look
-                  lineHeight: '1.5', // Adjust line height for better spacing
-                  marginTop: '10px', // Add space between the image and the text
-                }}  
+                  fontSize: 'clamp(1rem, 2.5vw, 2.5rem)', // More aggressive scaling: shrinks to 1rem on small screens
+                  lineHeight: '1.2', // Slightly tighter line spacing for smaller windows
+                  marginTop: '10px',
+                  textAlign: 'center',
+                }}
               >
                 Welcome to
                 <br />
-                Virtual Care Interactions 
+                Virtual Care Interactions
                 <br />
                 Powered by AI
               </Typography>
+
             </div>
 
 
@@ -730,21 +732,7 @@ export const Login = () => {
             )}
 
           {/* new user change password  */}
-          {!loading && signUpConfirmation && (
-          <Grid
-            item
-            xs={12}
-            sm={9}
-            md={7}
-            component={Paper}
-            square
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100%",
-            }}
-          >
+          {!loading && newUserPassword && (
             <Box
               sx={{
                 my: 8,
@@ -752,78 +740,103 @@ export const Login = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                width: "100%", // Ensure full width
-                paddingX: 3, // Add horizontal padding
               }}
             >
-              <Typography component="h1" variant="h5" sx={{ marginBottom: 2 }}>
+              <Typography component="h1" variant="h5" paddingBottom={3}>
+                New User
+              </Typography>
+              <p className="text-sm">
+                Please enter a new password for your account.
+              </p>
+              <div className="flex flex-col items-center justify-center">
+                <form onSubmit={handleNewUserPassword}>
+                  <input
+                    className="input input-bordered mt-1 h-10 w-full text-xs"
+                    name="newPassword"
+                    placeholder="New Password"
+                    type="password"
+                    required
+                  />
+                  <input
+                    className="input input-bordered mt-1 h-10 w-full text-xs"
+                    name="confirmNewPassword"
+                    placeholder="Confirm New Password"
+                    type="password"
+                    required
+                  />
+                  {passwordError && (
+                    <div className="block text-m mb-1 mt-6 text-red-600">
+                      {passwordError}
+                    </div>
+                  )}
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    sx={{ mt: 3, mb: 2 }}
+                  >
+                    Submit New Password
+                  </Button>
+                </form>
+              </div>
+            </Box>
+          )}
+          {/* new user confirm signup  */}
+          {!loading && signUpConfirmation && (
+            <Box
+              sx={{
+                my: 8,
+                mx: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Typography component="h1" variant="h5" paddingBottom={3}>
                 Account not verified
               </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: "center",
-                  marginBottom: 3,
-                }}
-              >
+              <p className="text-sm">
                 Please enter the confirmation code sent to your email.
-              </Typography>
-              <Box
-                component="form"
-                noValidate
-                onSubmit={handleConfirmSignUp}
-                sx={{
-                  width: "100%", // Ensure the form spans the entire width
-                  maxWidth: "500px", // Optional: Set a max width for better responsiveness
-                }}
-              >
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="confirmationCode"
-                  label="Confirmation Code"
-                  type="text"
-                  id="confirmationCode"
-                  value={confirmationCode}
-                  onChange={(e) => setConfirmationCode(e.target.value)}
-                  inputProps={{ maxLength: 15 }}
-                  sx={{ marginBottom: 2 }}
-                />
-                {confirmationError && (
-                  <Typography
-                    color="error"
-                    sx={{
-                      marginBottom: 2,
-                      textAlign: "center",
-                    }}
+              </p>
+              <div className="flex flex-col items-center justify-center">
+                <form onSubmit={handleConfirmSignUp}>
+                  <input
+                    className="input input-bordered mt-1 h-10 w-full text-xs bg-gray-200 border border-gray-400 rounded pl-2"
+                    name="confirmationCode"
+                    placeholder="Confirmation Code"
+                    type="password"
+                    maxLength={15}
+                    required
+                  />
+                  {confirmationError && (
+                    <div className="block text-m mb-1 mt-6 text-red-600">
+                      {confirmationError}
+                    </div>
+                  )}
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    sx={{ mt: 3, mb: 2 }}
                   >
-                    {confirmationError}
-                  </Typography>
-                )}
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  sx={{ marginBottom: 2 }}
-                >
-                  Submit
-                </Button>
-                <Button
-                  type="button"
-                  fullWidth
-                  variant="outlined"
-                  color="primary"
-                  onClick={resendConfirmationCode}
-                >
-                  Resend Code
-                </Button>
-              </Box>
+                    Submit
+                  </Button>
+                  <Button
+                    type="button"
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    sx={{ mt: 3, mb: 2 }}
+                    onClick={resendConfirmationCode}
+                  >
+                    Resend Code
+                  </Button>
+                </form>
+              </div>
             </Box>
-          </Grid>
-        )}
-
+          )}
           {/* forgot password?  */}
           {!loading && forgotPassword && (
             <Grid item xs={12} sm={8} md={5} component={Paper} square>
