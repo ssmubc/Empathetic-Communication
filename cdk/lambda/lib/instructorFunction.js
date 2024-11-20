@@ -207,25 +207,13 @@ exports.handler = async (event) => {
                     GROUP BY p.patient_id;
                 `;
 
-                // Query to get the average score for each patient, filtering by student role
-                const averageScores = await sqlConnection`
-                    SELECT p.patient_id, AVG(sp.patient_score) AS average_score
-                    FROM "patients" p
-                    LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
-                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
-                    LEFT JOIN "users" u ON e.user_id = u.user_id
-                    WHERE p.simulation_group_id = ${simulationGroupId}
-                    AND 'student' = ANY(u.roles)
-                    GROUP BY p.patient_id;
-                `;
-
-                // Query to get the percentage of perfect scores for each patient, filtering by student role
-                const perfectScores = await sqlConnection`
-                    SELECT p.patient_id, 
+                // Query to get the percentage of scores evaluated by the LLM for each patient, filtering by student role
+                const aiScores = await sqlConnection`
+                    SELECT p.patient_id, p.llm_completion,
                         CASE 
                             WHEN COUNT(sp.student_interaction_id) = 0 THEN 0 
                             ELSE COUNT(CASE WHEN sp.patient_score = 100 THEN 1 END) * 100.0 / COUNT(sp.student_interaction_id)
-                        END AS perfect_score_percentage
+                        END AS ai_score_percentage
                     FROM "patients" p
                     LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
                     LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
@@ -235,52 +223,31 @@ exports.handler = async (event) => {
                     GROUP BY p.patient_id;
                 `;
 
-                // Query to calculate the percentage of completed interactions for each patient
-                const completionPercentages = await sqlConnection`
-                SELECT 
-                    p.patient_id, 
-                    CASE 
-                        WHEN COUNT(sp.student_interaction_id) = 0 THEN 0 
-                        ELSE COUNT(CASE WHEN sp.is_completed THEN 1 END) * 100.0 / COUNT(sp.student_interaction_id)
-                    END AS completion_percentage
-                FROM "patients" p
-                LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
-                WHERE p.simulation_group_id = ${simulationGroupId}
-                GROUP BY p.patient_id;
+                // Query to calculate the percentage of completed interactions for each patient, filtering by student role
+                const instructorCompletionPercentages = await sqlConnection`
+                    SELECT 
+                        p.patient_id, 
+                        CASE 
+                            WHEN COUNT(sp.student_interaction_id) = 0 THEN 0 
+                            ELSE COUNT(CASE WHEN sp.is_completed THEN 1 END) * 100.0 / COUNT(sp.student_interaction_id)
+                        END AS instructor_completion_percentage
+                    FROM "patients" p
+                    LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
+                    LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
+                    LEFT JOIN "users" u ON e.user_id = u.user_id
+                    WHERE p.simulation_group_id = ${simulationGroupId}
+                    AND 'student' = ANY(u.roles)
+                    GROUP BY p.patient_id;
                 `;
-
-                const studentInteractions = await sqlConnection`
-                SELECT 
-                    p.patient_id,
-                    u.first_name || ' ' || u.last_name AS student_name,
-                    sp.is_completed,
-                    sp.last_accessed
-                FROM "patients" p
-                LEFT JOIN "student_interactions" sp ON p.patient_id = sp.patient_id
-                LEFT JOIN "enrolments" e ON sp.enrolment_id = e.enrolment_id
-                LEFT JOIN "users" u ON e.user_id = u.user_id
-                WHERE p.simulation_group_id = ${simulationGroupId};
-            `;
 
                 // Combine all data into a single response, ensuring all patients are included
                 const analyticsData = messageCreations.map((patient) => {
                     const accesses =
                         patientAccesses.find((pa) => pa.patient_id === patient.patient_id) || {};
-                    const scores =
-                        averageScores.find((as) => as.patient_id === patient.patient_id) || {};
-                    const perfectScore =
-                        perfectScores.find((ps) => ps.patient_id === patient.patient_id) || {};
-                    const completionData =
-                        completionPercentages.find((cp) => cp.patient_id === patient.patient_id) || {};
-                    const studentsForPatient = 
-                        studentInteractions.filter((interaction) => interaction.patient_id === patient.patient_id)
-                        .reduce((acc, interaction) => {
-                            acc[interaction.student_name] = {
-                                is_completed: interaction.is_completed || false,
-                                last_accessed: interaction.last_accessed || null,
-                            };
-                            return acc;
-                        }, {});
+                    const aiScore =
+                        aiScores.find((ps) => ps.patient_id === patient.patient_id) || {};
+                    const instructorCompletionData =
+                        instructorCompletionPercentages.find((cp) => cp.patient_id === patient.patient_id) || {};
 
                     return {
                         patient_id: patient.patient_id,
@@ -289,12 +256,11 @@ exports.handler = async (event) => {
                         student_message_count: patient.student_message_count || 0,
                         ai_message_count: patient.ai_message_count || 0,
                         access_count: accesses.access_count || 0,
-                        average_score: parseFloat(scores.average_score) || 0,
-                        perfect_score_percentage:
-                            parseFloat(perfectScore.perfect_score_percentage) || 0,
-                        completion_percentage:
-                            parseFloat(completionData.completion_percentage) || 0,
-                        students: studentsForPatient,
+                        ai_score_percentage:
+                            parseFloat(aiScore.ai_score_percentage) || 0,
+                        llm_completion: aiScore.llm_completion || false,
+                        instructor_completion_percentage:
+                            parseFloat(instructorCompletionData.instructor_completion_percentage) || 0,
                     };
                 });
 
