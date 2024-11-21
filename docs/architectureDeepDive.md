@@ -44,7 +44,7 @@
 
 ### RDS PostgreSQL Tables
 
-### `Users` table
+### `users` table
 
 | Column Name            | Description                             |
 | ---------------------- | --------------------------------------- |
@@ -58,83 +58,79 @@
 | `roles`                | The roles of the user                   |
 | `last_sign_in`         | The time the user last signed in in UTC |
 
-### `Courses` table
+### `simulation_groups` table
 
 | Column Name             | Description                                     |
 | ----------------------- | ----------------------------------------------- |
-| `course_id`             | The ID of the course                            |
-| `course_name`           | The name of the course                          |
-| `course_department`     | The acronym of the course department            |
-| `course_number`         | The number of the course                        |
-| `course_access_code`    | The access code for students to join the course |
-| `course_student_access` | Whether or not student can access the course    |
-| `system_prompt`         | The system prompt for the course                |
+| `simulation_group_id`   | The ID of the simulation group                  |
+| `group_name`            | The name of the simulation group                |
+| `group_description`     | The description of the simulation group         |
+| `group_access_code`     | The access code for students to join the group  |
+| `group_student_access`  | Whether or not students can access the group    |
+| `system_prompt`         | The system prompt for the group                 |
 
-### `Enrolments` table
+### `enrolments` table
 
 | Column Name                    | Description                                               |
 | ------------------------------ | --------------------------------------------------------- |
 | `enrolment_id`                 | The ID of the enrolment                                   |
 | `user_id`                      | The ID of the enrolled user                               |
-| `course_id`                    | The ID of the associated course                           |
+| `simulation_group_id`          | The ID of the associated simulation group                 |
 | `enrolment_type`               | The type of enrolment (e.g., student, instructor, admin)  |
-| `course_completion_percentage` | The percentage of the course completed (currently unused) |
-| `time_spent`                   | The time spent in the course (currently unused)           |
+| `group_completion_percentage`  | The percentage of the group completed (currently unused)  |
 | `time_enroled`                 | The timestamp when the enrolment occurred                 |
 
-### `Course_Concepts` table
+### `patients` table
 
-| Column Name      | Description                     |
-| ---------------- | ------------------------------- |
-| `concept_id`     | The ID of the concept           |
-| `course_id`      | The ID of the associated course |
-| `concept_name`   | The name of the concept         |
-| `concept_number` | The number of the concept       |
+| Column Name           | Description                                |
+| ---------------       | --------------------------------           |
+| `patient_id`          | The ID of the patient                      |
+| `simulation_group_id` | The ID of the associated simulation group  |
+| `patient_name`        | The name of the patient                    |
+| `patient_age`         | The age of the patient                     |
+| `patient_gender`      | The gender of the patient                  |
+| `patient_number`      | The number of the patient                  |
+| `patient_prompt`      | The prompt that reveals more about patient |
+| `llm_completion`      | The name of the patient                    |
 
-### `Course_Modules` table
-
-| Column Name     | Description                      |
-| --------------- | -------------------------------- |
-| `module_id`     | The ID of the module             |
-| `concept_id`    | The ID of the associated concept |
-| `module_name`   | The name of the module           |
-| `module_number` | The number of the module         |
-
-### `Module_Files` table
+### `patient_data` table
 
 | Column Name           | Description                                  |
 | --------------------- | -------------------------------------------- |
 | `file_id`             | The ID of the file                           |
-| `module_id`           | The ID of the associated module              |
+| `patient_id`          | The ID of the associated patient             |
 | `filetype`            | The type of the file (e.g., pdf, docx, etc.) |
 | `s3_bucket_reference` | The reference to the S3 bucket               |
 | `filepath`            | The path to the file in the S3 bucket        |
 | `filename`            | The name of the file                         |
 | `time_uploaded`       | The timestamp when the file was uploaded     |
 | `metadata`            | Additional metadata about the file           |
+| `file_number`         | Number of the file to keep track of order    |
 
-### `Student_Modules` table
+### `student_interactions` table
 
-| Column Name                | Description                                             |
-| -------------------------- | ------------------------------------------------------- |
-| `student_module_id`        | The ID of the student module                            |
-| `course_module_id`         | The ID of the associated course module                  |
-| `enrolment_id`             | The ID of the related enrolment                         |
-| `module_score`             | The score achieved by the student in the module         |
-| `last_accessed`            | The timestamp of the last time the module was accessed  |
-| `module_context_embedding` | A float array representing the module context embedding |
+| Column Name                 | Description                                                                                |
+| --------------------------  | -------------------------------------------------------                                    |
+| `student_interaction_id`    | The ID of the student interaction                                                          |
+| `patient_id`                | The ID of the associated patient                                                           |
+| `enrolment_id`              | The ID of the related enrolment                                                            |
+| `patient_score`             | Score calculated by the LLM for the student interacting with the patient                   |
+| `last_accessed`             | The timestamp of the last time the patient was accessed                                    |
+| `patient_context_embedding` | A float array representing the patient context embedding                                   |
+| `is_completed`              | A Boolean representing if the instructor has marked this student's interaction as complete |
 
-### `Sessions` table
+### `sessions` table
 
 | Column Name                  | Description                                                                  |
 | ---------------------------- | ---------------------------------------------------------------------------- |
 | `session_id`                 | The ID of the session                                                        |
-| `student_module_id`          | The ID of the associated student module                                      |
+| `student_interaction_id`     | The ID of the associated student interaction                                 |
 | `session_name`               | The name of the session                                                      |
 | `session_context_embeddings` | A float array representing the session context embeddings (currently unused) |
 | `last_accessed`              | The timestamp of the last time the session was accessed                      |
+| `notes`                      | The notes a student can take per session when talking to a patient           |
 
-### `Messages` table
+### `messages` table
 
 | Column Name       | Description                                           |
 | ----------------- | ----------------------------------------------------- |
@@ -144,17 +140,18 @@
 | `message_content` | The content of the message (currently unused)         |
 | `time_sent`       | The timestamp when the message was sent               |
 
-### `User_Engagement_Log` table
+### `user_engagement_log` table
 
-| Column Name       | Description                                  |
-| ----------------- | -------------------------------------------- |
-| `log_id`          | The ID of the engagement log entry           |
-| `user_id`         | The ID of the user                           |
-| `course_id`       | The ID of the associated course              |
-| `module_id`       | The ID of the associated module              |
-| `enrolment_id`    | The ID of the related enrolment              |
-| `timestamp`       | The timestamp of the engagement event        |
-| `engagement_type` | The type of engagement (e.g., module access) |
+| Column Name           | Description                                  |
+| -----------------     | -------------------------------------------- |
+| `log_id`              | The ID of the engagement log entry           |
+| `user_id`             | The ID of the user                           |
+| `simulation_group_id` | The ID of the associated course              |
+| `patient_id`          | The ID of the associated module              |
+| `enrolment_id`        | The ID of the related enrolment              |
+| `timestamp`           | The timestamp of the engagement event        |
+| `engagement_type`     | The type of engagement (e.g., module access) |
+| `engagement_details`  | The text describing the engagement           |
 
 ## S3 Structure
 
