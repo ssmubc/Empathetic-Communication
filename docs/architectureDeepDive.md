@@ -153,19 +153,21 @@
 | `engagement_type`     | The type of engagement (e.g., module access) |
 | `engagement_details`  | The text describing the engagement           |
 
-## S3 Structure
+## S3 Bucket Structure
 
 ```
 .
-├── {course_id_1}
-│   └── {module_name}_{module_id}
+├── {simulation_group_id}
+│   └── {patient_id}
 │       └── documents
-│           ├── document1.pdf
-│           └── document2.pdf
-└── {course_id_2}
-    └── {module_name}_{module_id}
-        └── documents
-            ├── document1.pdf
-            └── document2.pdf
+│           ├── document_1.pdf
+│           └── document_2.pdf
+        └── info
+            ├── info_1.pdf
+            └── info_2.pdf
+        └── answer_key
+            ├── answer_key_1.pdf
+        └── profile_pic
+            ├── {patient_id}_profile_pic.png
 
 ```
