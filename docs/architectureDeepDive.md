@@ -158,10 +158,10 @@
 ```
 .
 ├── {simulation_group_id}
-│   └── {patient_id}
-│       └── documents
-│           ├── document_1.pdf
-│           └── document_2.pdf
+    └── {patient_id}
+        └── documents
+            ├── document_1.pdf
+            └── document_2.pdf
         └── info
             ├── info_1.pdf
             └── info_2.pdf
