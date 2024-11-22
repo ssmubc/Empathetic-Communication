@@ -47,7 +47,7 @@ In the "Simulation Groups" tab, the administrator can view a list of the simulat
 Clicking on a simulation group leads to a page where the administrator can view all the instructors in that group while being able to change the status of the group:
 ![image](./images/admin-active.png)
 
-In the "Create Simulation Group" tab, the administrator can create a siimulation group by specifying the name, department, and code of the group. The administrator can also assign instructors to the group here while changing the "System Prompt" that the Large Language Model (LLM) uses as instructions when generating responses:
+In the "Create Simulation Group" tab, the administrator can create a siimulation group by specifying the name and description of the group. The administrator can also assign instructors to the group here while changing the "System Prompt" that the Large Language Model (LLM) uses as instructions when generating responses:
 ![image](./images/admin-create-course-button.png)
 ![image](./images/admin-create-course.png)
 
@@ -63,7 +63,7 @@ Additionally, the instructor can access detailed graphs that illustrate student 
 ![image](./images/instructor-analytics1.png)
 ![image](./images/instructor-analytics2.png)
 
-Clicking the "Edit Patients" tab leads to a page where the instructor can see a list of patients within the gorup. Here a new patient can be created or existing patients can be edited or deleted:
+Clicking the "Edit Patients" tab leads to a page where the instructor can see a list of patients within the group. Here a new patient can be created or existing patients can be edited or deleted:
 ![image](./images/instructor-edit-concept.png)
 
 The instructor can set for each patient whether or not they want the LLM to evaluate the student.
@@ -115,7 +115,7 @@ We are going to be looking at the Chronic Pain group as an example. Upon selecti
 If we click the "Review" button beside a patient (in this case, we will do Pamela), we are taken to a page where an LLM asks us a question and creates a new conversation:
 ![image](./images/student-new-conversation.png)
 
-The student can then answer the questions the LLM asks in a conversational manner. Upon answering multiple questions correctly, the LLM determines when the student has achieved competency over the module. The student can then respond to the questions the LLM asks to try and eventually find a cure or diagnose the patient. Once the student provides a cure or diagnosis, the LLM will either evaluate them (if the instructor has LLM evaluation on).
+The student can then answer the questions the LLM asks in a conversational manner. The student can then respond to the questions the LLM asks to try and eventually find a cure or diagnose the patient. Once the student provides a cure or diagnosis, the LLM will either evaluate them (if the instructor has LLM evaluation on).
 ![image](./images/student-new-conversation-LLM-evaluation.png)
 
 Or the LLM will stop answering the student (if the instructor has LLM evaluation off).
@@ -131,6 +131,10 @@ The student can also access the patient info posted by the instructor. There, th
 
 The way students interact with patient information varies depending on the file type. For instance, as shown below, with an image, students can zoom in and flip it to examine details more closely. In contrast, with a PDF, they can scroll through pages or print the document for further review.
 ![image](./images/student-new-conversation-patient-info-img.png)
+
+If a student is completely stuck, they can access the instructor-provided answer key by simply clicking the "Reveal Answer" button and confirming their choice.
+![image](./images/student-new-conversation-key.png)
+![image](./images/student-new-conversation-key1.png)
 
 Upon going back to the list of patients, the student can see their learning journey as the patients they achieved competency for are marked complete:
 ![image](./images/student-complete-module.png)
