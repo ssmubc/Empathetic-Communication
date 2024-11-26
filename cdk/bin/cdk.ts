@@ -13,8 +13,9 @@ const env = {
   region: process.env.CDK_DEFAULT_REGION 
 };
 
-const vpcStack = new VpcStack(app, 'VpcStack', { env });
-const dbStack = new DatabaseStack(app, 'DatabaseStack', vpcStack, { env });
-const apiStack = new ApiGatewayStack(app, 'ApiGatewayStack', dbStack, vpcStack,  { env });
-const dbFlowStack = new DBFlowStack(app, 'DBFlowStack', vpcStack, dbStack, apiStack, { env });
-const amplifyStack = new AmplifyStack(app, 'AmplifyStack',apiStack, { env });
+const vpcStack = new VpcStack(app, 'vci-VpcStack', { env });
+const dbStack = new DatabaseStack(app, 'vci-DatabaseStack', vpcStack, { env });
+const apiStack = new ApiGatewayStack(app, 'vci-ApiGatewayStack', dbStack, vpcStack,  { env });
+const dbFlowStack = new DBFlowStack(app, 'vci-DBFlowStack', vpcStack, dbStack, apiStack, { env });
+const amplifyStack = new AmplifyStack(app, 'vci-AmplifyStack',apiStack, { env });
+cdk.Tags.of(app).add("app", "Virtual-Care-Interaction");

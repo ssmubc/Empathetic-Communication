@@ -84,13 +84,13 @@ Extract text from a file in an S3 bucket and return it as a string.
 ```python
 def store_doc_texts(
     bucket: str, 
-    course: str, 
-    module: str,
+    group: str, 
+    patient: str,
     filename: str, 
     output_bucket: str
 ) -> List[str]:
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        s3.download_file(bucket, f"{course}/{module}/documents/{filename}", tmp_file.name)
+        s3.download_file(bucket, f"{group}/{patient}/documents/{filename}", tmp_file.name)
         doc = pymupdf.open(tmp_file.name)
         output_buffer = BytesIO()
 
@@ -99,13 +99,13 @@ def store_doc_texts(
             output_buffer.write(text)
             output_buffer.write(bytes((12,)))
 
-            page_output_key = f'{course}/{module}/documents/{filename}_page_{page_num}.txt'
+            page_output_key = f'{group}/{patient}/documents/{filename}_page_{page_num}.txt'
             page_output_buffer = BytesIO(text)
             s3.upload_fileobj(page_output_buffer, output_bucket, page_output_key)
 
         os.remove(tmp_file.name)
 
-    return [f'{course}/{module}/documents/{filename}_page_{page_num}.txt' for page_num in range(1, len(doc) + 1)]
+    return [f'{group}/{patient}/documents/{filename}_page_{page_num}.txt' for page_num in range(1, len(doc) + 1)]
 ```
 #### Purpose
 Extract and store each page of a document as a separate text file in an S3 bucket.
@@ -118,7 +118,7 @@ Extract and store each page of a document as a separate text file in an S3 bucke
 #### Inputs and Outputs
 - **Inputs**:
   - `bucket`: Name of the input S3 bucket containing the document.
-  - `course`, `module`: Folder structure within the S3 bucket.
+  - `group`, `patient`: Folder structure within the S3 bucket.
   - `filename`: Name of the document file.
   - `output_bucket`: S3 bucket to store extracted text files.
 - **Outputs**: 
@@ -128,8 +128,8 @@ Extract and store each page of a document as a separate text file in an S3 bucke
 ```python
 def add_document(
     bucket: str, 
-    course: str, 
-    module: str,
+    group: str, 
+    patient: str,
     filename: str, 
     vectorstore: PGVector, 
     embeddings: BedrockEmbeddings,
@@ -137,8 +137,8 @@ def add_document(
 ) -> List[Document]:
     output_filenames = store_doc_texts(
         bucket=bucket,
-        course=course,
-        module=module,
+        group=group,
+        patient=patient,
         filename=filename,
         output_bucket=output_bucket
     )
@@ -162,7 +162,7 @@ Processes and adds a document's chunks to the vector store.
 #### Inputs and Outputs
 - **Inputs**:
   - `bucket`: Input S3 bucket containing the document.
-  - `course`, `module`: Folder structure within the S3 bucket.
+  - `group`, `patient`: Folder structure within the S3 bucket.
   - `filename`: Name of the document file.
   - `vectorstore`: PGVector instance for storing document chunks.
   - `embeddings`: Embeddings instance to generate chunk embeddings.
@@ -191,7 +191,7 @@ def store_doc_chunks(
         doc_chunks = text_splitter.create_documents([doc_texts])
         
         head, _, _ = filename.partition("_page")
-        true_filename = head # Converts 'CourseCode_XXX_-_Course-Name.pdf_page_1.txt' to 'CourseCode_XXX_-_Course-Name.pdf'
+        true_filename = head # Converts 'GroupCode_XXX_-_Group-Name.pdf_page_1.txt' to 'GroupCode_XXX_-_Group-Name.pdf'
         
         doc_chunks = [x for x in doc_chunks if x.page_content]
         
@@ -232,13 +232,13 @@ Processes and stores document chunks in the vector store.
 ```python
 def process_documents(
     bucket: str, 
-    course: str, 
+    group: str, 
     vectorstore: PGVector, 
     embeddings: BedrockEmbeddings,
     record_manager: SQLRecordManager
 ) -> None:
     paginator = s3.get_paginator('list_objects_v2')
-    page_iterator = paginator.paginate(Bucket=bucket, Prefix=f"{course}/")
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=f"{group}/")
     all_doc_chunks = []
     
     for page in page_iterator:
@@ -248,11 +248,11 @@ def process_documents(
             filename = file['Key']
             if filename.split('/')[-2] == "documents": # Ensures that only files in the 'documents' folder are processed
                 if filename.endswith((".pdf", ".docx", ".pptx", ".txt", ".xlsx", ".xps", ".mobi", ".cbz")):
-                    module = filename.split('/')[1]
+                    patient = filename.split('/')[1]
                     this_doc_chunks = add_document(
                         bucket=bucket,
-                        course=course,
-                        module=module,
+                        group=group,
+                        patient=patient,
                         filename=os.path.basename(filename),
                         vectorstore=vectorstore,
                         embeddings=embeddings
@@ -265,11 +265,18 @@ def process_documents(
             all_doc_chunks, 
             record_manager, 
             vectorstore, 
-            cleanup="incremental",
+            cleanup="full",
             source_id_key="source"
         )
         logger.info(f"Indexing updates: \n {idx}")
     else:
+        idx = index(
+            [],
+            record_manager, 
+            vectorstore, 
+            cleanup="full",
+            source_id_key="source"
+        )
         logger.info("No documents found for indexing.")
 ```
 #### Purpose
@@ -283,7 +290,7 @@ Processes and indexes documents from an S3 bucket, adding them to the vector sto
 #### Inputs and Outputs
 - **Inputs**:
   - `bucket`: S3 bucket containing the documents.
-  - `course`: Folder structure within the S3 bucket.
+  - `group`: Folder structure within the S3 bucket.
   - `vectorstore`: PGVector instance for storing document chunks.
   - `embeddings`: BedrockEmbeddings instance.
   - `record_manager`: SQLRecordManager instance for managing indexing.
