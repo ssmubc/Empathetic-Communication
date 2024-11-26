@@ -107,7 +107,7 @@ export class DatabaseStack extends Stack {
         this.dbInstance.connections.securityGroups.forEach(function (securityGroup) {
             // Allow Postgres access in VPC
             securityGroup.addIngressRule(
-                ec2.Peer.ipv4("10.0.0.0/16"),
+                ec2.Peer.ipv4(vpcStack.vpcCidrString),
                 ec2.Port.tcp(5432),
                 "Postgres Ingress"
             );
