@@ -37,13 +37,13 @@ This script integrates AWS services like DynamoDB and Bedrock LLM with LangChain
 - **get_student_query**: Formats a student's query into a structured template suitable for processing.
 - **get_initial_student_query**: Generates an initial prompt for a student to greet the chatbot and request a question on a specific topic.
 - **get_response**: Manages the interaction between the student query, the Bedrock LLM, and the history-aware retriever to generate responses.
-- **get_llm_output**: Processes the output from the LLM and checks if the student's competency has been achieved.
+- **get_llm_output**: Processes the output from the LLM and checks if the student has properly diagnosed the patient or not.
 
 ### Execution Flow <a name="execution-flow"></a>
 1. **DynamoDB Table Creation**: The `create_dynamodb_history_table` function ensures that a DynamoDB table is available to store session history.
 2. **Query Processing**: The `get_student_query` and `get_initial_student_query` functions format student queries for processing.
 3. **Response Generation**: The `get_response` function uses the Bedrock LLM and chat history to generate responses to student queries and evaluates the student's progress toward mastering the topic.
-4. **Competency Evaluation**: The `get_llm_output` function checks if the LLM response indicates that the student has mastered the topic.
+4. **Proper Diagnosis Evaluation**: The `get_llm_output` function checks if the LLM response indicates that the student has properly diagnosed the student.
 
 ## Detailed Function Descriptions <a name="detailed-function-descriptions"></a>
 
@@ -172,24 +172,41 @@ def get_response(
     llm: ChatBedrock,
     history_aware_retriever,
     table_name: str,
-    session_id: str
+    session_id: str,
+    system_prompt: str,
+    patient_prompt: str,
+    llm_completion: bool
 ) -> dict:
+    
+    completion_string = """
+                Once I, the pharmacy student, have give you a diagnosis, politely leave the conversation and wish me goodbye.
+                Regardless if I have given you the proper diagnosis or not for the patient you are pretending to be, stop talking to me.
+                """
+    if llm_completion:
+        completion_string = """
+                Continue this process until you determine that me, the pharmacy student, has properly diagnosed the patient you are pretending to be.
+                Once the proper diagnosis is provided, include PROPER DIAGNOSIS ACHIEVED in your response and do not continue the conversation.
+                """
+
     # Create a system prompt for the question answering
     system_prompt = (
-        ""
-        "system"
-        "You are an instructor for a course. "
-        f"Your job is to help the student master the topic: {topic}. \n"        
-        "Engage with the student by asking questions and conversing with them to identify any gaps in their understanding of the topic. If you identify gaps, address these gaps by providing explanations, answering the student's questions, and referring to the relevant context to help the student gain a comprehensive understanding of the topic. "
-        "Continue this process until you determine that the student has mastered the topic. \nOnce mastery is achieved, include COMPETENCY ACHIEVED in your response and do not ask any further questions about the topic. "
-        "Use the following pieces of retrieved context to answer "
-        "a question asked by the student. Use three sentences maximum and keep the "
-        "answer concise. End each answer with a question that tests the student's knowledge about the topic."
-        ""
-        "documents"
-        "{context}"
-        ""
-        "assistant"
+        f"""
+        <|begin_of_text|>
+        <|start_header_id|>patient<|end_header_id|>
+        You are a patient, I am a pharmacy student. Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
+        You are not the pharmacy student. You are the patient. Look at the document(s) provided to you and act as a patient with those symptoms.
+        Please pay close attention to this: {system_prompt}
+        Here are some additional details about your personality, symptoms, or overall condition: {patient_prompt}
+        {completion_string}
+        Use the following document(s) to provide
+        hints as a patient to me, the pharmacy student. Use three sentences maximum when describing your symptoms to provide clues to me, the pharmacy student.
+        End each clue with a question that pushes me to the correct diagnosis. I might ask you questions or provide my thoughts as statements.
+        Again, YOU ARE SUPPOSED TO ACT AS THE PATIENT. I AM THE PHARMACY STUDENT. 
+        <|eot_id|>
+        <|start_header_id|>documents<|end_header_id|>
+        {{context}}
+        <|eot_id|>
+        """
     )
     
     qa_prompt = ChatPromptTemplate.from_messages(
@@ -213,17 +230,16 @@ def get_response(
         output_messages_key="answer",
     )
     
-    # Generate the response
-    response = conversational_rag_chain.invoke(
-        {
-            "input": query
-        },
-        config={
-            "configurable": {"session_id": session_id}
-        },  # constructs a key "session_id" in `store`.
-    )["answer"]
+    # Generate the response until it's not empty
+    response = ""
+    while not response:
+        response = generate_response(
+            conversational_rag_chain,
+            query,
+            session_id
+        )
     
-    return get_llm_output(response)
+    return get_llm_output(response, llm_completion)
 ```
 #### Purpose
 Generates a response to the student's query using the LLM and a history-aware retriever, incorporating context from previous conversations stored in DynamoDB.
@@ -279,19 +295,29 @@ Splits a given paragraph into individual sentences using a regular expression to
 
 ### Function: `get_llm_output` <a name="get_llm_output"></a>
 ```python
-def get_llm_output(response: str) -> dict:
-    if "COMPETENCY ACHIEVED" not in response:
+def get_llm_output(response: str, llm_completion: bool) -> dict:
+
+    completion_sentence = " Congratulations! You have provided the proper diagnosis for me, the patient I am pretending to be! Please try other mock patients to continue your diagnosis skills! :)"
+
+    if not llm_completion:
         return dict(
             llm_output=response,
             llm_verdict=False
         )
     
-    elif "COMPETENCY ACHIEVED" in response:
+    elif "PROPER DIAGNOSIS ACHIEVED" not in response:
+        return dict(
+            llm_output=response,
+            llm_verdict=False
+        )
+    
+    elif "PROPER DIAGNOSIS ACHIEVED" in response:
         sentences = split_into_sentences(response)
         
         for i in range(len(sentences)):
-            if "COMPETENCY ACHIEVED" in sentences[i]:
-                llm_response = ' '.join(sentences[0:i-1])
+            
+            if "PROPER DIAGNOSIS ACHIEVED" in sentences[i]:
+                llm_response=' '.join(sentences[0:i-1])
                 
                 if sentences[i-1][-1] == '?':
                     return dict(
@@ -300,37 +326,31 @@ def get_llm_output(response: str) -> dict:
                     )
                 else:
                     return dict(
-                        llm_output=llm_response,
+                        llm_output=llm_response + completion_sentence,
                         llm_verdict=True
                     )
-    elif "compet" in response.lower() or "master" in response.lower():
-        return dict(
-            llm_output=response,
-            llm_verdict=True
-        )
 ```
 #### Purpose
-Processes the response from the LLM to determine if competency in the topic has been achieved by the student, and extracts the relevant output.
+Processes the response from the LLM to determine if the proper diagnosis of the patient has been found by the student, and extracts the relevant output.
 
 #### Process Flow
-1. **Check for "COMPETENCY ACHIEVED" Absence**: If **"COMPETENCY ACHIEVED"** is **not** in the response, return the original response with `llm_verdict` set to `False`.
-2. **Check for "COMPETENCY ACHIEVED" Presence**: If **"COMPETENCY ACHIEVED"** is in the response:
+1. **Check for "PROPER DIAGNOSIS ACHIEVED" Absence**: If **"PROPER DIAGNOSIS ACHIEVED"** is **not** in the response, return the original response with `llm_verdict` set to `False`.
+2. **Check for "PROPER DIAGNOSIS ACHIEVED" Presence**: If **"PROPER DIAGNOSIS ACHIEVED"** is in the response:
   - Splits the response into sentences using `split_into_sentences(response)`.
-  - Iterates through the sentences to find the one containing **"COMPETENCY ACHIEVED"**.
-  - Extracts all sentences before **"COMPETENCY ACHIEVED"** and joins them into `llm_response`.
-  - Checks the punctuation of the sentence immediately before **"COMPETENCY ACHIEVED"**:
+  - Iterates through the sentences to find the one containing **"PROPER DIAGNOSIS ACHIEVED"**.
+  - Extracts all sentences before **"PROPER DIAGNOSIS ACHIEVED"** and joins them into `llm_response`.
+  - Checks the punctuation of the sentence immediately before **"PROPER DIAGNOSIS ACHIEVED"**:
     - If the preceding sentence ends with a question mark (`?`):
-      - Sets `llm_verdict` to `False` (indicating competency not achieved).
+      - Sets `llm_verdict` to `False` (indicating the proper diagnosis was not found).
     - Else:
-      - Sets `llm_verdict` to `True` (indicating competency achieved).
+      - Sets `llm_verdict` to `True` (indicating the proper diagnosis was found).
   - Returns `llm_response` and `llm_verdict`.
-3. **Check for Keywords "compet" or "master"**: If the **"compet"** or **"master"** word stems are in the response, return the original response with `llm_verdict` set to `True`.
 
 #### Inputs and Outputs
 - **Inputs**:
   - `response`: The response generated by the LLM.
   
 - **Outputs**:
-  - Returns a dictionary with the LLM's output and a boolean indicating whether competency has been achieved.
+  - Returns a dictionary with the LLM's output and a boolean indicating whether the student has properly diagnosed the mock patient.
 
 [🔼 Back to top](#table-of-contents)

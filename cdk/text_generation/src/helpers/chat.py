@@ -235,7 +235,7 @@ def get_llm_output(response: str, llm_completion: bool) -> dict:
     flag indicating whether proper diagnosis has been achieved.
     """
 
-    competion_sentence = " Congratulations! You have provided the proper diagnosis for me, the patient I am pretending to be! Please try other mock patients to continue your diagnosis skills! :)"
+    completion_sentence = " Congratulations! You have provided the proper diagnosis for me, the patient I am pretending to be! Please try other mock patients to continue your diagnosis skills! :)"
 
     if not llm_completion:
         return dict(
@@ -264,14 +264,9 @@ def get_llm_output(response: str, llm_completion: bool) -> dict:
                     )
                 else:
                     return dict(
-                        llm_output=llm_response + competion_sentence,
+                        llm_output=llm_response + completion_sentence,
                         llm_verdict=True
                     )
-    elif "compet" in response or "master" in response:
-        return dict(
-            llm_output=response + competion_sentence,
-            llm_verdict=True
-        )
 
 def split_into_sentences(paragraph: str) -> list[str]:
     """
