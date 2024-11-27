@@ -791,6 +791,9 @@ export const Login = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                margin: "0 auto", // Center the content horizontally
+                justifyContent: "center", // Center the content vertically
+
               }}
             >
               <Typography component="h1" variant="h5" paddingBottom={3}>
