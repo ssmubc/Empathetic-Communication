@@ -8,15 +8,15 @@
 
 1. The user sends a request to the application hosted on AWS Amplify.
 2. Amplify integrates with the backend API Gateway.
-3. Instructors can upload course materials to the application, which are stored in an S3 bucket using a pre-signed upload URL.
-4. Adding a new course file to the S3 bucket triggers the data ingestion workflow. The Lambda function runs a Docker container with Amazon Elastic Container Registry (ECR) and uses LangChain to process documents.
+3. Instructors can upload patient data to the application, which is stored in an S3 bucket using a pre-signed upload URL.
+4. Adding a new file to the S3 bucket triggers the data ingestion workflow. The Lambda function runs a Docker container with Amazon Elastic Container Registry (ECR) and uses LangChain to process documents.
 5. The Lambda function embeds the text from uploaded files into vectors using Amazon Bedrock. This project uses the Amazon Titan Text Embeddings V2 model to generate embeddings.
 6. The Lambda function stores the vectors in the PostgreSQL database.
-7. Users can perform course management/access actions by sending an API request which invokes a Lambda function.
+7. Users can perform simulation group management/access actions by sending an API request which invokes a Lambda function.
 8. This Lambda function interacts with Amazon RDS.
 9. Users can start chatting with the LLM by sending an API request that invokes the Lambda function to generate a response. The Lambda function runs a Docker container with Amazon ECR.
 10. The Lambda function stores the embedded messages in Amazon DynamoDB
-11. This Lambda function uses RAG architecture and LangChain to retrieve the response from LLMs hosted on Amazon Bedrock augmented with the course's information stored in the Amazon RDS. This project uses Meta Llama 3 70 B as its selected LLM. 
+11. This Lambda function uses RAG architecture and LangChain to retrieve the response from LLMs hosted on Amazon Bedrock augmented with the patient's information stored in the Amazon RDS. This project uses Meta Llama 3 70 B as its selected LLM. 
 
 ## Database Schema
 
@@ -146,7 +146,7 @@
 | -----------------     | -------------------------------------------- |
 | `log_id`              | The ID of the engagement log entry           |
 | `user_id`             | The ID of the user                           |
-| `simulation_group_id` | The ID of the associated course              |
+| `simulation_group_id` | The ID of the associated simulation group    |
 | `patient_id`          | The ID of the associated module              |
 | `enrolment_id`        | The ID of the related enrolment              |
 | `timestamp`           | The timestamp of the engagement event        |

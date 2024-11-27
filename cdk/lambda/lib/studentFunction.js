@@ -202,7 +202,7 @@ exports.handler = async (event) => {
 
             const user_id = userResult[0].user_id;
 
-            // Query to get courses for the user
+            // Query to get simulation groups for the user
             const data = await sqlConnection`
                 SELECT "simulation_groups".*
                 FROM "enrolments"

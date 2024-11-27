@@ -42,14 +42,14 @@ The administrator can also click an instructor in the list, which takes them to 
 ![image](./images/admin-instructor-details.png)
 
 In the "Simulation Groups" tab, the administrator can view a list of the simulation groups available:
-![image](./images/admin-courses.png)
+![image](./images/admin-groups.png)
 
 Clicking on a simulation group leads to a page where the administrator can view all the instructors in that group while being able to change the status of the group:
 ![image](./images/admin-active.png)
 
 In the "Create Simulation Group" tab, the administrator can create a siimulation group by specifying the name and description of the group. The administrator can also assign instructors to the group here while changing the "System Prompt" that the Large Language Model (LLM) uses as instructions when generating responses:
-![image](./images/admin-create-course-button.png)
-![image](./images/admin-create-course.png)
+![image](./images/admin-create-group-button.png)
+![image](./images/admin-create-group.png)
 
 ## Instructor View
 

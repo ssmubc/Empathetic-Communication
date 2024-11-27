@@ -44,7 +44,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
   };
 
   const handleNavigation = (component) => {
-    if (component === "InstructorAllCourses") {
+    if (component === "InstructorAllGroups") {
       navigate("/home");
     } else {
       setSelectedComponent(component);
@@ -76,7 +76,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
         >
           <List>
             {[
-              { text: "All Groups", icon: <GroupsIcon />, route: "InstructorAllCourses" },
+              { text: "All Groups", icon: <GroupsIcon />, route: "InstructorAllGroups" },
               { text: "Analytics", icon: <ShowChartIcon />, route: "InstructorAnalytics" },
               { text: "Edit Patients", icon: <EditIcon />, route: "InstructorEditPatients" },
               { text: "Prompt Settings", icon: <PsychologyIcon />, route: "PromptSettings" },

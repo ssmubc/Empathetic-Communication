@@ -53,7 +53,7 @@ Please refer to the [Web App User Guide](./docs/userGuide.md) for instructions o
 
 1. `/cdk`: Contains the deployment code for the app's AWS infrastructure
     - `/bin`: Contains the instantiation of CDK stack
-    - `/data_ingestion`: Contains the code required for the Data Ingestion step in retrieval-augmented generation. This folder is used by a Lambda function that runs a container which updates the vectorstore for a course when files are uploaded or deleted.
+    - `/data_ingestion`: Contains the code required for the Data Ingestion step in retrieval-augmented generation. This folder is used by a Lambda function that runs a container which updates the vectorstore for a simulation group when files are uploaded or deleted.
     - `/lambda`: Contains the lambda functions for the project
     - `/layers`: Contains the required layers for lambda functions
     - `/lib`: Contains the deployment code for all infrastructure stacks

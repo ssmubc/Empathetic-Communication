@@ -147,7 +147,7 @@ exports.handler = async (event) => {
               break;
             }
 
-            // Query to get all courses where the instructor is enrolled
+            // Query to get all simulation groups where the instructor is enrolled
             const data = await sqlConnection`
                 SELECT g.*
                 FROM "enrolments" e
