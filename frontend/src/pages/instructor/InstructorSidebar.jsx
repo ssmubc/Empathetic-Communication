@@ -61,7 +61,7 @@ const InstructorSidebar = ({ setSelectedComponent }) => {
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
-            backgroundColor: "#4de698",
+            backgroundColor: "#99DFB2", 
             boxShadow: "none",
             transition: "width 0.2s ease",
             overflowX: "hidden",
