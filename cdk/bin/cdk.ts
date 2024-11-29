@@ -8,14 +8,16 @@ import { DBFlowStack } from '../lib/dbFlow-stack';
 import { VpcStack } from '../lib/vpc-stack';
 const app = new cdk.App();
 
-const env = { 
-  account: process.env.CDK_DEFAULT_ACCOUNT, 
-  region: process.env.CDK_DEFAULT_REGION 
+const env = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION
 };
 
-const vpcStack = new VpcStack(app, 'vci-VpcStack', { env });
-const dbStack = new DatabaseStack(app, 'vci-DatabaseStack', vpcStack, { env });
-const apiStack = new ApiGatewayStack(app, 'vci-ApiGatewayStack', dbStack, vpcStack,  { env });
-const dbFlowStack = new DBFlowStack(app, 'vci-DBFlowStack', vpcStack, dbStack, apiStack, { env });
-const amplifyStack = new AmplifyStack(app, 'vci-AmplifyStack',apiStack, { env });
+const StackPrefix = app.node.tryGetContext("StackPrefix");
+
+const vpcStack = new VpcStack(app, `${StackPrefix}-VpcStack`, { env });
+const dbStack = new DatabaseStack(app, `${StackPrefix}-Database`, vpcStack, { env });
+const apiStack = new ApiGatewayStack(app, `${StackPrefix}-Api`, dbStack, vpcStack, { env });
+const dbFlowStack = new DBFlowStack(app, `${StackPrefix}-DBFlow`, vpcStack, dbStack, apiStack, { env });
+const amplifyStack = new AmplifyStack(app, `${StackPrefix}-Amplify`, apiStack, { env });
 cdk.Tags.of(app).add("app", "Virtual-Care-Interaction");
