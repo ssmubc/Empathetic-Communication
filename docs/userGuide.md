@@ -61,7 +61,6 @@ The instructor can click on the "Student View" to see the project as a student w
 
 Additionally, the instructor can access detailed graphs that illustrate student interactions with patients and their performance levels.
 ![image](./images/instructor-analytics1.png)
-![image](./images/instructor-analytics2.png)
 
 Clicking the "Edit Patients" tab leads to a page where the instructor can see a list of patients within the group. Here a new patient can be created or existing patients can be edited or deleted:
 ![image](./images/instructor-edit-concept.png)
