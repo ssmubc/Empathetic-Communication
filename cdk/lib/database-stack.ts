@@ -25,7 +25,7 @@ export class DatabaseStack extends Stack {
         /**
          * Create the RDS service-linked role if it doesn't exist
          */
-        // new iam.CfnServiceLinkedRole(this, 'RDSServiceLinkedRole', {
+        // new iam.CfnServiceLinkedRole(this, `${id}-RDSServiceLinkedRole`, {
         //     awsServiceName: 'rds.amazonaws.com',
         // });
 
@@ -60,7 +60,7 @@ export class DatabaseStack extends Stack {
             }
         });
 
-        const parameterGroup = new rds.ParameterGroup(this, "rdsParameterGroup2", {
+        const parameterGroup = new rds.ParameterGroup(this, `${id}-rdsParameterGroup`, {
             engine: rds.DatabaseInstanceEngine.postgres({
                 version: rds.PostgresEngineVersion.VER_16_3,
             }),
@@ -73,7 +73,7 @@ export class DatabaseStack extends Stack {
         /**
          * Create the RDS Postgres database
          */
-        this.dbInstance = new rds.DatabaseInstance(this, "VCI", {
+        this.dbInstance = new rds.DatabaseInstance(this, `${id}-database`, {
             vpc: vpcStack.vpc,
             vpcSubnets: {
                 subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
@@ -116,7 +116,7 @@ export class DatabaseStack extends Stack {
         /**
          * Create IAM role for RDS Proxy
          */
-        const rdsProxyRole = new iam.Role(this, "DBProxyRole", {
+        const rdsProxyRole = new iam.Role(this, `${id}-DBProxyRole`, {
             assumedBy: new iam.ServicePrincipal('rds.amazonaws.com')
         });
 

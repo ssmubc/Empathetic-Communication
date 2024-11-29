@@ -19,7 +19,7 @@ export class DBFlowStack extends Stack {
         const psycopgLambdaLayer = apiStack.getLayers()['psycopg2'];
 
         // Create IAM role for Lambda within the VPC
-        const lambdaRole = new iam.Role(this, "lambda-vpc-role", {
+        const lambdaRole = new iam.Role(this, `${id}-lambda-vpc-role`, {
             assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
             description: "Role for all Lambda functions inside VPC",
         });
@@ -74,8 +74,8 @@ export class DBFlowStack extends Stack {
         );
 
         // Create an initializer Lambda function for the RDS instance, invoked only during deployment
-        const initializerLambda = new triggers.TriggerFunction(this, "vci-triggerLambda", {
-            functionName: "vci-initializerFunction",
+        const initializerLambda = new triggers.TriggerFunction(this, `${id}-triggerLambda`, {
+            functionName: `${id}-initializerFunction`,
             runtime: lambda.Runtime.PYTHON_3_9,
             handler: "initializer.handler",
             timeout: Duration.seconds(300),

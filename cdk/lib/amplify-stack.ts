@@ -55,7 +55,7 @@ export class AmplifyStack extends cdk.Stack {
       "vci-owner-name"
     );
 
-    const amplifyApp = new App(this, "amplifyApp", {
+    const amplifyApp = new App(this, `${id}-amplifyApp`, {
       appName: "vci-amplify",
       sourceCodeProvider: new GitHubSourceCodeProvider({
         owner: username,
