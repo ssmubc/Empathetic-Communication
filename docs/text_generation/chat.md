@@ -12,8 +12,10 @@
   - [Function: `get_student_query`](#get_student_query)
   - [Function: `get_initial_student_query`](#get_initial_student_query)
   - [Function: `get_response`](#get_response)
+  - [Function: `generate_response`](#generate_response)
   - [Function: `split_into_sentences`](#split_into_sentences)
   - [Function: `get_llm_output`](#get_llm_output)
+  - [Function: `update_session_name`](#update_session_name)
 
 ## Script Overview <a name="script-overview"></a>
 This script integrates AWS services like DynamoDB and Bedrock LLM with LangChain to create an educational chatbot that can engage with students, ask questions, provide answers, and track student progress toward mastery of a topic. It also includes history-aware functionality, which uses chat history to provide relevant context during conversations.
@@ -44,6 +46,9 @@ This script integrates AWS services like DynamoDB and Bedrock LLM with LangChain
 2. **Query Processing**: The `get_student_query` and `get_initial_student_query` functions format student queries for processing.
 3. **Response Generation**: The `get_response` function uses the Bedrock LLM and chat history to generate responses to student queries and evaluates the student's progress toward mastering the topic.
 4. **Proper Diagnosis Evaluation**: The `get_llm_output` function checks if the LLM response indicates that the student has properly diagnosed the student.
+5. **RAG Chain Invocation**: The `generate_response` function invokes the RunnableWithMessageHistory chain to generate context-aware responses. This ensures the session_id is maintained for seamless retrieval of chat history.
+6. **Session Naming**: The `update_session_name` function assigns a descriptive name to a session if it meets specific criteria (e.g., exactly one exchange of messages).
+7. **LLM Output Processing**: The `get_llm_output` function determines whether the proper diagnosis has been achieved, updating the conversation flow accordingly.
 
 ## Detailed Function Descriptions <a name="detailed-function-descriptions"></a>
 
@@ -55,7 +60,21 @@ def create_dynamodb_history_table(table_name: str) -> None:
     dynamodb_client = boto3.client("dynamodb")
     
     # Retrieve the list of tables that currently exist.
-    existing_tables = dynamodb_client.list_tables()['TableNames']
+    existing_tables = []
+    exclusive_start_table_name = None
+    
+    while True:
+        if exclusive_start_table_name:
+            response = dynamodb_client.list_tables(ExclusiveStartTableName=exclusive_start_table_name)
+        else:
+            response = dynamodb_client.list_tables()
+        
+        existing_tables.extend(response.get('TableNames', []))
+        
+        if 'LastEvaluatedTableName' in response:
+            exclusive_start_table_name = response['LastEvaluatedTableName']
+        else:
+            break
     
     if table_name not in existing_tables:  # Create a new table if it doesn't exist.
         # Create the DynamoDB table.
@@ -65,6 +84,7 @@ def create_dynamodb_history_table(table_name: str) -> None:
             AttributeDefinitions=[{"AttributeName": "SessionId", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
+        
         # Wait until the table exists.
         table.meta.client.get_waiter("table_exists").wait(TableName=table_name)
 ```
@@ -242,25 +262,72 @@ def get_response(
     return get_llm_output(response, llm_completion)
 ```
 #### Purpose
-Generates a response to the student's query using the LLM and a history-aware retriever, incorporating context from previous conversations stored in DynamoDB.
+Generates a response to the student's query using the Bedrock LLM, context from a history-aware retriever, and stored chat history. This function ensures that responses are contextually aware, helping students simulate diagnosing a mock patient.
 
 #### Process Flow
-1. **Prompt Setup**: Creates a system prompt instructing the LLM to help the student master a specific topic, engaging them in conversation and filling gaps in their understanding.
-2. **Contextual Question Answering**: Uses a retrieval chain to fetch relevant documents based on the student's query and chat history.
-3. **Chat History Handling**: The conversation history is managed using `DynamoDBChatMessageHistory` for the specific session.
-4. **Generate Response**: Generates the response using the LLM and returns the result.
+1. **Define Conversation Flow**: Sets up a completion_string to instruct the LLM on when to end the conversation:
+  - If `llm_completion` is `True`: The LLM continues the process until the proper diagnosis is made.
+  - If `llm_completion` is `False`: The LLM ends the conversation after providing any diagnosis.
+2. **Create a System Prompt**: Constructs a detailed system prompt specifying the roles of the student (pharmacy student) and the LLM (acting as the patient). This includes:
+  - Details about the patient’s symptoms and personality.
+  - Instructions to use retrieved documents for context.
+  - Clear boundaries for the LLM's responses (e.g., number of sentences, ending responses with questions).
+3. **Setup Question Answering Chain**: Uses LangChain utilities to integrate the Bedrock LLM and retriever into a chain:
+  - `create_stuff_documents_chain`: Combines the LLM with prompts for question answering.
+  - `create_retrieval_chain`: Incorporates document retrieval into the reasoning process.
+4. **Generate Response**: Invokes the RAG (Retrieval-Augmented Generation) chain with the student's query and session context. Repeats the generation process until a valid (non-empty) response is obtained.
+5. **Process and Return Response**: The generated response is passed to `get_llm_output` to:
+  - Check if the proper diagnosis was achieved.
+  - Return the final structured response.
 
 #### Inputs and Outputs
 - **Inputs**:
   - `query`: The student's query string.
-  - `topic`: The topic the student is learning about.
+  - `topic`: The patient name the student is diagnosing.
   - `llm`: The Bedrock LLM instance.
   - `history_aware_retriever`: The retriever providing relevant documents for the query.
   - `table_name`: DynamoDB table name used to store the chat history.
   - `session_id`: Unique identifier for the chat session.
+  - `system_prompt `: Initial system prompt with conversation rules and guidance.
+  - `patient_prompt `: Additional context about the patient’s symptoms and personality.
+  - `llm_completion `: Controls whether the LLM stops after any diagnosis or waits for the correct diagnosis.
   
 - **Outputs**:
-  - Returns a dictionary containing the response and the source documents used for retrieval.
+  - Returns a dictionary with:
+    - `llm_output`: The response generated by the LLM.
+    - `llm_verdict`: `True` if the proper diagnosis was achieved, `False` otherwise.
+
+---
+
+### Function: `generate_response` <a name="generate_response"></a>
+```python
+def generate_response(conversational_rag_chain: object, query: str, session_id: str) -> str:
+
+    return conversational_rag_chain.invoke(
+        {
+            "input": query
+        },
+        config={
+            "configurable": {"session_id": session_id}
+        },  # constructs a key "session_id" in `store`.
+    )["answer"]
+```
+#### Purpose
+Invokes the RAG chain to generate a response for the given query, considering the session history.
+
+#### Process Flow
+1. Passes the query to the conversational_rag_chain instance.
+2. Includes the session_id in the configuration to ensure the response is generated with context from the relevant session.
+3. Extracts and returns the answer from the RAG chain's output.
+
+#### Inputs and Outputs
+- **Inputs**:
+  - `conversational_rag_chain`: The chain object processing the query.
+  - `query`: The student's query.
+  - `session_id`: Unique identifier for the current session.
+  
+- **Outputs**:
+  - Returns the generated response as a string.
 
 ---
 
@@ -331,7 +398,7 @@ def get_llm_output(response: str, llm_completion: bool) -> dict:
                     )
 ```
 #### Purpose
-Processes the response from the LLM to determine if the proper diagnosis of the patient has been found by the student, and extracts the relevant output.
+Processes the response from the LLM to determine whether the proper diagnosis for the patient has been achieved. Extracts relevant output and assigns a verdict indicating success or failure.
 
 #### Process Flow
 1. **Check for "PROPER DIAGNOSIS ACHIEVED" Absence**: If **"PROPER DIAGNOSIS ACHIEVED"** is **not** in the response, return the original response with `llm_verdict` set to `False`.
@@ -349,8 +416,107 @@ Processes the response from the LLM to determine if the proper diagnosis of the 
 #### Inputs and Outputs
 - **Inputs**:
   - `response`: The response generated by the LLM.
+  - `llm_completion`: A flag controlling whether the LLM response should be evaluated for achieving a proper diagnosis.
   
 - **Outputs**:
   - Returns a dictionary with the LLM's output and a boolean indicating whether the student has properly diagnosed the mock patient.
 
+---
+### Function: `update_session_name` <a name="update_session_name"></a>
+```python
+def update_session_name(table_name: str, session_id: str, bedrock_llm_id: str) -> str:
+    
+    dynamodb_client = boto3.client("dynamodb")
+    
+    # Retrieve the conversation history from the DynamoDB table
+    try:
+        response = dynamodb_client.get_item(
+            TableName=table_name,
+            Key={
+                'SessionId': {
+                    'S': session_id
+                }
+            }
+        )
+    except Exception as e:
+        print(f"Error fetching conversation history from DynamoDB: {e}")
+        return None
+
+    history = response.get('Item', {}).get('History', {}).get('L', [])
+
+
+
+    human_messages = []
+    ai_messages = []
+    
+    # Find the first human and ai messages in the history
+    # Check if length of human messages is 2 since the prompt counts as 1
+    # Check if length of AI messages is 2 since after first response by student, another response is generated
+    for item in history:
+        message_type = item.get('M', {}).get('data', {}).get('M', {}).get('type', {}).get('S')
+        
+        if message_type == 'human':
+            human_messages.append(item)
+            if len(human_messages) > 2:
+                print("More than one student message found; not the first exchange.")
+                return None
+        
+        elif message_type == 'ai':
+            ai_messages.append(item)
+            if len(ai_messages) > 2:
+                print("More than one AI message found; not the first exchange.")
+                return None
+
+    if len(human_messages) != 2 or len(ai_messages) != 2:
+        print("Not a complete first exchange between the LLM and student.")
+        return None
+    
+    student_message = human_messages[0].get('M', {}).get('data', {}).get('M', {}).get('content', {}).get('S', "")
+    llm_message = ai_messages[0].get('M', {}).get('data', {}).get('M', {}).get('content', {}).get('S', "")
+    
+    llm = BedrockLLM(
+                        model_id = bedrock_llm_id
+                    )
+    
+    system_prompt = """
+        You are given the first message from an AI and the first message from a student in a conversation. 
+        Based on these two messages, come up with a name that describes the conversation. 
+        The name should be less than 30 characters. ONLY OUTPUT THE NAME YOU GENERATED. NO OTHER TEXT.
+    """
+    
+    prompt = f"""
+        <|begin_of_text|>
+        <|start_header_id|>system<|end_header_id|>
+        {system_prompt}
+        <|eot_id|>
+        <|start_header_id|>AI Message<|end_header_id|>
+        {llm_message}
+        <|eot_id|>
+        <|start_header_id|>Student Message<|end_header_id|>
+        {student_message}
+        <|eot_id|>
+        <|start_header_id|>assistant<|end_header_id|>
+    """
+    
+    session_name = llm.invoke(prompt)
+    return session_name
+```
+#### Purpose
+Generates a descriptive session name based on the first messages exchanged by the student and the AI.
+
+#### Process Flow
+1. Fetches the chat history from DynamoDB using the session ID.
+2. Ensures exactly one human and one AI message are present in the history.
+3. Uses the Bedrock LLM to generate a name based on the initial messages.
+4. Returns the session name if conditions are met; otherwise, returns None.
+
+#### Inputs and Outputs
+- **Inputs**:
+  - `table_name`: The DynamoDB table name.
+  - `session_id`: The session ID for the conversation.
+  - `bedrock_llm_id`: The Bedrock LLM model ID used for naming.
+  
+- **Outputs**:
+  - Returns the session name or None if conditions are unmet.
+  
 [🔼 Back to top](#table-of-contents)
