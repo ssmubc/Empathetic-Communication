@@ -34,7 +34,7 @@ export class DBFlowStack extends Stack {
                     "secretsmanager:PutSecretValue"
                 ],
                 resources: [
-                    `arn:aws:secretsmanager:${this.region}:${this.account}:secret:VCI/*`,
+                    `arn:aws:secretsmanager:${this.region}:${this.account}:secret:*`,
                 ],
             })
         );
