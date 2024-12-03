@@ -673,6 +673,13 @@ export class ApiGatewayStack extends cdk.Stack {
       })
     );
 
+    coglambdaRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/*`],
+      })
+    );
+
     const AutoSignupLambda = new lambda.Function(this, `${id}-addStudentOnSignUp`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda/lib"),
@@ -854,19 +861,19 @@ export class ApiGatewayStack extends cdk.Stack {
 
     // Create parameters for Bedrock LLM ID, Embedding Model ID, and Table Name in Parameter Store
     const bedrockLLMParameter = new ssm.StringParameter(this, "BedrockLLMParameter", {
-      parameterName: "/AILA/BedrockLLMId",
+      parameterName: `/${id}/VCI/BedrockLLMId`,
       description: "Parameter containing the Bedrock LLM ID",
       stringValue: bedrockLLMID,
     });
 
     const embeddingModelParameter = new ssm.StringParameter(this, "EmbeddingModelParameter", {
-      parameterName: "/AILA/EmbeddingModelId",
+      parameterName: `/${id}/VCI/EmbeddingModelId`,
       description: "Parameter containing the Embedding Model ID",
       stringValue: "amazon.titan-embed-text-v2:0",
     });
 
     const tableNameParameter = new ssm.StringParameter(this, "TableNameParameter", {
-      parameterName: "/AILA/TableName",
+      parameterName: `/${id}/VCI/TableName`,
       description: "Parameter containing the DynamoDB table name",
       stringValue: "DynamoDB-Conversation-Table",
     });
@@ -918,6 +925,9 @@ export class ApiGatewayStack extends cdk.Stack {
         "arn:aws:bedrock:" +
           this.region +
           "::foundation-model/amazon.titan-embed-text-v2:0",
+        "arn:aws:bedrock:" +
+          this.region +
+          `::foundation-model/${bedrockLLMID}`,
       ],
     });
 
