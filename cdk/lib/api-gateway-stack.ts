@@ -828,11 +828,17 @@ export class ApiGatewayStack extends cdk.Stack {
       "instructorLambdaAuthorizer"
     );
 
+    // Define the Model ID of the LLM used
+    const bedrockLLMID = new cdk.CfnParameter(this, "bedrockLLMID", {
+      type: "String",
+      description: "The model ID of the LLM used",
+    }).valueAsString;
+
     // Create parameters for Bedrock LLM ID, Embedding Model ID, and Table Name in Parameter Store
     const bedrockLLMParameter = new ssm.StringParameter(this, "BedrockLLMParameter", {
       parameterName: "/AILA/BedrockLLMId",
       description: "Parameter containing the Bedrock LLM ID",
-      stringValue: "meta.llama3-70b-instruct-v1:0",
+      stringValue: bedrockLLMID,
     });
 
     const embeddingModelParameter = new ssm.StringParameter(this, "EmbeddingModelParameter", {
