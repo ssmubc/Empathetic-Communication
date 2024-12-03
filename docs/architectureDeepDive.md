@@ -142,16 +142,16 @@
 
 ### `user_engagement_log` table
 
-| Column Name           | Description                                  |
-| -----------------     | -------------------------------------------- |
-| `log_id`              | The ID of the engagement log entry           |
-| `user_id`             | The ID of the user                           |
-| `simulation_group_id` | The ID of the associated simulation group    |
-| `patient_id`          | The ID of the associated module              |
-| `enrolment_id`        | The ID of the related enrolment              |
-| `timestamp`           | The timestamp of the engagement event        |
-| `engagement_type`     | The type of engagement (e.g., module access) |
-| `engagement_details`  | The text describing the engagement           |
+| Column Name           | Description                                   |
+| -----------------     | --------------------------------------------  |
+| `log_id`              | The ID of the engagement log entry            |
+| `user_id`             | The ID of the user                            |
+| `simulation_group_id` | The ID of the associated simulation group     |
+| `patient_id`          | The ID of the associated patient              |
+| `enrolment_id`        | The ID of the related enrolment               |
+| `timestamp`           | The timestamp of the engagement event         |
+| `engagement_type`     | The type of engagement (e.g., patient access) |
+| `engagement_details`  | The text describing the engagement            |
 
 ## S3 Bucket Structure
 

@@ -294,7 +294,7 @@ const InstructorHomepage = () => {
       />
       <Route exact path=":groupName/*" element={<GroupDetails />} />
       <Route
-        path=":groupName/edit-patient/:moduleId"
+        path=":groupName/edit-patient"
         element={<InstructorEditPatients />}
       />
       <Route path=":groupName/new-patient" element={<InstructorNewPatient />} />

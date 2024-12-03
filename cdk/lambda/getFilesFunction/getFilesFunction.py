@@ -51,7 +51,7 @@ def list_files_in_s3_prefix(bucket, prefix):
     files = []
     continuation_token = None
 
-    # Fetch all objects in the module directory, handling pagination
+    # Fetch all objects in the patient directory, handling pagination
     while True:
         if continuation_token:
             result = s3.list_objects_v2(

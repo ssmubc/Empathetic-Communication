@@ -1379,7 +1379,7 @@ export class ApiGatewayStack extends cdk.Stack {
 
     /**
      *
-     * Create Lambda function to delete an entire module directory
+     * Create Lambda function to delete an entire patient directory
      */
     const deletePatientFunction = new lambda.Function(this, `${id}-DeletePatientFunction`, {
       runtime: lambda.Runtime.PYTHON_3_9,

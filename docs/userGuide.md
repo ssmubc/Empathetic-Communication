@@ -109,7 +109,7 @@ Upon logging in as a student, they will see the following home page:
 ![image](./images/student-home-page.png)
 
 We are going to be looking at the Chronic Pain group as an example. Upon selecting Chronic Pain, the student is shown a list of patients, including Pamela and Timothy:
-![image](./images/student-modules.png)
+![image](./images/student-patients.png)
 
 If we click the "Review" button beside a patient (in this case, we will do Pamela), we are taken to a page where an LLM asks us a question and creates a new conversation:
 ![image](./images/student-new-conversation.png)
@@ -136,4 +136,4 @@ If a student is completely stuck, they can access the instructor-provided answer
 ![image](./images/student-new-conversation-key1.png)
 
 Upon going back to the list of patients, the student can see their learning journey as the patients they achieved competency for are marked complete:
-![image](./images/student-complete-module.png)
+![image](./images/student-complete-patient.png)
