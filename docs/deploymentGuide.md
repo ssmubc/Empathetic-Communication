@@ -101,6 +101,12 @@ aws secretsmanager create-secret \
     --profile <your-profile-name>
 ```
 
+Note: If you using an Apple Computer, use the following command instead:
+aws secretsmanager create-secret \
+    --name DSASecrets \
+    --secret-string "{\"DB_Username\":\"<YOUR-DB-USERNAME>\"}"\
+    --profile <your-profile-name>
+
 For example,
 
 ```
@@ -192,7 +198,7 @@ cdk deploy --all --parameters VirtualCareInteraction-Api:bedrockLLMID=meta.llama
 ### Step 1: Build AWS Amplify App
 
 1. Log in to AWS console, and navigate to **AWS Amplify**. You can do so by typing `Amplify` in the search bar at the top.
-2. From `All apps`, click `vci-amplify`.
+2. From `All apps`, click `<stack-prefix>-amplify`.
 3. Then click `main` under `branches`
 4. Click `run job` and wait for the build to complete.
 5. You now have access to the `Amplify App ID` and the public domain name to use the web app.
