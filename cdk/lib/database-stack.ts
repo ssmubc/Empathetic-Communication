@@ -37,8 +37,8 @@ export class DatabaseStack extends Stack {
         /**
          * Create Secrets for various users
          */
-        this.secretPathAdminName = "VCI/credentials/rdsDbCredential";
-        const secretPathUserName = "VCI/userCredentials/rdsDbCredential";
+        this.secretPathAdminName = `${id}VCI/credentials/rdsDbCredential`;
+        const secretPathUserName = `${id}VCI/userCredentials/rdsDbCredential`;
         this.secretPathUser = new secretsmanager.Secret(this, secretPathUserName, {
             secretName: secretPathUserName,
             description: "Secrets for clients to connect to RDS",
@@ -49,7 +49,7 @@ export class DatabaseStack extends Stack {
             }
         });
 
-        const secretPathTableCreator = "VCI/userCredentials/TableCreator";
+        const secretPathTableCreator = `${id}VCI/userCredentials/TableCreator`;
         this.secretPathTableCreator = new secretsmanager.Secret(this, secretPathTableCreator, {
             secretName: secretPathTableCreator,
             description: "Secrets for TableCreator to connect to RDS",

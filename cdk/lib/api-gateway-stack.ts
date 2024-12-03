@@ -177,7 +177,7 @@ export class ApiGatewayStack extends cdk.Stack {
       }
     );
 
-    const secretsName = "VCI_Cognito_Secrets";
+    const secretsName = `${id}-VCI_Cognito_Secrets`;
 
     this.secret = new secretsmanager.Secret(this, secretsName, {
       secretName: secretsName,
@@ -724,6 +724,24 @@ export class ApiGatewayStack extends cdk.Stack {
       value: this.userPool.userPoolId,
       description: "The ID of the Cognito User Pool",
     });
+
+    const preSignupLambda = new lambda.Function(this, "preSignupLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset("lambda/lib"),
+      handler: "preSignup.handler",
+      timeout: Duration.seconds(300),
+      environment: {
+        ALLOWED_EMAIL_DOMAINS: "/VCI/AllowedEmailDomains",
+      },
+      vpc: vpcStack.vpc,
+      functionName: `${id}-preSignupLambda`,
+      memorySize: 128,
+      role: coglambdaRole,
+    });
+    this.userPool.addTrigger(
+      cognito.UserPoolOperation.PRE_SIGN_UP,
+      preSignupLambda
+    );
 
     // **
     //  *
