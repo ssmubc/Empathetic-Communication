@@ -87,6 +87,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
         <Box
           sx={{
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             height: "50vh",
