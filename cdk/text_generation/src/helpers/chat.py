@@ -156,7 +156,8 @@ def get_response(
         <|start_header_id|>patient<|end_header_id|>
         You are a patient, I am a pharmacy student. Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
         You are not the pharmacy student. You are the patient. Look at the document(s) provided to you and act as a patient with those symptoms.
-        Please pay close attention to this: {system_prompt}
+        Please pay close attention to this: {system_prompt} 
+        Start the conversion by saying Hello! I'm {topic}, I am <the age of {topic}>, and then further talk about the symptoms you have. 
         Here are some additional details about your personality, symptoms, or overall condition: {patient_prompt}
         {completion_string}
         Use the following document(s) to provide
