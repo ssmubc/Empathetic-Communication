@@ -72,7 +72,7 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
   };
 
   return (
-    <Container sx={{ flexGrow: 1, p: 3, marginTop: 9, overflow: "auto" }}>
+    <Container sx={{ flexGrow: 1, p: 3, marginTop: 9, width: "100%", overflow: "auto" }}>
       <Typography
         color="black"
         fontStyle="semibold"
@@ -85,15 +85,15 @@ const InstructorAnalytics = ({ groupName, simulation_group_id }) => {
 
       {data.length === 0 ? (
         <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "50vh",
-            textAlign: "center",
-          }}
-        >
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "50vh",
+          textAlign: "center",
+        }}
+      >
           <Typography variant="h5" color="textSecondary">
             No data to display. Please check back later.
           </Typography>
