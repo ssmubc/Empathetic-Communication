@@ -39,7 +39,6 @@ function DraggableNotes({ onClose, sessionId }) {
         const data = await response.json();
         setNoteContent(data.notes || "");
       } else {
-        console.error("Failed to fetch notes:", response.statusText);
       }
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -79,7 +78,6 @@ function DraggableNotes({ onClose, sessionId }) {
           theme: "colored",
         });
       } else {
-        console.error("Failed to update notes:", response.statusText);
       }
     } catch (error) {
       console.error("Error updating notes:", error);

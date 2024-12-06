@@ -21,7 +21,6 @@ exports.handler = async (event) => {
     (attr) => attr.Name === "email"
   );
   const userEmailAttribute = emailAttr ? emailAttr.Value : null;
-  console.log(userEmailAttribute);
   // Check for query string parameters
 
   const queryStringParams = event.queryStringParameters || {};
@@ -660,12 +659,6 @@ exports.handler = async (event) => {
               const simulationGroupId = event.queryStringParameters.simulation_group_id;
               const patientId = event.queryStringParameters.patient_id;
       
-              console.log("message", message_content);
-              console.log("session", sessionId);
-              console.log("email", studentEmail);
-              console.log("simulation group", simulationGroupId);
-              console.log("patient", patientId);
-      
               try {
                   // Insert the new message into the Messages table with a generated UUID for message_id
                   const messageData = await sqlConnection`
@@ -745,12 +738,6 @@ exports.handler = async (event) => {
               const studentEmail = event.queryStringParameters.email;
               const simulationGroupId = event.queryStringParameters.simulation_group_id;
               const patientId = event.queryStringParameters.patient_id;
-      
-              console.log("AI message", message_content);
-              console.log("session", sessionId);
-              console.log("email", studentEmail);
-              console.log("simulation group", simulationGroupId);
-              console.log("patient", patientId);
       
               try {
                   // Insert the new AI message into the Messages table with a generated UUID for message_id

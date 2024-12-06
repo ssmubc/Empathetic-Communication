@@ -2,8 +2,9 @@ import os
 import json
 import boto3
 import psycopg2
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
+from typing import NamedTuple
 
 from helpers.vectorstore import update_vectorstore
 from langchain_aws import BedrockEmbeddings
@@ -16,6 +17,14 @@ DB_SECRET_NAME = os.environ["SM_DB_CREDENTIALS"]
 REGION = os.environ["REGION"]
 DATA_INGESTION_BUCKET = os.environ["BUCKET"]
 EMBEDDING_BUCKET_NAME = os.environ["EMBEDDING_BUCKET_NAME"]
+
+# Set up class to represent parsed file path
+class ParsedFilePath(NamedTuple):
+    simulation_group_id: str
+    patient_id: str 
+    file_category: str
+    file_name: str
+    file_type: str
 
 def get_secret():
     # secretsmanager client to get db credentials
@@ -63,7 +72,13 @@ def parse_s3_file_path(file_key):
 
         file_name, file_type = filename_with_ext.rsplit('.', 1)
 
-        return simulation_group_id, patient_id, file_category, file_name, file_type
+        return ParsedFilePath(
+            simulation_group_id=simulation_group_id,
+            patient_id=patient_id,
+            file_category=file_category,
+            file_name=file_name,
+            file_type=file_type
+        )
     except ValueError as e:
         logger.error(f"Error parsing S3 file path: {e}")
         return {
@@ -181,7 +196,12 @@ def handler(event, context):
             continue
 
         file_key = record['s3']['object']['key']
-        simulation_group_id, patient_id, file_category, file_name, file_type = parse_s3_file_path(file_key)
+        parsed = parse_s3_file_path(file_key)
+        simulation_group_id = parsed.simulation_group_id
+        patient_id = parsed.patient_id
+        file_category = parsed.file_category
+        file_name = parsed.file_name
+        file_type = parsed.file_type
 
         if not simulation_group_id or not patient_id or not file_name or not file_type:
             return {

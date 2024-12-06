@@ -41,7 +41,6 @@ export async function getSignedRequest(
 
     return { responseData, formattedData };
   } else {
-    console.log("Failed to retrieve data:", response.statusText);
     throw new Error(response.statusText);
   }
 }

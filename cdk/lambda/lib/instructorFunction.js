@@ -20,7 +20,6 @@ exports.handler = async (event) => {
     (attr) => attr.Name === "email"
   );
   const userEmailAttribute = emailAttr ? emailAttr.Value : null;
-  console.log(userEmailAttribute);
 
   // Check for query string parameters
 

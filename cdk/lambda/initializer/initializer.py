@@ -10,10 +10,11 @@ DB_USER_SECRET_NAME = os.environ["DB_USER_SECRET_NAME"]
 DB_PROXY = os.environ["DB_PROXY"]
 print(psycopg2.__version__)
 
+# Global Secret Manager Client to avoid recreating multiple times
+sm_client = boto3.client("secretsmanager")
 
 def getDbSecret():
-    # secretsmanager client to get db credentials
-    sm_client = boto3.client("secretsmanager")
+    # use secretsmanager client to get db credentials
     response = sm_client.get_secret_value(SecretId=DB_SECRET_NAME)["SecretString"]
     secret = json.loads(response)
     return secret
@@ -33,10 +34,8 @@ def createConnection():
 dbSecret = getDbSecret()
 connection = createConnection()
 
-
 def handler(event, context):
     global connection
-    print(connection)
     if connection.closed:
         connection = createConnection()
     
@@ -257,7 +256,6 @@ def handler(event, context):
         # Store credentials in Secrets Manager
         authInfoTableCreator = {"username": usernameTableCreator, "password": passwordTableCreator}
         dbSecret.update(authInfoTableCreator)
-        sm_client = boto3.client("secretsmanager")
         sm_client.put_secret_value(SecretId=DB_PROXY, SecretString=json.dumps(dbSecret))
 
         # Store client username and password

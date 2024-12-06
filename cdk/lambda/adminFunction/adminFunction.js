@@ -106,7 +106,6 @@ exports.handler = async (event) => {
                 `;
       
               const enrolment_id = enrollment[0]?.enrolment_id;
-              console.log(enrolment_id);
       
               if (enrolment_id) {
                 // Retrieve all patient IDs associated with the simulation group
@@ -115,7 +114,6 @@ exports.handler = async (event) => {
                     FROM "patients"
                     WHERE simulation_group_id = ${simulation_group_id};
                   `;
-                console.log(patientsResult);
       
                 // Insert a record into student_interactions for each patient in the simulation group
                 const studentInteractionInsertions = patientsResult.map((patient) => {
@@ -127,7 +125,6 @@ exports.handler = async (event) => {
       
                 // Execute all insertions
                 await Promise.all(studentInteractionInsertions);
-                console.log(studentInteractionInsertions);
               }
       
               response.body = JSON.stringify({
@@ -190,7 +187,6 @@ exports.handler = async (event) => {
                   RETURNING *;
               `;
       
-            console.log(newSimulationGroup);
             response.body = JSON.stringify(newSimulationGroup[0]);
           } catch (err) {
             response.statusCode = 500;
