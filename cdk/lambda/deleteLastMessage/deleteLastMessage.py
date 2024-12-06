@@ -19,6 +19,7 @@ def get_secret(secret_name, expect_json=True):
         response = sm_client.get_secret_value(SecretId=secret_name)["SecretString"]
         
         if expect_json:
+            logger.info(f"Successfully fetched secret: {secret_name}")
             return json.loads(response)
         else:
             return response

@@ -69,6 +69,7 @@ export const Login = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+
   const verifyJwtToken = async (token) => {
     try {
       const verifier = CognitoJwtVerifier.create({
@@ -209,21 +210,22 @@ export const Login = () => {
         }
       }
     } catch (error) {
-      toast.error(`Error signing up: ${error}`, {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
-      });
+      const errorMessage =
+      error.message.includes("PreSignUp failed with error")
+        ? "Your email domain is not allowed. Please use a valid email address."
+        : `Error signing up: ${error.message}`;
+    toast.error(errorMessage, {
+      position: "top-center",
+      autoClose: 3000,
+      theme: "colored",
+    });
       console.log("Error signing up:", error);
       setLoading(false);
       setError(error.message);
     }
   };
+
+
 
   // user gets new password
   const handleNewUserPassword = async (event) => {
