@@ -2521,9 +2521,6 @@ paths:
           description: Too Many Requests
         "500":
           description: Internal Server Error
-      requestBody:
-        required: false
-        content: {}
       security:
         - instructorAuthorizer: []
       x-amazon-apigateway-integration:
@@ -2584,19 +2581,16 @@ paths:
               properties:
                 patient_name:
                   type: string
+                patient_age:
+                  type: integer
+                patient_gender:
+                  type: string
+                patient_prompt:
+                  type: string
               required:
                 - patient_name
-              patient_age:
-                  type: integer
-              required:
                 - patient_age
-              patient_gender:
-                  type: string
-              required:
                 - patient_gender
-              patient_prompt:
-                  type: string
-              required:
                 - patient_prompt
       responses:
         "200":
