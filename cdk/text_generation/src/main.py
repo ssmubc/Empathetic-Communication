@@ -14,7 +14,7 @@ logger = logging.getLogger()
 
 DB_SECRET_NAME = os.environ["SM_DB_CREDENTIALS"]
 REGION = os.environ["REGION"]
-
+RDS_PROXY_ENDPOINT = os.environ["RDS_PROXY_ENDPOINT"]
 
 def get_secret(secret_name, expect_json=True):
     try:
@@ -81,7 +81,7 @@ def get_system_prompt(simulation_group_id):
             'dbname': db_secret["dbname"],
             'user': db_secret["username"],
             'password': db_secret["password"],
-            'host': db_secret["host"],
+            'host': RDS_PROXY_ENDPOINT,
             'port': db_secret["port"]
         }
 
@@ -135,7 +135,7 @@ def get_patient_details(patient_id):
             'dbname': db_secret["dbname"],
             'user': db_secret["username"],
             'password': db_secret["password"],
-            'host': db_secret["host"],
+            'host': RDS_PROXY_ENDPOINT,
             'port': db_secret["port"]
         }
 
@@ -260,7 +260,7 @@ def handler(event, context):
             'dbname': db_secret["dbname"],
             'user': db_secret["username"],
             'password': db_secret["password"],
-            'host': db_secret["host"],
+            'host': RDS_PROXY_ENDPOINT,
             'port': db_secret["port"]
         }
     except Exception as e:

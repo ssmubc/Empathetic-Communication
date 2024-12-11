@@ -18,6 +18,7 @@ export class DatabaseStack extends Stack {
     public readonly secretPathTableCreator: secretsmanager.Secret;
     public readonly rdsProxyEndpoint: string;
     public readonly rdsProxyEndpointTableCreator: string;
+    public readonly rdsProxyEndpointAdmin: string;
 
     constructor(scope: Construct, id: string, vpcStack: VpcStack, props?: StackProps) {
         super(scope, id, props);
@@ -146,6 +147,16 @@ export class DatabaseStack extends Stack {
             requireTLS: false,
         });
 
+        const secretPathAdmin = secretmanager.Secret.fromSecretNameV2(this, 'AdminSecret', this.secretPathAdminName);
+        
+        const rdsProxyAdmin = this.dbInstance.addProxy(id + '-proxy-admin', {
+            secrets: [secretPathAdmin],
+            vpc: vpcStack.vpc,
+            role: rdsProxyRole,
+            securityGroups: this.dbInstance.connections.securityGroups,
+            requireTLS: false,
+        });
+
         /**
          * Workaround for TargetGroupName not being set automatically
          */
@@ -169,5 +180,6 @@ export class DatabaseStack extends Stack {
 
         this.rdsProxyEndpoint = rdsProxy.endpoint;
         this.rdsProxyEndpointTableCreator = rdsProxyTableCreator.endpoint;
+        this.rdsProxyEndpointAdmin = rdsProxyAdmin.endpoint;
     }
 }
