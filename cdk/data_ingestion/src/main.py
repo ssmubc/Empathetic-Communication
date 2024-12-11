@@ -33,6 +33,21 @@ def get_secret():
     secret = json.loads(response)
     return secret
 
+def get_parameter(param_name):
+    """
+    Fetch a parameter value from Systems Manager Parameter Store.
+    """
+    try:
+        ssm_client = boto3.client("ssm")
+        response = ssm_client.get_parameter(Name=param_name, WithDecryption=True)
+        return response["Parameter"]["Value"]
+    except Exception as e:
+        logger.error(f"Error fetching parameter {param_name}: {e}")
+        raise
+
+## GET PARAMETER VALUES FOR CONSTANTS
+EMBEDDING_MODEL_ID = get_parameter(os.environ["EMBEDDING_MODEL_PARAM"])
+
 def connect_to_db():
     try:
         db_secret = get_secret()
@@ -152,7 +167,7 @@ def update_vectorstore_from_s3(bucket, simulation_group_id):
     bedrock_runtime = boto3.client("bedrock-runtime", region_name=REGION)
 
     embeddings = BedrockEmbeddings(
-        model_id='amazon.titan-embed-text-v2:0', 
+        model_id=EMBEDDING_MODEL_ID, 
         client=bedrock_runtime,
         region_name=REGION
     )
