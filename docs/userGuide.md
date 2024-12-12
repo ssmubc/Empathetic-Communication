@@ -47,7 +47,7 @@ In the "Simulation Groups" tab, the administrator can view a list of the simulat
 Clicking on a simulation group leads to a page where the administrator can view all the instructors in that group while being able to change the status of the group:
 ![image](./images/admin-active.png)
 
-In the "Create Simulation Group" tab, the administrator can create a siimulation group by specifying the name and description of the group. The administrator can also assign instructors to the group here while changing the "System Prompt" that the Large Language Model (LLM) uses as instructions when generating responses:
+In the "Create Simulation Group" tab, the administrator can create a simulation group by specifying the name and description of the group. The administrator can also assign instructors to the group here while changing the "System Prompt" that the Large Language Model (LLM) uses as instructions when generating responses:
 ![image](./images/admin-create-group-button.png)
 ![image](./images/admin-create-group.png)
 
