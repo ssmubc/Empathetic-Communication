@@ -211,14 +211,14 @@ export const Login = () => {
       }
     } catch (error) {
       const errorMessage =
-      error.message.includes("PreSignUp failed with error")
-        ? "Your email domain is not allowed. Please use a valid email address."
-        : `Error signing up: ${error.message}`;
-    toast.error(errorMessage, {
-      position: "top-center",
-      autoClose: 3000,
-      theme: "colored",
-    });
+        error.message.includes("PreSignUp failed with error")
+          ? "Your email domain is not allowed. Please use a valid email address."
+          : `Error signing up: ${error.message}`;
+      toast.error(errorMessage, {
+        position: "top-center",
+        autoClose: 3000,
+        theme: "colored",
+      });
       console.log("Error signing up:", error);
       setLoading(false);
       setError(error.message);
@@ -306,8 +306,7 @@ export const Login = () => {
         const token = session.tokens.idToken
 
         const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
+          `${import.meta.env.VITE_API_ENDPOINT
           }student/create_user?user_email=${encodeURIComponent(
             username
           )}&username=${encodeURIComponent(
@@ -465,7 +464,7 @@ export const Login = () => {
             }}
           >
 
-            
+
             <div style={{ textAlign: 'center', marginTop: '20px' }}>
               <img
                 src={heartbeatImage}
@@ -501,7 +500,7 @@ export const Login = () => {
 
 
           </Grid>
-          
+
           {/* existing user sign in */}
           {!loading &&
             !newUserPassword &&
@@ -599,139 +598,139 @@ export const Login = () => {
                 </Box>
               </Grid>
             )}
-            {newSignUp && (
-              <Grid
-                item
-                xs={12}
-                sm={9}
-                md={7}
-                component={Paper}
-                square
+          {newSignUp && (
+            <Grid
+              item
+              xs={12}
+              sm={9}
+              md={7}
+              component={Paper}
+              square
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
+              <Box
                 sx={{
+                  my: 8,
+                  mx: 4,
                   display: "flex",
-                  justifyContent: "center",
+                  flexDirection: "column",
                   alignItems: "center",
-                  height: "100%",
                 }}
               >
-                <Box
-                  sx={{
-                    my: 8,
-                    mx: 4,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography component="h1" variant="h5" paddingBottom={3}>
-                    Create your account
+                <Typography component="h1" variant="h5" paddingBottom={3}>
+                  Create your account
+                </Typography>
+                <Box sx={{ mt: 1, width: "100%" }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        autoComplete="given-name"
+                        name="firstName"
+                        required
+                        fullWidth
+                        id="firstName"
+                        label="First Name"
+                        autoFocus
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        inputProps={{ maxLength: 30 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        required
+                        fullWidth
+                        id="lastName"
+                        label="Last Name"
+                        name="lastName"
+                        autoComplete="family-name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        inputProps={{ maxLength: 30 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        required
+                        fullWidth
+                        id="email"
+                        label="Email Address"
+                        name="email"
+                        autoComplete="email"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        inputProps={{ maxLength: 40 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        required
+                        fullWidth
+                        name="password"
+                        label="Password"
+                        type="password"
+                        id="password"
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        inputProps={{ maxLength: 50 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        required
+                        fullWidth
+                        name="confirmPassword"
+                        label="Confirm password"
+                        type="password"
+                        id="confirmPassword"
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        inputProps={{ maxLength: 50 }}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    align="center"
+                    paddingBottom={2}
+                    marginTop={2}
+                  >
+                    Providing personal information is optional and entirely at your
+                    discretion. You can use this app without sharing any personal
+                    details beyond those necessary for account setup.
                   </Typography>
-                  <Box sx={{ mt: 1, width: "100%" }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          autoComplete="given-name"
-                          name="firstName"
-                          required
-                          fullWidth
-                          id="firstName"
-                          label="First Name"
-                          autoFocus
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          inputProps={{ maxLength: 30 }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          required
-                          fullWidth
-                          id="lastName"
-                          label="Last Name"
-                          name="lastName"
-                          autoComplete="family-name"
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          inputProps={{ maxLength: 30 }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          required
-                          fullWidth
-                          id="email"
-                          label="Email Address"
-                          name="email"
-                          autoComplete="email"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          inputProps={{ maxLength: 40 }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          required
-                          fullWidth
-                          name="password"
-                          label="Password"
-                          type="password"
-                          id="password"
-                          autoComplete="new-password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          inputProps={{ maxLength: 50 }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          required
-                          fullWidth
-                          name="confirmPassword"
-                          label="Confirm password"
-                          type="password"
-                          id="confirmPassword"
-                          autoComplete="new-password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          inputProps={{ maxLength: 50 }}
-                        />
-                      </Grid>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSignUp}
+                    sx={{ mt: 3, mb: 2 }}
+                  >
+                    Sign Up
+                  </Button>
+                  <Grid container>
+                    <Grid item xs>
+                      <Link
+                        href="#"
+                        variant="body2"
+                        onClick={() => setNewSignUp(false)}
+                      >
+                        Already have an account? {"Sign in"}
+                      </Link>
                     </Grid>
-                    <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      align="center"
-                      paddingBottom={2}
-                      marginTop={2}
-                    >
-                      Providing personal information is optional and entirely at your
-                      discretion. You can use this app without sharing any personal
-                      details beyond those necessary for account setup.
-                    </Typography>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="primary"
-                      onClick={handleSignUp}
-                      sx={{ mt: 3, mb: 2 }}
-                    >
-                      Sign Up
-                    </Button>
-                    <Grid container>
-                      <Grid item xs>
-                        <Link
-                          href="#"
-                          variant="body2"
-                          onClick={() => setNewSignUp(false)}
-                        >
-                          Already have an account? {"Sign in"}
-                        </Link>
-                      </Grid>
-                    </Grid>
-                  </Box>
+                  </Grid>
                 </Box>
-              </Grid>
-            )}
+              </Box>
+            </Grid>
+          )}
 
           {/* new user change password  */}
           {!loading && newUserPassword && (
@@ -844,120 +843,152 @@ export const Login = () => {
           )}
           {/* forgot password?  */}
           {!loading && forgotPassword && (
-            <Grid item xs={12} sm={8} md={5} component={Paper} square>
+            <Grid
+              item
+              xs={12}
+              sm={12}
+              md={7}
+              component={Paper}
+              square
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100vh", // Center vertically and horizontally
+              }}
+            >
               <Box
                 sx={{
-                  my: 10,
-                  mx: 10,
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center",
                   justifyContent: "center",
+                  alignItems: "center",
                   width: "100%",
-                  paddingRight: 15,
+                  maxWidth: "500px", // Adjust for a clean form size
+                  padding: 4, // Spacing around content
                 }}
               >
-                <Typography fullWidthvariant="h5" sx={{ mb: 3 }}>
+                {/* Title */}
+                <Typography
+                  component="h1"
+                  variant="h5"
+                  sx={{
+                    mb: 3,
+                    textAlign: "center",
+                    fontSize: "1.8rem", // Match font size with Sign In
+                  }}
+                >
                   Reset Password
                 </Typography>
+
+                {/* Request Reset */}
                 {step === "requestReset" && (
                   <>
-                    <Grid item xs={12} md={12}>
-                      <TextField
-                        label="Email"
-                        type="email"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        fullWidth
-                        margin="normal"
-                        inputProps={{ maxLength: 40 }}
-                      />
-                    </Grid>
+                    <TextField
+                      label="Email Address"
+                      type="email"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      inputProps={{ maxLength: 40 }}
+                      sx={{
+                        fontSize: "1rem", // Ensure input matches font size
+                      }}
+                    />
                     <Button
                       variant="contained"
                       color="primary"
                       onClick={() => handleResetPassword(username)}
-                      sx={{ mt: 2 }}
+                      fullWidth
+                      sx={{
+                        mt: 3,
+                        mb: 2,
+                        py: 1.2, // Vertical padding for height consistency
+                        fontSize: "1rem", // Match button text font size
+                      }}
                     >
                       Send Reset Code
                     </Button>
                   </>
                 )}
+
+                {/* Confirm Reset */}
                 {step === "confirmReset" && (
-                  <Grid item xs={12} sm={8} md={5} square>
-                    <Box
-                      component="form"
-                      noValidate
-                      onSubmit={handleConfirmResetPassword}
-                      sx={{ mt: 1 }}
+                  <Box component="form" noValidate onSubmit={handleConfirmResetPassword}>
+                    <TextField
+                      label="Confirmation Code"
+                      value={confirmationCode}
+                      onChange={(e) => setConfirmationCode(e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      inputProps={{ maxLength: 15 }}
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <TextField
+                      label="New Password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      inputProps={{ maxLength: 50 }}
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      sx={{
+                        mt: 3,
+                        mb: 2,
+                        py: 1.2,
+                        fontSize: "1rem",
+                        fontWeight: "bold",
+                      }}
                     >
-                      <Grid item xs={12}>
-                        <TextField
-                          required
-                          fullWidth
-                          id="email"
-                          label="Email Address"
-                          name="email"
-                          autoComplete="email"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          inputProps={{ maxLength: 40 }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          label="Confirmation Code"
-                          value={confirmationCode}
-                          onChange={(e) => setConfirmationCode(e.target.value)}
-                          fullWidth
-                          margin="normal"
-                          inputProps={{ maxLength: 15 }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          label="New Password"
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          fullWidth
-                          margin="normal"
-                          inputProps={{ maxLength: 50 }}
-                        />
-                      </Grid>
-                      <Button
-                        type="submit"
-                        fullWidth
-                        variant="contained"
-                        color="primary"
-                        sx={{ mt: 3, mb: 2 }}
-                      >
-                        Reset Password
-                      </Button>
-                    </Box>
-                  </Grid>
+                      Reset Password
+                    </Button>
+                  </Box>
                 )}
+
+                {/* Success Message */}
                 {step === "done" && (
-                  <Typography color="primary" sx={{ mt: 2 }}>
+                  <Typography
+                    color="primary"
+                    sx={{ mt: 3, textAlign: "center", fontSize: "1.2rem" }}
+                  >
                     Password has been successfully reset.
                   </Typography>
                 )}
+
+                {/* Error Message */}
                 {error && (
-                  <Typography color="error" sx={{ mt: 2 }}>
+                  <Typography
+                    color="error"
+                    sx={{ mt: 2, textAlign: "center", fontSize: "1rem" }}
+                  >
                     {error}
                   </Typography>
                 )}
-                <Grid container sx={{ mt: 4 }}>
-                  <Grid item xs>
-                    <Link
-                      href="#"
-                      variant="body2"
-                      onClick={() => setForgotPassword(false)}
-                    >
-                      Remember your Password? {"Sign in"}
-                    </Link>
-                  </Grid>
-                </Grid>
+
+                {/* Remember Password Link */}
+                <Link
+                  href="#"
+                  variant="body2"
+                  onClick={() => setForgotPassword(false)}
+                  sx={{
+                    mt: 3,
+                    textAlign: "center",
+                    display: "block",
+                    fontSize: "1rem",
+                    fontWeight: "bold",
+                    color: "primary.main", // Match link color
+                  }}
+                >
+                  Remember your Password? <strong>Sign in</strong>
+                </Link>
               </Box>
             </Grid>
           )}
