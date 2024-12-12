@@ -86,8 +86,8 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        setProfilePicture(URL.createObjectURL(file));
-        setIsCropDialogOpen(true); // Open cropping dialog
+      setProfilePicture(URL.createObjectURL(file));
+      setIsCropDialogOpen(true); // Open cropping dialog
     }
   };
 
@@ -114,29 +114,29 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     const fileName = `${patient.patient_id}_profile_pic`;
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-            simulation_group_id
-        )}&patient_id=${encodeURIComponent(
-          patient.patient_id
-        )}&file_type=${encodeURIComponent(
-            fileType
-        )}&file_name=${encodeURIComponent(fileName)}&folder_type=profile_picture`,
-        {
-            method: "GET",
-            headers: {
-                Authorization: token,
-                "Content-Type": "application/json",
-            },
-        }
+      `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+        simulation_group_id
+      )}&patient_id=${encodeURIComponent(
+        patient.patient_id
+      )}&file_type=${encodeURIComponent(
+        fileType
+      )}&file_name=${encodeURIComponent(fileName)}&folder_type=profile_picture`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     const presignedUrl = await response.json();
     await fetch(presignedUrl.presignedurl, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "image/png",
-        },
-        body: profilePicture,
+      method: "PUT",
+      headers: {
+        "Content-Type": "image/png",
+      },
+      body: profilePicture,
     });
   };
 
@@ -268,8 +268,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       const session = await fetchAuthSession();
       const token = session.tokens.idToken
       const s3Response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/delete_patient_s3?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
@@ -288,8 +287,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         throw new Error("Failed to delete patient from S3");
       }
       const patientResponse = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/delete_patient?patient_id=${encodeURIComponent(
           patient.patient_id
         )}`,
@@ -336,8 +334,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     const { token, email } = await getAuthSessionAndEmail();
 
     const editPatientResponse = await fetch(
-      `${
-        import.meta.env.VITE_API_ENDPOINT
+      `${import.meta.env.VITE_API_ENDPOINT
       }instructor/edit_patient?patient_id=${encodeURIComponent(
         patient.patient_id
       )}&instructor_email=${encodeURIComponent(email)}`,
@@ -368,8 +365,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       const fileType = getFileType(file_name);
       const fileName = cleanFileName(removeFileExtension(file_name));
       return fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/delete_file?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
@@ -399,8 +395,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       const fileName = cleanFileName(removeFileExtension(file.name));
 
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
@@ -440,8 +435,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       const fileName = cleanFileName(removeFileExtension(file.name));
 
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
@@ -519,7 +513,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
-  
+
     if (!patientName) {
       toast.error("Patient Name is required.", { position: "top-center" });
       setIsSaving(false);
@@ -535,7 +529,20 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       setIsSaving(false);
       return;
     }
-  
+
+    const totalLLMFiles = files.length + newFiles.length;
+    if (totalLLMFiles === 0) {
+      toast.error("At least one LLM file is required.", {
+        position: "top-center",
+        autoClose: 2000,
+        theme: "colored",
+      });
+      setIsSaving(false);
+      return;
+    }
+
+
+
     try {
       const updatedPatientData = {
         patient_id: patientData.patient_id,
@@ -544,12 +551,12 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         patient_gender: patientGender,
         patient_prompt: patientPrompt,
       };
-  
+
       await updatePatient();
-  
+
       // Update patient information in the parent component
       onPatientUpdated(updatedPatientData);
-  
+
       const { token } = await getAuthSessionAndEmail();
       await deleteFiles(deletedFiles, token);
       await deleteFiles(deletedPatientFiles, token);
@@ -557,13 +564,13 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       await uploadFiles(newFiles, token);
       await uploadPatientFiles(newPatientFiles, token);
       await uploadAnswerKeyFiles(newAnswerKeyFiles, token);
-  
+
       // Upload profile picture and update the preview
       if (profilePicture) {
         await uploadProfilePicture(profilePicture, token);
         setProfilePicturePreview(URL.createObjectURL(profilePicture));
       }
-  
+
       await Promise.all([
         updateMetaData(files, token, metadata),
         updateMetaData(savedFiles, token, metadata),
@@ -575,12 +582,12 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
         updateMetaData(savedAnswerKeyFiles, token, answerKeyMetadata),
         updateMetaData(newAnswerKeyFiles, token, answerKeyMetadata),
       ]);
-  
+
       // Refresh the file list in case of new or deleted files
       setFiles((prevFiles) =>
         prevFiles.filter((file) => !deletedFiles.includes(file.fileName))
       );
-  
+
       setDeletedFiles([]);
       setNewFiles([]);
       setDeletedPatientFiles([]);
@@ -588,7 +595,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       setDeletedAnswerKeyFiles([]);
       setNewAnswerKeyFiles([]);
 
-      showSuccessToast("Patient updated successfully");  
+      showSuccessToast("Patient updated successfully");
       onClose();
     } catch (error) {
       console.error("Error saving patient:", error);
@@ -706,7 +713,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
           margin="normal"
           inputProps={{ maxLength: 50 }}
         />
-        
+
         <TextField
           label="Patient Age"
           name="age"
@@ -715,7 +722,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
           fullWidth
           margin="normal"
         />
-        
+
         <FormControl fullWidth margin="normal">
           <InputLabel>Gender</InputLabel>
           <Select

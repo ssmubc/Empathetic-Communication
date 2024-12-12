@@ -79,13 +79,13 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
   const cleanFileName = (fileName) => {
     return fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   };
-  
+
 
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        setProfilePicture(URL.createObjectURL(file));
-        setIsCropDialogOpen(true); // Open cropping dialog
+      setProfilePicture(URL.createObjectURL(file));
+      setIsCropDialogOpen(true); // Open cropping dialog
     }
   };
 
@@ -111,31 +111,31 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
     const fileName = `${patientId}_profile_pic`;
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
-            simulation_group_id
-        )}&patient_id=${encodeURIComponent(
-          patientId
-        )}&file_type=${encodeURIComponent(
-            fileType
-        )}&file_name=${encodeURIComponent(fileName)}&folder_type=profile_picture`,
-        {
-            method: "GET",
-            headers: {
-                Authorization: token,
-                "Content-Type": "application/json",
-            },
-        }
+      `${import.meta.env.VITE_API_ENDPOINT}instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
+        simulation_group_id
+      )}&patient_id=${encodeURIComponent(
+        patientId
+      )}&file_type=${encodeURIComponent(
+        fileType
+      )}&file_name=${encodeURIComponent(fileName)}&folder_type=profile_picture`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     const presignedUrl = await response.json();
     await fetch(presignedUrl.presignedurl, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "image/png",
-        },
-        body: profilePicture,
+      method: "PUT",
+      headers: {
+        "Content-Type": "image/png",
+      },
+      body: profilePicture,
     });
-  };  
+  };
 
   function removeFileExtension(fileName) {
     return fileName.replace(/\.[^/.]+$/, "");
@@ -151,12 +151,12 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
       fileName,
       url,
     }));
-  
+
     const fileMetadata = resultArray.reduce((acc, { fileName, url }) => {
       acc[fileName] = url.metadata || ""; // Store metadata
       return acc;
     }, {});
-  
+
     setMetadata(fileMetadata);
     return resultArray;
   }
@@ -166,8 +166,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
       const fileType = file.name.split('.').pop();
       const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
       return fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
@@ -206,8 +205,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
       const fileName = cleanFileName(file.name.replace(/\.[^/.]+$/, ""));
 
       return fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/generate_presigned_url?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_id=${encodeURIComponent(
@@ -285,7 +283,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
       const fileMetadata = metadata[fileNameWithExtension] || "";
       const fileName = cleanFileName(removeFileExtension(fileNameWithExtension));
       const fileType = getFileType(fileNameWithExtension);
-      
+
       fetch(
         `${import.meta.env.VITE_API_ENDPOINT}instructor/update_metadata?patient_id=${encodeURIComponent(
           patientId
@@ -336,7 +334,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
     }
 
     if (!patientGender) {
-      
+
       toast.error("Patient Gender is required.", {
         position: "top-center",
         autoClose: 1000,
@@ -364,6 +362,16 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
       return;
     }
 
+    // Check for LLM file upload
+    if (newFiles.length === 0) {
+      toast.error("LLM file is required.", {
+        position: "top-center",
+        autoClose: 1000,
+        theme: "colored",
+      });
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -372,8 +380,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
       const { email } = await fetchUserAttributes();
 
       const response = await fetch(
-        `${
-          import.meta.env.VITE_API_ENDPOINT
+        `${import.meta.env.VITE_API_ENDPOINT
         }instructor/create_patient?simulation_group_id=${encodeURIComponent(
           simulation_group_id
         )}&patient_name=${encodeURIComponent(
@@ -432,8 +439,8 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
           prevFiles.filter((file) => !deletedPatientFiles.includes(file.fileName))
         );
         setSavedPatientFiles((prevFiles) => [...prevFiles, ...newPatientFiles]);
-        
-        setAnswerKeyFiles((prevFiles) => 
+
+        setAnswerKeyFiles((prevFiles) =>
           prevFiles.filter((file) => !deletedAnswerKeyFiles.includes(file.fileName))
         );
         setSavedAnswerKeyFiles((prevFiles) => [...prevFiles, ...newAnswerKeyFiles]);
@@ -445,7 +452,7 @@ export const InstructorNewPatient = ({ data, simulation_group_id, onClose, onPat
         setDeletedAnswerKeyFiles([]);
         setNewAnswerKeyFiles([]);
         showSuccessToast("Patient Created Successfully");
-        onPatientCreated(updatedPatient);        
+        onPatientCreated(updatedPatient);
         onClose();
       }
     } catch (error) {
