@@ -732,7 +732,7 @@ export class ApiGatewayStack extends cdk.Stack {
       description: "The ID of the Cognito User Pool",
     });
 
-    const preSignupLambda = new lambda.Function(this, `${id}-preSignupLambda`, {
+    const preSignupLambda = new lambda.Function(this, `preSignupLambda`, {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda/lib"),
       handler: "preSignup.handler",
