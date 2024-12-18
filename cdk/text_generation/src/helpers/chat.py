@@ -96,31 +96,32 @@ def get_student_query(raw_query: str) -> str:
     """
     return student_query
 
-def get_initial_student_query(topic: str) -> str:
+def get_initial_student_query(patient_name: str) -> str:
     """
     Generate an initial query for the student to interact with the system. 
-    The query asks the student to greet the system and then requests a question related to a specified topic.
+    The query asks the student to greet the system and then requests a question related to a specified patient.
 
     Args:
-    topic (str): The topic for which the initial question should be generated.
+    patient_name (str): The name of the patient for which the initial question should be generated.
 
     Returns:
     str: The formatted initial query string for the student.
     """
     student_query = f"""
     user
-    Greet me and then ask me a question related to the topic: {topic}. 
+    Greet me and then ask me a question related to the patient: {patient_name}. 
     """
     return student_query
 
 def get_response(
     query: str,
-    topic: str,
+    patient_name: str,
     llm: ChatBedrock,
     history_aware_retriever,
     table_name: str,
     session_id: str,
     system_prompt: str,
+    patient_age: str,
     patient_prompt: str,
     llm_completion: bool
 ) -> dict:
@@ -129,7 +130,7 @@ def get_response(
 
     Args:
     query (str): The student's query string for which a response is needed.
-    topic (str): The specific topic that the student needs to master.
+    patient_name (str): The specific patient that the student needs to diagnose.
     llm (ChatBedrock): The language model instance used to generate the response.
     history_aware_retriever: The history-aware retriever instance that provides relevant context documents for the query.
     table_name (str): The DynamoDB table name used to store and retrieve the chat history.
@@ -154,10 +155,10 @@ def get_response(
         f"""
         <|begin_of_text|>
         <|start_header_id|>patient<|end_header_id|>
-        You are a patient, I am a pharmacy student. Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
+        You are a patient, I am a pharmacy student. Your name is {patient_name} and you are going to pretend to be a patient talking to me, a pharmacy student.
         You are not the pharmacy student. You are the patient. Look at the document(s) provided to you and act as a patient with those symptoms.
         Please pay close attention to this: {system_prompt} 
-        Start the conversion by saying Hello! I'm {topic}, I am <the age of {topic}>, and then further talk about the symptoms you have. 
+        Start the conversion by saying Hello! I'm {patient_name}, I am {patient_age} years old, and then further talk about the symptoms you have. 
         Here are some additional details about your personality, symptoms, or overall condition: {patient_prompt}
         {completion_string}
         Use the following document(s) to provide

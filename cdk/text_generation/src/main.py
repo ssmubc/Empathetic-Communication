@@ -153,7 +153,7 @@ def get_patient_details(patient_id):
         cur = connection.cursor()
         logger.info("Connected to RDS instance!")
         cur.execute("""
-            SELECT patient_name, patient_prompt, llm_completion
+            SELECT patient_name, patient_age, patient_prompt, llm_completion
             FROM "patients"
             WHERE patient_id = %s;
         """, (patient_id,))
@@ -164,13 +164,13 @@ def get_patient_details(patient_id):
         cur.close()
 
         if result:
-            patient_name, patient_prompt, llm_completion = result
+            patient_name, patient_age, patient_prompt, llm_completion = result
             logger.info(f"Patient details found for patient_id {patient_id}: "
-                        f"Name: {patient_name}, Prompt: {patient_prompt}, LLM Completion: {llm_completion}")
-            return patient_name, patient_prompt, llm_completion
+                        f"Name: {patient_name}, Age: {patient_age}, Prompt: {patient_prompt}, LLM Completion: {llm_completion}")
+            return patient_name, patient_age, patient_prompt, llm_completion
         else:
             logger.warning(f"No details found for patient_id {patient_id}")
-            return None, None, None
+            return None, None, None, None
 
     except Exception as e:
         logger.error(f"Error fetching patient details: {e}")
@@ -216,9 +216,9 @@ def handler(event, context):
             'body': json.dumps('Error fetching system prompt')
         }
 
-    patient_name, patient_prompt, llm_completion = get_patient_details(
+    patient_name, patient_age, patient_prompt, llm_completion = get_patient_details(
         patient_id)
-    if patient_name is None or patient_prompt is None or llm_completion is None:
+    if patient_name is None or patient_age is None or patient_prompt is None or llm_completion is None:
         logger.error(f"Error fetching patient details for patient_id: {patient_id}")
         return {
             'statusCode': 400,
@@ -306,12 +306,13 @@ def handler(event, context):
         logger.info("Generating response from the LLM.")
         response = get_response(
             query=student_query,
-            topic=patient_name,
+            patient_name=patient_name,
             llm=llm,
             history_aware_retriever=history_aware_retriever,
             table_name=TABLE_NAME,
             session_id=session_id,
             system_prompt=system_prompt,
+            patient_age=patient_age,
             patient_prompt=patient_prompt,
             llm_completion=llm_completion
         )
