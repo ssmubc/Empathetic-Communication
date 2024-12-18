@@ -1120,6 +1120,15 @@ export class ApiGatewayStack extends cdk.Stack {
       })
     );
 
+    // Grant access to SSM Parameter Store for specific parameters
+    dataIngestLambdaDockerFunc.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["ssm:GetParameter"],
+        resources: [embeddingModelParameter.parameterArn],
+      })
+    );
+
     /**
      *
      * Create Lambda function that will return all file names for a specified simulation group and patient
