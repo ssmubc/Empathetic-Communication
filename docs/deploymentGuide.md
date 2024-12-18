@@ -184,14 +184,13 @@ The stack prefix will be prefixed onto the physical names of the resources creat
 If you have trouble running the above command, try removing all the \ and run it in one line.
 ```
 cdk deploy --all \
- --parameters <your-stack-prefix>-Api:bedrockLLMID=<your-model-id> \
  --parameters <your-stack-prefix>-Amplify:githubRepoName=VIRTUAL-CARE-INTERACTION \
  --context StackPrefix=<your-stack-prefix> \
  --profile <your-profile-name>
 ```
 For example: 
 ```
-cdk deploy --all --parameters VirtualCareInteraction-Api:bedrockLLMID=meta.llama3-70b-instruct-v1:0 --parameters VirtualCareInteraction-Amplify:githubRepoName=VIRTUAL-CARE-INTERACTION --context StackPrefix=VirtualCareInteraction --profile <your-profile-name>
+cdk deploy --all --parameters VirtualCareInteraction-Amplify:githubRepoName=VIRTUAL-CARE-INTERACTION --context StackPrefix=VirtualCareInteraction --profile <your-profile-name>
 ```
 
 ## Post-Deployment
