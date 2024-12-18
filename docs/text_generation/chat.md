@@ -18,7 +18,7 @@
   - [Function: `update_session_name`](#update_session_name)
 
 ## Script Overview <a name="script-overview"></a>
-This script integrates AWS services like DynamoDB and Bedrock LLM with LangChain to create an educational chatbot that can engage with students, ask questions, provide answers, and track student progress toward mastery of a topic. It also includes history-aware functionality, which uses chat history to provide relevant context during conversations.
+This script integrates AWS services like DynamoDB and Bedrock LLM with LangChain to create an educational chatbot that can engage with students, ask questions, provide answers, and track student progress toward diagnosing a patient. It also includes history-aware functionality, which uses chat history to provide relevant context during conversations.
 
 ### Import Libraries <a name="import-libraries"></a>
 - **boto3**: AWS SDK to interact with services like DynamoDB and manage resources.
@@ -37,14 +37,14 @@ This script integrates AWS services like DynamoDB and Bedrock LLM with LangChain
 - **create_dynamodb_history_table**: Creates a DynamoDB table to store chat session history if it doesn't already exist.
 - **get_bedrock_llm**: Retrieves an instance of the Bedrock LLM based on a provided model ID.
 - **get_student_query**: Formats a student's query into a structured template suitable for processing.
-- **get_initial_student_query**: Generates an initial prompt for a student to greet the chatbot and request a question on a specific topic.
+- **get_initial_student_query**: Generates an initial prompt for a student to greet the chatbot and request a question on a specific patient.
 - **get_response**: Manages the interaction between the student query, the Bedrock LLM, and the history-aware retriever to generate responses.
 - **get_llm_output**: Processes the output from the LLM and checks if the student has properly diagnosed the patient or not.
 
 ### Execution Flow <a name="execution-flow"></a>
 1. **DynamoDB Table Creation**: The `create_dynamodb_history_table` function ensures that a DynamoDB table is available to store session history.
 2. **Query Processing**: The `get_student_query` and `get_initial_student_query` functions format student queries for processing.
-3. **Response Generation**: The `get_response` function uses the Bedrock LLM and chat history to generate responses to student queries and evaluates the student's progress toward mastering the topic.
+3. **Response Generation**: The `get_response` function uses the Bedrock LLM and chat history to generate responses to student queries and evaluates the student's progress toward diagnosing a patient.
 4. **Proper Diagnosis Evaluation**: The `get_llm_output` function checks if the LLM response indicates that the student has properly diagnosed the student.
 5. **RAG Chain Invocation**: The `generate_response` function invokes the RunnableWithMessageHistory chain to generate context-aware responses. This ensures the session_id is maintained for seamless retrieval of chat history.
 6. **Session Naming**: The `update_session_name` function assigns a descriptive name to a session if it meets specific criteria (e.g., exactly one exchange of messages).
@@ -161,23 +161,23 @@ Formats a raw student query into a structured template suitable for further proc
 
 ### Function: `get_initial_student_query` <a name="get_initial_student_query"></a>
 ```python
-def get_initial_student_query(topic: str) -> str:
+def get_initial_student_query(patient_name: str) -> str:
     student_query = f"""
     user
-    Greet me and then ask me a question related to the topic: {topic}. 
+    Greet me and then ask me a question related to the patient: {patient_name}. 
     """
     return student_query
 ```
 #### Purpose
-Generates an initial prompt asking the student to greet the system and pose a question related to a specific topic.
+Generates an initial prompt asking the student to greet the system and pose a question related to a specific patient.
 
 #### Process Flow
-1. **Generate Initial Query**: Constructs a query asking the student to greet the system and inquire about a specific topic.
+1. **Generate Initial Query**: Constructs a query asking the student to greet the system and inquire about a specific patient.
 2. **Return Query**: Returns the generated query.
 
 #### Inputs and Outputs
 - **Inputs**:
-  - `topic`: The topic for which the initial question should be generated.
+  - `patient_name`: The name of a patient for which the initial question should be generated.
   
 - **Outputs**:
   - Returns the formatted initial query string.
@@ -188,7 +188,7 @@ Generates an initial prompt asking the student to greet the system and pose a qu
 ```python
 def get_response(
     query: str,
-    topic: str,
+    patient_name: str,
     llm: ChatBedrock,
     history_aware_retriever,
     table_name: str,
@@ -213,7 +213,7 @@ def get_response(
         f"""
         <|begin_of_text|>
         <|start_header_id|>patient<|end_header_id|>
-        You are a patient, I am a pharmacy student. Your name is {topic} and you are going to pretend to be a patient talking to me, a pharmacy student.
+        You are a patient, I am a pharmacy student. Your name is {patient_name} and you are going to pretend to be a patient talking to me, a pharmacy student.
         You are not the pharmacy student. You are the patient. Look at the document(s) provided to you and act as a patient with those symptoms.
         Please pay close attention to this: {system_prompt}
         Here are some additional details about your personality, symptoms, or overall condition: {patient_prompt}
@@ -283,7 +283,7 @@ Generates a response to the student's query using the Bedrock LLM, context from 
 #### Inputs and Outputs
 - **Inputs**:
   - `query`: The student's query string.
-  - `topic`: The patient name the student is diagnosing.
+  - `patient_name`: The patient name the student is diagnosing.
   - `llm`: The Bedrock LLM instance.
   - `history_aware_retriever`: The retriever providing relevant documents for the query.
   - `table_name`: DynamoDB table name used to store the chat history.
