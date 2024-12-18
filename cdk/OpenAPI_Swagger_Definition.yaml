@@ -2026,6 +2026,12 @@ paths:
           description: Name of the file
           schema:
             type: string
+        - in: query
+          name: folder_type
+          required: true
+          description: Type of folder
+          schema:
+            type: string
       responses:
         "200":
           description: File deleted successfully

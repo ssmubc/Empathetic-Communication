@@ -360,7 +360,7 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
     return editPatientResponse;
   };
 
-  const deleteFiles = async (deletedFiles, token) => {
+  const deleteFiles = async (deletedFiles, folder_type, token) => {
     const deletePromises = deletedFiles.map((file_name) => {
       const fileType = getFileType(file_name);
       const fileName = cleanFileName(removeFileExtension(file_name));
@@ -374,7 +374,9 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
           patientName
         )}&file_type=${encodeURIComponent(
           fileType
-        )}&file_name=${encodeURIComponent(fileName)}`,
+        )}&file_name=${encodeURIComponent(
+          fileName
+        )}&folder_type=${encodeURIComponent(folder_type)}`,
         {
           method: "DELETE",
           headers: {
@@ -558,9 +560,9 @@ const InstructorEditPatients = ({ patientData, simulation_group_id, onClose, onP
       onPatientUpdated(updatedPatientData);
 
       const { token } = await getAuthSessionAndEmail();
-      await deleteFiles(deletedFiles, token);
-      await deleteFiles(deletedPatientFiles, token);
-      await deleteFiles(deletedAnswerKeyFiles, token);
+      await deleteFiles(deletedFiles, "documents", token);
+      await deleteFiles(deletedPatientFiles, "info", token);
+      await deleteFiles(deletedAnswerKeyFiles, "answer_key", token);
       await uploadFiles(newFiles, token);
       await uploadPatientFiles(newPatientFiles, token);
       await uploadAnswerKeyFiles(newAnswerKeyFiles, token);

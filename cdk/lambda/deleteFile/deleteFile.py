@@ -85,13 +85,15 @@ def lambda_handler(event, context):
     patient_id = query_params.get("patient_id", "")
     file_name = query_params.get("file_name", "")
     file_type = query_params.get("file_type", "")
+    folder_type = query_params.get("folder_type", "")
 
-    if not simulation_group_id or not patient_id or not file_name or not file_type:
+    if not simulation_group_id or not patient_id or not file_name or not file_type or not folder_type:
         logger.error("Missing required parameters", extra={
             "simulation_group_id": simulation_group_id,
             "patient_id": patient_id,
             "file_name": file_name,
-            "file_type": file_type
+            "file_type": file_type,
+            "folder_type": folder_type
         })
         return {
             'statusCode': 400,
@@ -109,22 +111,21 @@ def lambda_handler(event, context):
         allowed_document_types = {"pdf", "docx", "pptx", "txt", "xlsx", "xps", "mobi", "cbz"}
         
         # Allowed file types for information
-        allowed_info_types = {
+        allowed_generic_types = {
             'pdf', 'docx', 'pptx', 'txt', 'xlsx', 'xps', 'mobi', 'cbz',
             'bmp', 'eps', 'gif', 'icns', 'ico', 'im', 'jpeg', 'jpg', 'j2k', 'jp2', 'msp',
             'pcx', 'png', 'ppm', 'pgm', 'pbm', 'sgi', 'tga', 'tiff', 'tif', 'webp', 'xbm'
         }
-
-        folder = None
+        
         objects_to_delete = []
 
         # Determine the folder based on the file type
-        if file_type in allowed_document_types:
-            folder = "documents"
-            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/{folder}/{file_name}.{file_type}"})
-        elif file_type in allowed_info_types:
-            folder = "info"
-            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/{folder}/{file_name}.{file_type}"})
+        if folder_type == "documents" and file_type in allowed_document_types:
+            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/documents/{file_name}.{file_type}"})
+        elif folder_type == "info" and file_type in allowed_generic_types:
+            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/info/{file_name}.{file_type}"})
+        elif folder_type == "answer_key" and file_type in allowed_generic_types:
+            objects_to_delete.append({"Key": f"{simulation_group_id}/{patient_id}/answer_key/{file_name}.{file_type}"})
         else:
             return {
                 'statusCode': 400,
