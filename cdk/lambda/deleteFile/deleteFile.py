@@ -103,7 +103,7 @@ def lambda_handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "*",
             },
-            'body': json.dumps('Missing required parameters: simulation_group_id, patient_id, file_name, or file_type')
+            'body': json.dumps('Missing required parameters: simulation_group_id, patient_id, file_name, file_type, or folder_type')
         }
 
     try:
@@ -116,7 +116,7 @@ def lambda_handler(event, context):
             'bmp', 'eps', 'gif', 'icns', 'ico', 'im', 'jpeg', 'jpg', 'j2k', 'jp2', 'msp',
             'pcx', 'png', 'ppm', 'pgm', 'pbm', 'sgi', 'tga', 'tiff', 'tif', 'webp', 'xbm'
         }
-        
+
         objects_to_delete = []
 
         # Determine the folder based on the file type
