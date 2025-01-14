@@ -379,7 +379,7 @@ export const Login = () => {
       const output = await resetPassword({ username });
       handleResetPasswordNextSteps(output);
     } catch (error) {
-      toast.error(`Error Reseting Password`, {
+      toast.error(`Error Resetting Password`, {
         position: "top-center",
         autoClose: 3000,
         hideProgressBar: false,
