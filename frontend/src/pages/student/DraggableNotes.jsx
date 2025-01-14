@@ -12,7 +12,7 @@ function DraggableNotes({ onClose, sessionId }) {
   const isDragging = useRef(false);
   const isResizing = useRef(false);
 
-  // Load notes from the back-end when the component mounts
+  // Load notes when component mounts
   useEffect(() => {
     if (sessionId) {
       fetchNotes(sessionId);
@@ -39,6 +39,7 @@ function DraggableNotes({ onClose, sessionId }) {
         const data = await response.json();
         setNoteContent(data.notes || "");
       } else {
+        console.error("Failed to fetch notes.");
       }
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -74,13 +75,13 @@ function DraggableNotes({ onClose, sessionId }) {
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          progress: undefined,
           theme: "colored",
         });
       } else {
+        console.error("Failed to save notes.");
       }
     } catch (error) {
-      console.error("Error updating notes:", error);
+      console.error("Error saving notes:", error);
     }
   };
 
@@ -159,7 +160,7 @@ function DraggableNotes({ onClose, sessionId }) {
         zIndex: 1000,
       }}
     >
-      {/* Header with Draggable and Close Button */}
+      {/* Header */}
       <div
         style={{
           backgroundColor: "#989898",
@@ -178,7 +179,7 @@ function DraggableNotes({ onClose, sessionId }) {
         />
       </div>
 
-      {/* Textarea for Note Content */}
+      {/* Textarea */}
       <div style={{ height: "calc(100% - 80px)", padding: "10px" }}>
         <textarea
           style={{
@@ -197,10 +198,16 @@ function DraggableNotes({ onClose, sessionId }) {
           placeholder="Write your notes here..."
           value={noteContent}
           onChange={handleNoteChange}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              // Ensure pressing Enter creates a new line
+              e.stopPropagation(); // Stop event propagation if needed
+            }
+          }}
         />
       </div>
 
-      {/* Bottom section with Save Button */}
+      {/* Save Button */}
       <div style={{ padding: "5px 10px", textAlign: "right", marginTop: "5px", marginBottom: "10px" }}>
         <button
           onClick={handleSave}
@@ -212,7 +219,7 @@ function DraggableNotes({ onClose, sessionId }) {
             fontSize: "12px",
             borderRadius: "4px",
             cursor: "pointer",
-            width: "80px", 
+            width: "80px",
           }}
         >
           Save
@@ -234,6 +241,7 @@ function DraggableNotes({ onClose, sessionId }) {
         }}
       ></div>
 
+      {/* Toast Container */}
       <ToastContainer
         position="top-center"
         autoClose={1000}
