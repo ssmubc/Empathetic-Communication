@@ -10,7 +10,7 @@
   - [Deployment](#deployment)
     - [Step 1: Fork \& Clone The Repository](#step-1-fork--clone-the-repository)
     - [Step 2: Upload Secrets](#step-2-upload-secrets)
-      - [CDK Deployment in Hybrid Cloud Environment](#cdk-deployment-in-hybrid-cloud-environment)
+      - [CDK Deployment in a Pre-existing VPC](#cdk-deployment-in-a-pre-existing-vpc)
       - [Step-by-Step Instructions](#step-by-step-instructions)
     - [Step 3: CDK Deployment](#step-3-cdk-deployment)
   - [Post-Deployment](#post-deployment)
@@ -133,7 +133,7 @@ aws ssm put-parameter \
     --profile <YOUR-PROFILE-NAME>
 ```
 
-#### CDK Deployment in Hybrid Cloud Environment
+#### CDK Deployment in a Pre-existing VPC
 
 The following set of instructions are only if you want to deploy this application in a **hybrid cloud environment**. If you do not want to do this you can skip this section.
 
