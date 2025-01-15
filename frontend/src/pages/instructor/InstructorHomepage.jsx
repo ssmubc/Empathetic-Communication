@@ -123,8 +123,7 @@ const InstructorHomepage = () => {
         var token = session.tokens.idToken
         const { email } = await fetchUserAttributes();
         const response = await fetch(
-          `${
-            import.meta.env.VITE_API_ENDPOINT
+          `${import.meta.env.VITE_API_ENDPOINT
           }instructor/groups?email=${encodeURIComponent(email)}`,
           {
             method: "GET",
@@ -249,7 +248,12 @@ const InstructorHomepage = () => {
                           <TableRow
                             key={index}
                             onClick={() => handleRowClick(row.group, row.id)}
-                            style={{ cursor: "pointer" }}
+                            style={{
+                              cursor: "pointer",
+                              transition: "background-color 0.3s",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f5f5")}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
                           >
                             <TableCell sx={{ padding: "16px" }}>
                               {titleCase(row.group)}
@@ -260,16 +264,13 @@ const InstructorHomepage = () => {
                             <TableCell sx={{ padding: "16px" }}>
                               <Button
                                 variant="contained"
-                                color={
-                                  row.status === "Active"
-                                    ? "primary"
-                                    : "secondary"
-                                }
+                                color={row.status === "Active" ? "primary" : "secondary"}
                               >
                                 {row.status}
                               </Button>
                             </TableCell>
                           </TableRow>
+
                         ))}
                     </TableBody>
                     <TableFooter>
