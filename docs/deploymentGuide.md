@@ -103,7 +103,7 @@ aws secretsmanager create-secret \
 
 Note: If you using an Apple Computer, use the following command instead:
 aws secretsmanager create-secret \
-    --name DSASecrets \
+    --name VCISecrets \
     --secret-string "{\"DB_Username\":\"<YOUR-DB-USERNAME>\"}"\
     --profile <your-profile-name>
 
