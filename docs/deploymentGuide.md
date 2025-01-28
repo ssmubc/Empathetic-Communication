@@ -143,7 +143,7 @@ In order to deploy in a hybrid cloud environment, you will need to have access t
 
 1. **Modify the VPC Stack:**
    - Navigate to the `vpc-stack.ts` file located at `cdk/lib/vpc-stack.ts`.
-   - Replace **line 13** with your existing VPC ID:
+   - Replace **line 16** with your existing VPC ID:
      ```typescript
      const existingVpcId: string = 'your-vpc-id'; //CHANGE IF DEPLOYING WITH EXISTING VPC
      ```
@@ -152,7 +152,7 @@ In order to deploy in a hybrid cloud environment, you will need to have access t
      ![VPC ID Image](images/ExistingVPCId.png)
 
 2. **Update the AWS Control Tower Stack Set:**
-   - Replace **line 21** with your AWS Control Tower Stack Set name:
+   - Replace **line 19** with your AWS Control Tower Stack Set name:
      ```typescript
      const AWSControlTowerStackSet = "your-stackset-name"; //CHANGE TO YOUR CONTROL TOWER STACK SET
      ```
