@@ -200,6 +200,7 @@ def update_vectorstore_from_s3(bucket, simulation_group_id, patient_id):
         update_vectorstore(
             bucket=bucket,
             group=simulation_group_id,
+            patient_id=patient_id,
             vectorstore_config_dict=vectorstore_config_dict,
             embeddings=embeddings
         )
