@@ -206,47 +206,6 @@ aws secretsmanager create-secret \
 
 Finally, in order to restrict user sign up to specific email domains, you will need to upload a comma separated list of allowed email domains to Amazon SSM Parameter Store. You can do so by running the following command. Make sure you replace `<YOUR-ALLOWED-EMAIL-DOMAIN-LIST>` and `<YOUR-PROFILE-NAME>` with your actual list and the appropriate AWS profile name.
 
-
-<details>
-<summary>macOS</summary>
-
-```bash
-aws secretsmanager create-secret \
-    --name github-personal-access-token \
-    --secret-string '{"my-github-token": "<YOUR-GITHUB-TOKEN>"}' \
-    --profile <YOUR-PROFILE-NAME>
-```
-
-</details>
-
-<details>
-<summary>Windows CMD</summary>
-
-```cmd
-aws secretsmanager create-secret ^
-    --name github-personal-access-token ^
-    --secret-string "{\"my-github-token\": \"<YOUR-GITHUB-TOKEN>\"}" ^
-    --profile <YOUR-PROFILE-NAME>
-```
-
-</details>
-
-<details>
-<summary>PowerShell</summary>
-
-```powershell
-aws secretsmanager create-secret `
-    --name github-personal-access-token `
-    --secret-string '{"my-github-token": "<YOUR-GITHUB-TOKEN>"}' `
-    --profile <YOUR-PROFILE-NAME>
-```
-</details>
-
-&nbsp;
-
-Moreover, you will need to upload your github username to Amazon SSM Parameter Store. You can do so by running the following command. Make sure you replace `<YOUR-GITHUB-USERNAME>` and `<YOUR-PROFILE-NAME>` with your actual username and the appropriate AWS profile name.
-
-
 <details>
 <summary>macOS</summary>
 
