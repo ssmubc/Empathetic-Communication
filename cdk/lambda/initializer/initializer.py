@@ -100,7 +100,7 @@ def handler(event, context):
                 "time_uploaded" timestamp,
                 "metadata" text,
                 "file_number" integer,
-                "ingestion_status" BOOLEAN DEFAULT FALSE
+                "ingestion_status" VARCHAR(20) DEFAULT 'not processing'
             );
 
             CREATE TABLE IF NOT EXISTS "student_interactions" (
