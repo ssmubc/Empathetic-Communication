@@ -1,6 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Box, Toolbar, Typography, Paper } from "@mui/material";
+import {
+  Button,
+  Box,
+  Toolbar,
+  Typography,
+  Paper,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogActions,
+  Switch,
+  Tooltip,
+  Avatar,
+  Collapse,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+ } from "@mui/material";
 import { fetchAuthSession, fetchUserAttributes } from "aws-amplify/auth";
 import {
   MRT_TableContainer,
@@ -10,8 +30,6 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InstructorNewPatient from "./InstructorNewPatient";
 import InstructorEditPatients from "./InstructorEditPatients";
-import { Dialog, DialogContent, DialogTitle, DialogActions, Switch, Tooltip } from "@mui/material";
-import { Avatar } from "@mui/material";
 
 function groupTitleCase(str) {
   if (typeof str !== "string") {
@@ -48,6 +66,11 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
   const [openEditPatientDialog, setOpenEditPatientDialog] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [profilePictures, setProfilePictures] = useState({});
+  const [expandedPatient, setExpandedPatient] = useState(null);
+
+  const handleExpandRow = (patientId) => {
+    setExpandedPatient((prev) => (prev === patientId ? null : patientId));
+  };
 
   // Toast function to display success messages
   const showSuccessToast = (message) => {
@@ -151,8 +174,46 @@ const InstructorPatients = ({ groupName, simulation_group_id }) => {
           </Button>
         ),
       },
+      {
+        accessorKey: "ingestion_status",
+        header: "Ingestion Status",
+        Cell: ({ row }) => {
+          const isExpanded = expandedPatient === row.original.patient_id;
+          return (
+            <>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => handleExpandRow(row.original.patient_id)}
+              >
+                {isExpanded ? "Hide" : "Check"}
+              </Button>
+              {isExpanded && (
+                <TableContainer component={Paper} sx={{ marginTop: 1 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>File</TableCell>
+                        <TableCell>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {["File 1", "File 2", "File 3"].map((file, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{file}</TableCell>
+                          <TableCell>Processing</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
+          );
+        },
+      },
     ],
-    [profilePictures]
+    [profilePictures, expandedPatient]
   );
 
   const table = useMaterialReactTable({
