@@ -99,7 +99,8 @@ def handler(event, context):
                 "filename" varchar,
                 "time_uploaded" timestamp,
                 "metadata" text,
-                "file_number" integer
+                "file_number" integer,
+                "ingestion_status" BOOLEAN DEFAULT FALSE
             );
 
             CREATE TABLE IF NOT EXISTS "student_interactions" (
