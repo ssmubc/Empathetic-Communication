@@ -1042,8 +1042,8 @@ export class ApiGatewayStack extends cdk.Stack {
       `${id}-DataIngestLambdaDockerFunction`,
       {
         code: lambda.DockerImageCode.fromImageAsset("./data_ingestion"),
-        memorySize: 512,
-        timeout: cdk.Duration.seconds(300),
+        memorySize: 2048,
+        timeout: cdk.Duration.seconds(900),
         vpc: vpcStack.vpc, // Pass the VPC
         functionName: `${id}-DataIngestLambdaDockerFunction`,
         environment: {
