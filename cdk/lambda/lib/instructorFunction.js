@@ -1225,7 +1225,7 @@ exports.handler = async (event) => {
             try {
                 // Query patient_data table to fetch filenames and ingestion_status for documents
                 const ingestionStatusData = await sqlConnection`
-                    SELECT filename, ingestion_status
+                    SELECT filename, filetype, ingestion_status
                     FROM "patient_data"
                     WHERE patient_id = ${patient_id}
                     AND filepath LIKE ${simulation_group_id + '/' + patient_id + '/documents/%'};
@@ -1234,7 +1234,7 @@ exports.handler = async (event) => {
                 // Convert the results to a hashmap
                 const ingestionStatusMap = {};
                 ingestionStatusData.forEach((row) => {
-                    ingestionStatusMap[row.filename] = row.ingestion_status;
+                    ingestionStatusMap[row.filename + '.' + row.filetype] = row.ingestion_status;
                 });
     
                 response.statusCode = 200;
