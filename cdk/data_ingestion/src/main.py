@@ -137,6 +137,42 @@ def get_embedding_count(patient_id):
         logger.error(f"Error retrieving embedding count for patient {patient_id}: {e}")
         raise
 
+def update_ingestion_status(patient_id: str, file_path: str, status: str):
+    """
+    Updates the ingestion_status of a file in the patient_data table.
+
+    Args:
+        patient_id (str): The patient ID associated with the file.
+        file_path (str): The full file path stored in the database.
+        status (str): The status to update ('completed' or 'error').
+    """
+    connection = connect_to_db()
+    if connection is None:
+        logger.error("Database connection failed. Unable to update ingestion status.")
+        return
+
+    try:
+        cur = connection.cursor()
+
+        update_query = """
+        UPDATE "patient_data"
+        SET ingestion_status = %s
+        WHERE patient_id = %s
+        AND filepath = %s;
+        """
+        cur.execute(update_query, (status, patient_id, file_path))
+        connection.commit()
+        cur.close()
+
+        logger.info(f"Ingestion status for {file_path} updated to '{status}' for patient {patient_id}.")
+
+    except Exception as e:
+        if cur:
+            cur.close()
+        connection.rollback()
+        logger.error(f"Error updating ingestion status for patient {patient_id}, file {file_path}: {e}")
+        raise
+
 def parse_s3_file_path(file_key):
     # Assuming the file path is of the format: {simulation_group_id}/{patient_id}/{documents or info}/{file_name}.{file_type}
     try:
@@ -269,6 +305,7 @@ def update_vectorstore_from_s3(bucket, simulation_group_id, patient_id, file_pat
             logger.warning(f"Temporary page file not found while updating vectorstore for patient {patient_id}. "
                            f"Ingestion status for this document is set to completed since it has already been processed.")
         else:
+            update_ingestion_status(patient_id, file_path, "error")
             logger.error(f"Error updating vectorstore for patient {patient_id}: {e}, ingestion_status set to 'error'.")
             raise
 
