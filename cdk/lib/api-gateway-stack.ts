@@ -1566,7 +1566,7 @@ export class ApiGatewayStack extends cdk.Stack {
       })
     );
 
-        // Waf Firewall
+    // Waf Firewall
     const waf = new wafv2.CfnWebACL(this, `${id}-waf`, {
       description: "VCI waf",
       scope: "REGIONAL",
