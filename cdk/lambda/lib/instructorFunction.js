@@ -516,9 +516,10 @@ exports.handler = async (event) => {
         if (
             event.queryStringParameters != null &&
             event.queryStringParameters.patient_id &&
-            event.queryStringParameters.instructor_email
+            event.queryStringParameters.instructor_email &&
+            event.queryStringParameters.simulation_group_id
         ) {
-            const { patient_id, instructor_email } = event.queryStringParameters;
+            const { patient_id, instructor_email, simulation_group_id } = event.queryStringParameters;
             const { patient_name, patient_age, patient_gender, patient_prompt } = JSON.parse(event.body || "{}");
     
             if (patient_name != null && patient_age != null && patient_gender != null  && patient_prompt != null) {
@@ -526,7 +527,8 @@ exports.handler = async (event) => {
                     // Check if another patient with the same name exists under the same simulation group
                     const existingPatient = await sqlConnection`
                         SELECT * FROM "patients"
-                        WHERE patient_name = ${patient_name}
+                        WHERE simulation_group_id = ${simulation_group_id}
+                        AND patient_name = ${patient_name}
                         AND patient_id != ${patient_id};
                     `;
     
@@ -562,7 +564,7 @@ exports.handler = async (event) => {
                         ) VALUES (
                             uuid_generate_v4(), 
                             (SELECT user_id FROM "users" WHERE user_email = ${instructor_email}),
-                            (SELECT simulation_group_id FROM "patients" WHERE patient_id = ${patient_id}),
+                            ${simulation_group_id}, 
                             ${patient_id}, 
                             NULL, 
                             CURRENT_TIMESTAMP, 
