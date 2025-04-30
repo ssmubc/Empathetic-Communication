@@ -102,47 +102,37 @@ Using an AWS SageMaker Notebook instance allows you to quickly experiment with a
 ### Checking Embeddings
 
 In this section, you will learn how to check whether document embeddings have been correctly generated and stored in the database.  
-Embeddings are organized into **collections**, and each collection corresponds to a **module** inside a **concept** inside a **course**.  
-To verify that embeddings are properly created, you first need to find the right **modules** inside a course. Once you have the module IDs, you can check the associated collections to make sure embeddings are present.
+Embeddings are organized into **collections**, and each collection corresponds to a **patient** inside a **simulation group**.  
+To verify that embeddings are properly created, you first need to find the right patient inside a simulation group. Once you have the patient IDs, you can check the associated collections to make sure embeddings are present.
 
 ---
 
-1. **View all concepts for a specific course**
-   - First, you need to see all the concepts belonging to a course. This will help you identify which concept you want to explore further.
+1. **View all simulation group IDs and names**
+   - First, you need to see all the simulation groups to know which the group of patients you would like to inspect.
 
    - Paste the following SQL command into your database terminal:
 
      ```sql
-     SELECT cc.concept_id, cc.concept_name
-     FROM "Course_Concepts" cc
-     JOIN "Courses" c ON cc.course_id = c.course_id
-     WHERE c.course_name = '<course name>';
+     SELECT simulation_group_id, group_name
+     FROM "simulation_groups";
      ```
 
-   - Replace `<course name>` with the exact name of your course (case-sensitive).
-
-   - This will return a table listing **concept IDs** and **concept names** for the course you specified.
-
-   - You will use the **concept ID** you get here for the next step.
+   - Use the simulation_group_id to fetch associated patients in the next step.
 
 ---
 
-2. **View all modules within a concept**
-   - Now that you have the concept ID, you can view all the modules (which represent collections of embeddings) under that concept.
+2. **View All Patients in a Simulation Group**
+   - Now that you have the simulation group IDs, you can view all the patients in it.
 
    - Paste the following command:
 
      ```sql
-     SELECT module_id, module_name 
-     FROM "Course_Modules" 
-     WHERE concept_id = '<concept_id>';
+     SELECT patient_id, patient_name
+     FROM "patients"
+     WHERE simulation_group_id = '<your_simulation_group_id>';
      ```
 
-   - Replace `<concept_id>` with the concept ID you got from Step 1.
-
-   - This will return a table listing **module IDs** and **module names** that belong to the selected concept.
-
-   - Each module listed here has (or should have) an associated collection of embeddings.
+   - Replace `<your_simulation_group_idd>` with the actual ID from the previous step.
 
 ---
 
@@ -155,48 +145,48 @@ To verify that embeddings are properly created, you first need to find the right
      SELECT * FROM langchain_pg_collection;
      ```
 
-   - To see **only the collections related to a specific concept**:
+   - To see **only the collections related to a specific simulation group**:
 
      ```sql
      SELECT lpc.uuid, lpc.name
-     FROM "langchain_pg_collection" lpc
+     FROM langchain_pg_collection lpc
      WHERE lpc.name IN (
-         SELECT cm.module_id::text
-         FROM "Course_Modules" cm
-         WHERE cm.concept_id = '<concept_id>'
+         SELECT patient_id::text
+         FROM "patients"
+         WHERE simulation_group_id = '<your_simulation_group_id>'
      );
      ```
 
-   - Replace `<concept_id>` with the concept ID you retrieved earlier.
+   - Replace `<your_simulation_group_idd>` with the simulation group ID you retrieved earlier.
 
    - **Notes:**
-     - The collection names should match the module IDs from Step 2.
-     - The number of collections shown should match the number of modules you saw earlier.
-     - Each collection corresponds to one module.
+     - The collection names should match the patient IDs from Step 2.
+     - The number of collections shown should match the number of patients you saw earlier.
+     - Each collection corresponds to one patient.
 
 ---
 
 4. **Check number of embeddings in a collection**
-   - Finally, you can check how many embeddings exist for each module (collection).
+   - Finally, you can check how many embeddings exist for each patient (collection).
 
-   - To check the number of embeddings for a specific module, use:
+   - To check the number of embeddings for a specific patient, use:
 
      ```sql
      SELECT COUNT(*)
      FROM langchain_pg_embedding e
      JOIN langchain_pg_collection c ON e.collection_id = c.uuid
-     WHERE c.name = '<module_id or name of collection>';
+     WHERE c.name = '<patient_id or name of collection>';
      ```
 
-   - Replace `<module_id or name of collection>` with the module ID or collection name you want to inspect.
+   - Replace `<patient_id or name of collection>` with the patient ID or collection name you want to inspect.
 
-   - This will return a **single number** representing how many embeddings (pieces of information) are stored for that module.
+   - This will return a **single number** representing how many embeddings (pieces of information) are stored for that patient.
 
    - **Example:**
-     - If you added documents into the module through the web app, you should see the number go **up**.
-     - If you delete documents from the module, the number should **go down**.
+     - If you added documents into the patient through the web app, you should see the number go **up**.
+     - If you delete documents from the patient, the number should **go down**.
 
-   - If you want to see the **total number of embeddings** across the entire project (all modules combined), use:
+   - If you want to see the **total number of embeddings** across the entire project (all patients combined), use:
 
      ```sql
      SELECT COUNT(*) 
