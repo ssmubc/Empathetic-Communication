@@ -11,6 +11,7 @@ from helpers.chat import get_bedrock_llm, get_initial_student_query, get_student
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # Environment variables
 DB_SECRET_NAME = os.environ["SM_DB_CREDENTIALS"]
@@ -343,6 +344,9 @@ def handler(event, context):
         session_name = "New Chat"
 
     logger.info("Returning the generated response.")
+
+    empathy_eval = response.get('empathy_evaluation', None)
+    logger.info(f"LLM RESPONSE: {empathy_eval}")
     return {
         "statusCode": 200,
         "headers": {
