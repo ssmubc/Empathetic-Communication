@@ -924,6 +924,7 @@ export class ApiGatewayStack extends cdk.Stack {
         "arn:aws:bedrock:" +
           this.region +
           "::foundation-model/amazon.titan-embed-text-v2:0",
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0",
       ],
     });
 
@@ -1047,7 +1048,7 @@ export class ApiGatewayStack extends cdk.Stack {
       `${id}-DataIngestLambdaDockerFunction`,
       {
         code: lambda.DockerImageCode.fromImageAsset("./data_ingestion"),
-        memorySize: 2048,
+        memorySize: 3008,
         timeout: cdk.Duration.seconds(900),
         vpc: vpcStack.vpc, // Pass the VPC
         functionName: `${id}-DataIngestLambdaDockerFunction`,
@@ -1135,21 +1136,12 @@ export class ApiGatewayStack extends cdk.Stack {
       })
     );
 
-    // Get Log Group for dataIngestLambdaDockerFunc
-    let logGroup: logs.ILogGroup;
-    try {
-      logGroup = logs.LogGroup.fromLogGroupName(
-        this,
-        `${id}-ExistingDataIngestLambdaLogGroup`,
-        `/aws/lambda/${dataIngestLambdaDockerFunc.functionName}`
-      );
-    } catch {
-      logGroup = new logs.LogGroup(this, `${id}-DataIngestLambdaLogGroup`, {
-        logGroupName: `/aws/lambda/${dataIngestLambdaDockerFunc.functionName}`,
-        retention: logs.RetentionDays.ONE_WEEK, // Set retention policy
-        removalPolicy: cdk.RemovalPolicy.DESTROY, // Adjust as needed
-      });
-    }
+    // Create Log Group for dataIngestLambdaDockerFunc
+    const logGroup = new logs.LogGroup(this, `${id}-DataIngestLambdaLogGroup`, {
+      logGroupName: `/aws/lambda/${dataIngestLambdaDockerFunc.functionName}`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
 
     // Define a CloudWatch Log Metric Filter to detect timeouts
     const timeoutMetricFilter = new logs.MetricFilter(this, `${id}-LambdaTimeoutMetricFilter`, {

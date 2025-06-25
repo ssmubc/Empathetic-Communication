@@ -1,4 +1,6 @@
-import boto3, re
+import boto3, re, json, logging
+
+logger = logging.getLogger(__name__)
 from langchain_aws import ChatBedrock
 from langchain_aws import BedrockLLM
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -202,7 +204,21 @@ def get_response(
             session_id
         )
     
-    return get_llm_output(response, llm_completion)
+    # Evaluate empathy if this is a student response (not initial greeting)
+    empathy_evaluation = None
+    if query.strip() and "Greet me" not in query:
+        patient_context = f"Patient: {patient_name}, Age: {patient_age}, Condition: {patient_prompt}"
+        nova_client = {
+            "client": boto3.client("bedrock-runtime", region_name="us-east-1"),
+            "model_id": "amazon.nova-pro-v1:0"
+        }
+        empathy_evaluation = evaluate_empathy(query, patient_context, nova_client)
+    
+    result = get_llm_output(response, llm_completion)
+    if empathy_evaluation:
+        result["empathy_evaluation"] = empathy_evaluation
+    
+    return result
 
 def generate_response(conversational_rag_chain: object, query: str, session_id: str) -> str:
     """
@@ -288,6 +304,109 @@ def split_into_sentences(paragraph: str) -> list[str]:
     sentence_endings = r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s'
     sentences = re.split(sentence_endings, paragraph)
     return sentences
+
+def evaluate_empathy(student_response: str, patient_context: str, bedrock_client) -> dict:
+    """
+    Evaluate empathy score and realism of student response.
+    
+    Args:
+    student_response (str): The student's response to evaluate
+    patient_context (str): Context about the patient's condition
+    bedrock_client: Bedrock client for Nova Pro
+    
+    Returns:
+    dict: Contains empathy_score, realism_flag, and feedback
+    """
+
+    evaluation_prompt = f"""
+    You are an expert healthcare communication coach. Evaluate this pharmacy student's response and provide detailed coaching feedback.
+
+    Patient Context: {patient_context}
+    Student Response: {student_response}
+
+    Examples of scoring:
+
+    GREAT empathy (score: great):
+    - "I can see this is really frightening for you, and that's completely understandable given what you're experiencing. Let's work through this together step by step."
+    - "It sounds like you're carrying a lot of worry about your family right now. That shows how much you care about them, and I want to make sure we address all your concerns."
+
+    GOOD empathy (score: good):
+    - "I understand this must be very difficult for you. Let's discuss your treatment options."
+    - "I can see you're worried. It's completely normal to feel this way."
+
+    OK empathy (score: ok):
+    - "I see you're concerned about this. Let me explain what we can do."
+    - "That sounds difficult. Here's what I recommend."
+
+    BAD empathy (score: bad):
+    - "That's not my problem."
+    - "Just take the medication."
+    - "Don't worry about it."
+
+    UNREALISTIC responses (flag: unrealistic):
+    - Telling terminal cancer patient "You'll be fine tomorrow"
+    - Promising miraculous cures
+    - Dismissing serious symptoms
+    - "This medication will definitely cure you completely"
+
+    COACHING FEEDBACK:
+    Provide specific, actionable feedback including:
+    - What the student did well
+    - Areas for improvement
+    - Alternative phrasing suggestions
+    - Why certain approaches work better
+    - How to strengthen empathetic communication
+
+    Respond in JSON format:
+    {{
+        "empathy_score": "bad|ok|good|great",
+        "realism_flag": "realistic|unrealistic",
+        "feedback": "Detailed coaching feedback with specific suggestions and alternative phrasing examples"
+    }}
+    """
+
+    body = {
+        "messages": [{
+            "role": "user",
+            "content": [{"text": evaluation_prompt}]
+        }],
+        "inferenceConfig": {
+            "temperature": 0.1,
+            "maxTokens": 500
+        }
+    }
+    
+    try:
+        response = bedrock_client["client"].invoke_model(
+            modelId=bedrock_client["model_id"],
+            contentType="application/json",
+            accept="application/json",
+            body=json.dumps(body)
+        )
+        
+        result = json.loads(response["body"].read())
+        response_text = result["output"]["message"]["content"][0]["text"]
+        
+        # Clean response text and parse JSON
+        try:
+            evaluation = json.loads(response_text.strip())
+            return evaluation
+        except json.JSONDecodeError:
+            # Fallback if Nova Pro doesn't return valid JSON
+            logger.warning(f"Invalid JSON from Nova Pro: {response_text}")
+            return {
+                "empathy_score": "ok",
+                "realism_flag": "realistic",
+                "feedback": "Unable to parse evaluation"
+            }
+        
+    except Exception as e:
+        logger.error(f"Error evaluating empathy: {e}")
+        return {
+            "empathy_score": "ok",
+            "realism_flag": "realistic",
+            "feedback": "Unable to evaluate"
+        }
 
 def update_session_name(table_name: str, session_id: str, bedrock_llm_id: str) -> str:
     """

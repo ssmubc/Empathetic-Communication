@@ -354,6 +354,7 @@ def handler(event, context):
         "body": json.dumps({
             "session_name": session_name,
             "llm_output": response.get("llm_output", "LLM failed to create response"),
-            "llm_verdict": response.get("llm_verdict", "LLM failed to create verdict")
+            "llm_verdict": response.get("llm_verdict", "LLM failed to create verdict"),
+            "empathy_evaluation": response.get("empathy_evaluation", None)
         })
     }
