@@ -159,26 +159,72 @@ def get_response(
         if empathy_evaluation:
             empathy_score = empathy_evaluation.get('empathy_score', 'unknown')
             realism_flag = empathy_evaluation.get('realism_flag', 'unknown')
-            feedback = empathy_evaluation.get('feedback', {})
+            feedback = empathy_evaluation.get('feedback', '')
             
-            empathy_feedback = f"[EMPATHY COACH: Your empathy score is {empathy_score.upper()} and your response is {realism_flag.upper()}. "
+            # Use markdown formatting with star ratings and icons
+            empathy_feedback = f"**Empathy Coach:**\n\n"
             
-            if isinstance(feedback, dict):
-                if 'what_did_well' in feedback:
-                    empathy_feedback += f"\nStrengths: {feedback['what_did_well']}"
-                
-                if 'areas_for_improvement' in feedback and feedback['areas_for_improvement']:
-                    empathy_feedback += "\nAreas to improve: "
-                    for area in feedback['areas_for_improvement'][:2]:  # Limit to 2 areas
-                        empathy_feedback += f"\n- {area}"
-                
-                if 'alternative_phrasing_suggestions' in feedback and feedback['alternative_phrasing_suggestions']:
-                    empathy_feedback += "\nTry saying: "
-                    empathy_feedback += f"\n\"{feedback['alternative_phrasing_suggestions'][0]}\""
+            # Add star rating based on empathy score
+            if empathy_score == "bad":
+                stars = ""
+            elif empathy_score == "ok":
+                stars = "⭐"
+            elif empathy_score == "good":
+                stars = "⭐⭐"
             else:
-                empathy_feedback += f"\nFeedback: {feedback}"
+                stars = "⭐⭐⭐"
                 
-            empathy_feedback += "]\n\n"
+            # Add icon for realism
+            if realism_flag == "unrealistic":
+                realism_icon = ""
+            else:
+                realism_icon = "✅"
+                
+            empathy_feedback += f"Your empathy score is {empathy_score} {stars}\n"
+            empathy_feedback += f"Your response is {realism_flag} {realism_icon}\n"
+            
+            # Add detailed feedback with reasoning
+            if feedback:
+                if isinstance(feedback, dict):  # Structured feedback from Nova Pro
+                    # Add strengths
+                    if 'strengths' in feedback and feedback['strengths']:
+                        empathy_feedback += f"**Strengths:**\n"
+                        for strength in feedback['strengths']:
+                            empathy_feedback += f"• {strength}\n"
+                        empathy_feedback += "\n"
+                    
+                    # Add areas for improvement
+                    if 'areas_for_improvement' in feedback and feedback['areas_for_improvement']:
+                        empathy_feedback += f"**Areas for improvement:**\n"
+                        for area in feedback['areas_for_improvement']:
+                            empathy_feedback += f"• {area}\n"
+                        empathy_feedback += "\n"
+                    
+                    # Add why realistic/unrealistic
+                    if 'why_realistic' in feedback and feedback['why_realistic']:
+                        empathy_feedback += f"**Your response is {realism_flag} because:** {feedback['why_realistic']}\n\n"
+                    elif 'why_unrealistic' in feedback and feedback['why_unrealistic']:
+                        empathy_feedback += f"**Your response is {realism_flag} because:** {feedback['why_unrealistic']}\n\n"
+                    
+                    # Add improvement suggestions
+                    if 'improvement_suggestions' in feedback and feedback['improvement_suggestions']:
+                        empathy_feedback += f"**Improvement suggestions:**\n"
+                        for suggestion in feedback['improvement_suggestions']:
+                            empathy_feedback += f"• {suggestion}\n"
+                        empathy_feedback += "\n"
+                    
+                    # Add alternative phrasing
+                    if 'alternative_phrasing' in feedback and feedback['alternative_phrasing']:
+                        empathy_feedback += f"**Try this approach:** *{feedback['alternative_phrasing']}*\n\n"
+                        
+                elif isinstance(feedback, str) and len(feedback) > 10:  # Simple string feedback
+                    empathy_feedback += f"**Feedback:** {feedback}\n"
+                else:
+                    empathy_feedback += f"**Feedback:** Unable to provide detailed feedback at this time.\n"
+            else:
+                empathy_feedback += "**Feedback:** System temporarily unavailable.\n"
+                
+            empathy_feedback += "---\n\n**Patient Response:**\n"
     
     completion_string = """
                 Once I, the pharmacy student, have give you a diagnosis, politely leave the conversation and wish me goodbye.
@@ -349,49 +395,41 @@ def evaluate_empathy(student_response: str, patient_context: str, bedrock_client
     """
 
     evaluation_prompt = f"""
-    You are an expert healthcare communication coach. Evaluate this pharmacy student's response and provide detailed coaching feedback.
+    You are an expert healthcare communication coach. Evaluate this pharmacy student's response.
 
     Patient Context: {patient_context}
     Student Response: {student_response}
 
-    Examples of scoring:
+    Evaluate the response for:
+    1. **Empathy Score**: bad, ok, good, or great
+       - Great: Deep understanding, validates emotions, highly supportive
+       - Good: Acknowledges concerns, shows care and understanding
+       - Ok: Basic acknowledgment but lacks emotional connection
+       - Bad: Dismissive, insensitive, or lacks empathy
 
-    GREAT empathy (score: great):
-    - "I can see this is really frightening for you, and that's completely understandable given what you're experiencing. Let's work through this together step by step."
-    - "It sounds like you're carrying a lot of worry about your family right now. That shows how much you care about them, and I want to make sure we address all your concerns."
+    2. **Realism Assessment**: realistic or unrealistic
+       - Unrealistic: False reassurances, impossible promises, dismissing serious symptoms, medical inaccuracies
+       - Realistic: Medically appropriate, honest, evidence-based responses
 
-    GOOD empathy (score: good):
-    - "I understand this must be very difficult for you. Let's discuss your treatment options."
-    - "I can see you're worried. It's completely normal to feel this way."
-
-    OK empathy (score: ok):
-    - "I see you're concerned about this. Let me explain what we can do."
-    - "That sounds difficult. Here's what I recommend."
-
-    BAD empathy (score: bad):
-    - "That's not my problem."
-    - "Just take the medication."
-    - "Don't worry about it."
-
-    UNREALISTIC responses (flag: unrealistic):
-    - Telling terminal cancer patient "You'll be fine tomorrow"
-    - Promising miraculous cures
-    - Dismissing serious symptoms
-    - "This medication will definitely cure you completely"
-
-    COACHING FEEDBACK:
-    Provide specific, actionable feedback including:
-    - What the student did well
-    - Areas for improvement
-    - Alternative phrasing suggestions
-    - Why certain approaches work better
-    - How to strengthen empathetic communication
+    3. **Detailed Feedback**: Provide comprehensive, situation-specific feedback that includes:
+       - What the student did well (strengths)
+       - Specific areas for improvement based on THIS patient scenario
+       - WHY the response is realistic/unrealistic (specific to this situation)
+       - Alternative phrasing suggestion with example tailored to THIS patient's condition and concerns
+       - If unrealistic, explain the specific harm or consequences for THIS patient scenario
 
     Respond in JSON format:
     {{
         "empathy_score": "bad|ok|good|great",
         "realism_flag": "realistic|unrealistic",
-        "feedback": "Detailed coaching feedback with specific suggestions and alternative phrasing examples"
+        "feedback": {{
+            "strengths": ["List what the student did well"],
+            "areas_for_improvement": ["List specific areas to improve"],
+            "why_realistic": "Explain why response is realistic (if realistic)",
+            "why_unrealistic": "Explain why response is unrealistic (if unrealistic)",
+            "improvement_suggestions": ["List specific suggestions for improvement"],
+            "alternative_phrasing": "Provide better phrasing example tailored to this patient scenario"
+        }}
     }}
     """
 
@@ -428,7 +466,7 @@ def evaluate_empathy(student_response: str, patient_context: str, bedrock_client
             return {
                 "empathy_score": "ok",
                 "realism_flag": "realistic",
-                "feedback": "Unable to parse evaluation"
+                "feedback": "System error - unable to parse evaluation. Please try again."
             }
         
     except Exception as e:
@@ -436,7 +474,7 @@ def evaluate_empathy(student_response: str, patient_context: str, bedrock_client
         return {
             "empathy_score": "ok",
             "realism_flag": "realistic",
-            "feedback": "Unable to evaluate"
+            "feedback": "System error - unable to evaluate. Please try again."
         }
 
 def update_session_name(table_name: str, session_id: str, bedrock_llm_id: str) -> str:
